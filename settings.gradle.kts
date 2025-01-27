@@ -20,5 +20,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "printmap"
-include(":app")
 include(":lib")
