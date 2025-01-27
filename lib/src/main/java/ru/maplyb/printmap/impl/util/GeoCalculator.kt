@@ -1,10 +1,12 @@
-package ru.maplyb.printmap.util
+package ru.maplyb.printmap.impl.util
 
 import android.database.sqlite.SQLiteDatabase
+import android.graphics.Bitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import ru.maplyb.printmap.item.BoundingBox
-import ru.maplyb.printmap.item.GeoPoint
+import ru.maplyb.printmap.api.model.BoundingBox
+import ru.maplyb.printmap.api.model.GeoPoint
+import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.math.asinh
 import kotlin.math.cos
@@ -13,13 +15,19 @@ import kotlin.math.ln
 import kotlin.math.pow
 import kotlin.math.tan
 
-class GeoCalculator {
+//lat - широта (y)
+// lon - долгота (x)
 
+/**
+ * Расчеты связанные с картой
+ * */
+internal class GeoCalculator {
+
+    /**Количество тайлов, размер файла*/
     fun calculateTotalTilesCount(
         boundingBox: BoundingBox, fromZoom: Int, toZoom: Int
     ): Long {
         var totalTileCount = 0L
-
         val bottomLeft = GeoPoint(boundingBox.latSouth, boundingBox.lonWest)
         val topRight = GeoPoint(boundingBox.latNorth, boundingBox.lonEast)
         for (zoom in fromZoom..toZoom) {
@@ -33,7 +41,7 @@ class GeoCalculator {
         }
         return totalTileCount
     }
-
+    /**Из широты-долготы в x,y*/
     fun degToNum(latDeg: Double, lonDeg: Double, zoom: Int): kotlin.Pair<Int, Int> {
         val latRad = Math.toRadians(latDeg)
         val n = 2.0.pow(zoom.toDouble())
@@ -53,9 +61,9 @@ class GeoCalculator {
     fun calculateTileX(longitude: Double, zoomLevel: Int): Int =
         floor((longitude + 180.0) / 360.0 * (1 shl zoomLevel)).toInt()
 
-
+    /*надо получить tile_data (картинка в байтах)*/
     suspend fun getMetadataMbtiles(path: String): String? {
-        return withContext(Dispatchers.IO){
+        return withContext(Dispatchers.IO) {
             var bounds: String? = null
             val db: SQLiteDatabase = SQLiteDatabase.openOrCreateDatabase(File(path), null)
 
@@ -75,5 +83,18 @@ class GeoCalculator {
             bounds
         }
     }
+}
 
+fun saveTileToDatabase(
+    database: SQLiteDatabase, xOfXYZ: Int, yOfXYZ: Int, zoomLevel: Int, bitmap: Bitmap,
+) {
+    val boas = ByteArrayOutputStream()
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 75, boas)
+    val blob = boas.toByteArray()
+    val insertSql =
+        "INSERT INTO tiles (zoom_level, tile_column, tile_row, tile_data) VALUES (?, ?, ?, ?)"
+    //todo: Пока закомментировал, т.к. нет OsmMapTools
+//    val yTMS = OsmMapTools.xyzToTmsY(yOfXYZ, zoomLevel)
+//    val args = arrayOf(zoomLevel, xOfXYZ, yTMS, blob)
+//    database.execSQL(insertSql, args)
 }
