@@ -4,13 +4,15 @@ data class MapItem(
     val name: String,
     val type: MapType,
     val isVisible: Boolean,
-    val transparent: Float,
+    val alpha: Float,
+    val position: Int
     //todo: Надо ли?
     /*val zoomMin: Int,
-    val zoomMax: Int,
-    val position: Int*/
+    val zoomMax: Int*/
 )
 
-enum class MapType {
-    OFFLINE, ONLINE
+sealed class MapType {
+    abstract val path: String
+    data class Offline(override val path: String): MapType()
+    data class Online(override val path: String): MapType()
 }

@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.GeoPoint
+import ru.maplyb.printmap.impl.domain.model.TileParams
 import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.math.asinh
@@ -13,6 +14,7 @@ import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.ln
 import kotlin.math.pow
+import kotlin.math.sin
 import kotlin.math.tan
 
 //lat - широта (y)
@@ -25,30 +27,47 @@ internal class GeoCalculator {
 
     /**Количество тайлов, размер файла*/
     fun calculateTotalTilesCount(
-        boundingBox: BoundingBox, fromZoom: Int, toZoom: Int
-    ): Long {
-        var totalTileCount = 0L
+        boundingBox: BoundingBox, zoom: Int
+    ): List<TileParams> {
         val bottomLeft = GeoPoint(boundingBox.latSouth, boundingBox.lonWest)
         val topRight = GeoPoint(boundingBox.latNorth, boundingBox.lonEast)
-        for (zoom in fromZoom..toZoom) {
-            val leftBottomTiles = degToNum(bottomLeft.latitude, bottomLeft.longitude, zoom)
-            val rightTopTiles = degToNum(topRight.latitude, topRight.longitude, zoom)
-
-            val currentTileCount =
-                (rightTopTiles.first - leftBottomTiles.first + 1) * (leftBottomTiles.second - rightTopTiles.second + 1)
-
-            totalTileCount += currentTileCount
+        val tiles = mutableListOf<TileParams>()
+        val (xMin, yMin) = degToNum(bottomLeft.latitude, bottomLeft.longitude, zoom)
+        val (xMax, yMax) = degToNum(topRight.latitude, topRight.longitude, zoom)
+        val xSorted = if (xMin < xMax) xMin..xMax else xMax..xMin
+        val ySorted = if (yMin < yMax) yMin..yMax else yMax..yMin
+        for (x in xSorted) {
+            for (y in ySorted) {
+                tiles.add(TileParams(x, y, zoom))
+            }
         }
-        return totalTileCount
+        return tiles
     }
+
+    fun boundingBoxToTiles(bbox: BoundingBox, zoom: Int): List<Pair<Int, Int>> {
+        val (xMin, yMin) = degToNum(bbox.latSouth, bbox.lonWest, zoom)
+        val (xMax, yMax) = degToNum(bbox.latNorth, bbox.lonEast, zoom)
+        println("xMin = $xMin, yMin = $yMin, xMax = $xMax, yMax = $yMax")
+        val tiles = mutableListOf<Pair<Int, Int>>()
+        val xSorted = if (xMin < xMax) xMin..xMax else xMax..xMin
+        val ySorted = if (yMin < yMax) yMin..yMax else yMax..yMin
+        for (x in xSorted) {
+            for (y in ySorted) {
+                tiles.add(x to y)
+            }
+        }
+        return tiles
+    }
+
     /**Из широты-долготы в x,y*/
     fun degToNum(latDeg: Double, lonDeg: Double, zoom: Int): kotlin.Pair<Int, Int> {
         val latRad = Math.toRadians(latDeg)
         val n = 2.0.pow(zoom.toDouble())
         val xTile = ((lonDeg + 180.0) / 360.0 * n).toInt()
         val yTile = ((1.0 - asinh(tan(latRad)) / Math.PI) / 2.0 * n).toInt()
-        return kotlin.Pair(xTile, yTile)
+        return xTile to yTile
     }
+
 
     fun calculateTileY(latitude: Double, zoomLevel: Int): Int =
         floor(

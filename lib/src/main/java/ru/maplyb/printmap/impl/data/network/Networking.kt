@@ -19,6 +19,7 @@ internal class Networking {
         val retrofit = Retrofit.Builder()
             .client(client)
             .addConverterFactory(MoshiConverterFactory.create())
+            .baseUrl("https://mt0.google.com/vt/lyrs=s/")
             .build()
 
         return retrofit.create()

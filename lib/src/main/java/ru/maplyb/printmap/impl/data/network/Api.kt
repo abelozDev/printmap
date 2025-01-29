@@ -1,15 +1,20 @@
 package ru.maplyb.printmap.impl.data.network
 
+import okhttp3.ResponseBody
 import retrofit2.http.GET
-import retrofit2.http.Path
+import retrofit2.http.Query
+import retrofit2.http.Url
 
 internal interface Api {
 
     /**Формат - https://mt0.google.com/vt/lyrs=s&x=1&y=1&z=1
     **/
     //todo: Изменить тип возвращаемого значения
-    @GET("{url}")
+    @GET()
     suspend fun getMap(
-        @Path("url") url: String
-    ): ByteArray
+        @Url url: String,
+        @Query ("x") x: Int,
+        @Query ("y") y: Int,
+        @Query ("z") z: Int
+    ): ResponseBody
 }
