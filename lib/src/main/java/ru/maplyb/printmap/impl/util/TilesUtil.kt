@@ -2,8 +2,15 @@ package ru.maplyb.printmap.impl.util
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import ru.maplyb.printmap.api.model.MapItem
+import ru.maplyb.printmap.api.model.MapType
+import ru.maplyb.printmap.impl.domain.model.TileSchema
 
 internal class TilesUtil {
 
@@ -17,41 +24,60 @@ internal class TilesUtil {
         return Triple(-1, -1, -1)
     }
 
-    suspend fun mergeTilesSortedByCoordinates(tilesPaths: List<String>): Bitmap {
+    suspend fun mergeTilesSortedByCoordinates(
+        tilesPaths: Map<MapItem, List<String?>>,
+        minX: Int,
+        maxX: Int,
+        minY: Int,
+        maxY: Int,
+        zoom: Int
+    ): Bitmap? {
+        if (tilesPaths.isEmpty()) return null
+        val horizontalSize = (maxX - minX).coerceAtLeast(1)
+        val verticalSize = (maxY - minY).coerceAtLeast(1)
+
+        val resultWidth = 255 * horizontalSize
+        val resultHeight = 255 * verticalSize
+        val resultBitmap = Bitmap.createBitmap(resultWidth, resultHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(resultBitmap)
+        val sortedMaps = tilesPaths.keys.sortedBy { it.position }
         return withContext(Dispatchers.Default) {
-            val allCoords = tilesPaths.map {
-                extractCoordinates(it)
-            }
-            val bitmapsWithCoords = tilesPaths.map { path ->
-                val (x, y) = extractCoordinates(path)
-                val bitmap = BitmapFactory.decodeFile(path)
-                Triple(x, y, bitmap)
-            }
-            val horizontalSize = allCoords.maxOf { it.first } - allCoords.minOf { it.first }
-            val verticalSize = allCoords.maxOf { it.second } - allCoords.minOf { it.second }
-
-            val resultWidth = 255 * horizontalSize
-            val resultHeight = 255 * verticalSize
-            val resultBitmap = Bitmap.createBitmap(resultWidth, resultHeight, Bitmap.Config.ARGB_8888)
-
-            var xOffset = 0
-            var yOffset = 0
-            for (y in allCoords.minOf { it.second }..allCoords.maxOf { it.second }) {
-                for (x in allCoords.minOf { it.first }..allCoords.maxOf { it.first }) {
-                    val tile = bitmapsWithCoords.find { it.first == x && it.second == y }?.third
-                    if (tile != null) {
-                        resultBitmap.apply {
-                            val canvas = android.graphics.Canvas(this)
-                            canvas.drawBitmap(tile, xOffset.toFloat(), yOffset.toFloat(), null)
+            sortedMaps.forEach { mapItem ->
+                val paths = tilesPaths[mapItem]
+                val (newMaxY, newMinY) = if (mapItem.mapType == TileSchema.TMS) {
+                    Pair(GeoCalculator().googleXyzToTms(minX, minY, zoom).second, GeoCalculator().googleXyzToTms(maxX, maxY, zoom).second)
+                } else {
+                    Pair(minY, maxY)
+                }
+                val bitmapsWithCoords = paths?.mapNotNull { path ->
+                    path?.let {
+                        val (x, y) = extractCoordinates(it)
+                        val bitmap = BitmapFactory.decodeFile(it)
+                        val correctedY = if (mapItem.mapType == TileSchema.TMS) {
+                            GeoCalculator().googleXyzToTms(x, y, zoom).second
+                        } else {
+                            y
+                        }
+                        Triple(x, correctedY, bitmap)
+                    }
+                }
+                val paint = Paint().apply {
+                    isFilterBitmap = true
+                    xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER) // Наложение слоев
+                }
+                for (y in newMinY..newMaxY) {
+                    for (x in minX..maxX) {
+                        val tile =
+                            bitmapsWithCoords?.find { it.first == x && it.second == y }?.third
+                        val xOffset = (x - minX) * 255
+                        val yOffset = (y - newMinY) * 255
+                        if (tile != null) {
+                            canvas.drawBitmap(tile, xOffset.toFloat(), yOffset.toFloat(), paint)
                         }
                     }
-                    xOffset += 255
                 }
-                xOffset = 0
-                yOffset += 255
             }
             resultBitmap
         }
     }
-
 }

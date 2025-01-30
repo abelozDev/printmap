@@ -1,7 +1,16 @@
 package ru.maplyb.printmap.sample
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.database.sqlite.SQLiteDatabase
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -27,28 +36,70 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import ru.maplyb.printmap.api.domain.MapPrint
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapType
+import ru.maplyb.printmap.impl.domain.model.TileParams
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        getStoragePermission()
         val bbox = BoundingBox(
-            latNorth = 85.0511287798066, // Почти самый верхний край карты
-            latSouth = 0.0,             // Экватор
-            lonEast = 90.0,             // 2 тайла по X (45° * 2)
-            lonWest = 0.0               // От нулевого меридиана
-        )
-        val map = MapItem(
-            name = "OpenStreetMap",
-            type = MapType.Online("https://mt0.google.com//vt/lyrs=s"),
-            isVisible = true,
-            alpha = 140f,
-            position = 1
+            latNorth = 50.85835,
+            lonWest = 29.70180,
+            latSouth = 50.01655,
+            lonEast = 31.72720,
+            )
+        /* ,беларусб
+          latNorth = 53.85397,
+            lonWest = 25.77757,
+            latSouth = 53.37413,
+            lonEast = 29.49843,
+            */
+        //киев
+        /*
+        latNorth = 50.85835,
+                    lonWest = 29.70180,
+                    latSouth = 50.01655,
+                    lonEast = 31.72720,
+                    */
+
+        //украина + беларусь
+        /*
+        latNorth = 52.33238,
+                    latSouth = 51.13283,
+                    lonEast = 27.85486,
+                    lonWest = 24.85486,
+                    */
+        val map = listOf(
+            /*MapItem(
+                name = "OpenStreetMap",
+                type = MapType.Online("https://mt0.google.com/vt/lyrs=s"),
+                isVisible = true,
+                alpha = 250f,
+                position = 1
+            ),*/
+            /*MapItem(
+                name = "Google",
+                type = MapType.Online("https://mt0.google.com//vt/lyrs=m"),
+                isVisible = true,
+                alpha = 200f,
+                position = 1
+            ),*/
+            MapItem(
+                name = "LocalTest",
+                type = MapType.Offline("storage/emulated/0/Download/Relief_Ukraine.mbtiles"),
+                isVisible = true,
+                alpha = 255f,
+                position = 2
+            )
         )
         setContent {
             val coroutineScope = rememberCoroutineScope()
@@ -63,14 +114,22 @@ class MainActivity : ComponentActivity() {
                         .padding(innerPadding),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    ///storage/emulated/0/Download/basic.mbtiles
+                    ///storage/emulated/0/Download/Relief_Ukraine.mbtiles
                     Button(
                         onClick = {
                             coroutineScope.launch {
+//                                val result = getMetadataMbtiles("/storage/emulated/0/Download/basic.mbtiles")
+                                /* val result = getTileDataMbtiles(
+                                     "/storage/emulated/0/Download/basic.mbtiles",
+                                     listOf(TileParams(x = 0, y = 3, z = 2))
+                                 )*/
+//                                bitmap = BitmapFactory.decodeByteArray(result, 0, result.size)
                                 MapPrint.create(context)
                                     .startFormingAMap(
-                                        listOf(map),
+                                        map,
                                         bbox,
-                                        zoom = 5,
+                                        zoom = 10,
                                         onResult = {
                                             bitmap = it
                                         }
@@ -95,17 +154,83 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    fun getStoragePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                startActivity(intent)
+            } catch (e: ActivityNotFoundException) {
+                Toast.makeText(
+                    this,
+                    "Устройство не поддерживает запрос этого разрешения",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
+//z = 8, x = 190, y = 225
+//z = 8, x = 190, y = 226
+//z = 8, x = 190, y = 227
+//z = 8, x = 190, y = 228
+suspend fun getTileDataMbtiles(path: String, param: List<TileParams>): ByteArray {
+    return withContext(Dispatchers.IO) {
+        var result = byteArrayOf()
+        param.forEach { (x, y, z) ->
+            val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
+            println("z = $z, x = $x, y = $y")
+            val query =
+                "SELECT tile_data FROM tiles WHERE zoom_level = $z AND tile_column = $x AND tile_row = $y;"
+            try {
+                val cur = db.rawQuery(query, null)
+                if (cur.moveToFirst()) {
+                    do {
+                        result = cur.getBlob(0)
+                    } while (cur.moveToNext())
+                }
+                cur.close()
+            } catch (e: android.database.sqlite.SQLiteException) {
+            } finally {
+                db.close()
+            }
+            /*try {
+                val cursor = db.rawQuery(query, args)
+                if (cursor.moveToFirst()) {
+                    result[cursor.getInt(0)] = cursor.getInt(1)
+                }
+                cursor.close()
+            } catch (e: android.database.sqlite.SQLiteException) {
+                println("Error while fetching tile data: ${e.printStackTrace()}")
+                e.printStackTrace()
+            } finally {
+                db.close()
+            }*/
+        }
+        return@withContext result
+    }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
+suspend fun getMetadataMbtiles(path: String): String? {
+    return withContext(Dispatchers.IO) {
+        var bounds: String? = null
+        val db: SQLiteDatabase = SQLiteDatabase.openOrCreateDatabase(File(path), null)
+
+        val query = "SELECT name,value FROM metadata WHERE name = 'bounds';"
+        try {
+            val cur = db.rawQuery(query, null)
+            if (cur.moveToFirst()) {
+                do {
+                    bounds = cur.getString(1)
+                } while (cur.moveToNext())
+            }
+            cur.close()
+        } catch (e: android.database.sqlite.SQLiteException) {
+            bounds = null
+        }
+        db.close()
+        bounds
+    }
 }

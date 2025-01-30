@@ -43,6 +43,15 @@ internal class GeoCalculator {
         }
         return tiles
     }
+    /**Из широты-долготы в x,y*/
+    fun degToNum(latDeg: Double, lonDeg: Double, zoom: Int): kotlin.Pair<Int, Int> {
+        val latRad = Math.toRadians(latDeg)
+        val n = 2.0.pow(zoom.toDouble())
+        val xTile = ((lonDeg + 180.0) / 360.0 * n).toInt()
+        val yTile = ((1.0 - asinh(tan(latRad)) / Math.PI) / 2.0 * n).toInt()
+        return xTile to yTile
+    }
+
 
     fun boundingBoxToTiles(bbox: BoundingBox, zoom: Int): List<Pair<Int, Int>> {
         val (xMin, yMin) = degToNum(bbox.latSouth, bbox.lonWest, zoom)
@@ -59,15 +68,11 @@ internal class GeoCalculator {
         return tiles
     }
 
-    /**Из широты-долготы в x,y*/
-    fun degToNum(latDeg: Double, lonDeg: Double, zoom: Int): kotlin.Pair<Int, Int> {
-        val latRad = Math.toRadians(latDeg)
-        val n = 2.0.pow(zoom.toDouble())
-        val xTile = ((lonDeg + 180.0) / 360.0 * n).toInt()
-        val yTile = ((1.0 - asinh(tan(latRad)) / Math.PI) / 2.0 * n).toInt()
-        return xTile to yTile
+    fun googleXyzToTms(x: Int, y: Int, zoom: Int): Pair<Int, Int> {
+        val n = 2.0.pow(zoom.toDouble()).toInt()
+        val yTms = n - 1 - y
+        return x to yTms
     }
-
 
     fun calculateTileY(latitude: Double, zoomLevel: Int): Int =
         floor(
@@ -104,16 +109,3 @@ internal class GeoCalculator {
     }
 }
 
-fun saveTileToDatabase(
-    database: SQLiteDatabase, xOfXYZ: Int, yOfXYZ: Int, zoomLevel: Int, bitmap: Bitmap,
-) {
-    val boas = ByteArrayOutputStream()
-    bitmap.compress(Bitmap.CompressFormat.JPEG, 75, boas)
-    val blob = boas.toByteArray()
-    val insertSql =
-        "INSERT INTO tiles (zoom_level, tile_column, tile_row, tile_data) VALUES (?, ?, ?, ?)"
-    //todo: Пока закомментировал, т.к. нет OsmMapTools
-//    val yTMS = OsmMapTools.xyzToTmsY(yOfXYZ, zoomLevel)
-//    val args = arrayOf(zoomLevel, xOfXYZ, yTMS, blob)
-//    database.execSQL(insertSql, args)
-}

@@ -8,7 +8,7 @@ import ru.maplyb.printmap.impl.util.FileSaveUtil
 
 internal interface DownloadTilesManager {
 
-    suspend fun getTiles(maps: List<MapItem>, tiles: List<TileParams>): List<String?>
+    suspend fun getTiles(maps: List<MapItem>, tiles: List<TileParams>): Map<MapItem, List<String?>>
 
     companion object Factory {
         fun create(context: Context): DownloadTilesManager {

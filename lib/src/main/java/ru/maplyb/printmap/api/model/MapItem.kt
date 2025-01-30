@@ -1,11 +1,14 @@
 package ru.maplyb.printmap.api.model
 
+import ru.maplyb.printmap.impl.domain.model.TileSchema
+
 data class MapItem(
     val name: String,
     val type: MapType,
     val isVisible: Boolean,
     val alpha: Float,
-    val position: Int
+    val position: Int,
+    val mapType: TileSchema = TileSchema.GOOGLE
     //todo: Надо ли?
     /*val zoomMin: Int,
     val zoomMax: Int*/
