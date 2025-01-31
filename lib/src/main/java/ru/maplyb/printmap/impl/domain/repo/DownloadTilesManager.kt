@@ -8,6 +8,8 @@ import ru.maplyb.printmap.impl.util.FileSaveUtil
 
 internal interface DownloadTilesManager {
 
+    /**Скичивает тайлы
+     * @return Map где key - карта, value - пути к файлам в локальной памяти*/
     suspend fun getTiles(maps: List<MapItem>, tiles: List<TileParams>): Map<MapItem, List<String?>>
 
     companion object Factory {

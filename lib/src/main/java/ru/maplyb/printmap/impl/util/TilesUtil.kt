@@ -44,7 +44,7 @@ internal class TilesUtil {
         return withContext(Dispatchers.Default) {
             sortedMaps.forEach { mapItem ->
                 val paths = tilesPaths[mapItem]
-                val (newMaxY, newMinY) = if (mapItem.mapType == TileSchema.TMS) {
+                val (newMinY, newMaxY) = if (mapItem.mapType == TileSchema.TMS) {
                     Pair(GeoCalculator().googleXyzToTms(minX, minY, zoom).second, GeoCalculator().googleXyzToTms(maxX, maxY, zoom).second)
                 } else {
                     Pair(minY, maxY)
@@ -61,16 +61,17 @@ internal class TilesUtil {
                         Triple(x, correctedY, bitmap)
                     }
                 }
+                val range = if (newMaxY > newMinY) newMinY..newMaxY else newMinY downTo newMaxY
                 val paint = Paint().apply {
                     isFilterBitmap = true
                     xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER) // Наложение слоев
                 }
-                for (y in newMinY..newMaxY) {
+                for (y in range) {
                     for (x in minX..maxX) {
                         val tile =
                             bitmapsWithCoords?.find { it.first == x && it.second == y }?.third
                         val xOffset = (x - minX) * 255
-                        val yOffset = (y - newMinY) * 255
+                        val yOffset = if ((newMaxY > newMinY)) (y - newMinY) * 255 else (newMinY - y ) * 255
                         if (tile != null) {
                             canvas.drawBitmap(tile, xOffset.toFloat(), yOffset.toFloat(), paint)
                         }

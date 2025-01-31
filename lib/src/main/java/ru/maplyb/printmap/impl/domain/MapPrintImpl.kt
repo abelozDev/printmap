@@ -21,32 +21,29 @@ internal class MapPrintImpl(private val context: Context) : MapPrint {
     ): List<TileParams> {
         return GeoCalculator().calculateTotalTilesCount(bound, zoom)
     }
-    @RequiresApi(Build.VERSION_CODES.R)
     override suspend fun startFormingAMap(
         mapList: List<MapItem>,
         bound: BoundingBox,
         zoom: Int,
         onResult: (Bitmap?) -> Unit
     ) {
-        if (Environment.isExternalStorageManager()) {
-            println("Разрешение дано")
-        } else println("Разрешение не дано")
         val tiles = GeoCalculator().calculateTotalTilesCount(bound, zoom)
         val visibleMaps = mapList.filter { it.isVisible }
         val tileManager = DownloadTilesManager.create(context)
-        //todo: обработать null
+        /**Скачивание тайлов*/
         val downloadedTiles = tileManager.getTiles(visibleMaps, tiles)
-        onResult(
-            TilesUtil()
-                .mergeTilesSortedByCoordinates(
-                    downloadedTiles,
-                    tiles.minOf { it.x },
-                    tiles.maxOf { it.x },
-                    tiles.minOf { it.y },
-                    tiles.maxOf { it.y },
-                    zoom
-                )
-        )
+
+        val resultBitmap = TilesUtil()
+            .mergeTilesSortedByCoordinates(
+                downloadedTiles,
+                tiles.minOf { it.x },
+                tiles.maxOf { it.x },
+                tiles.minOf { it.y },
+                tiles.maxOf { it.y },
+                zoom
+            )
+
+        onResult(resultBitmap)
         println("tiles = $tiles")
     }
 }

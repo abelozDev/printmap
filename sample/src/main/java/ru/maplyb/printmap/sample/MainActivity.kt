@@ -52,10 +52,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         getStoragePermission()
         val bbox = BoundingBox(
-            latNorth = 50.85835,
-            lonWest = 29.70180,
-            latSouth = 50.01655,
-            lonEast = 31.72720,
+            latNorth = 48.80033250943958,
+            lonWest = 20.30710968815696,
+            latSouth = 47.5057647015311,
+            lonEast = 24.176979174180058,
             )
         /* ,беларусб
           latNorth = 53.85397,
@@ -79,13 +79,13 @@ class MainActivity : ComponentActivity() {
                     lonWest = 24.85486,
                     */
         val map = listOf(
-            /*MapItem(
+            MapItem(
                 name = "OpenStreetMap",
                 type = MapType.Online("https://mt0.google.com/vt/lyrs=s"),
                 isVisible = true,
                 alpha = 250f,
                 position = 1
-            ),*/
+            ),
             /*MapItem(
                 name = "Google",
                 type = MapType.Online("https://mt0.google.com//vt/lyrs=m"),

@@ -60,7 +60,7 @@ internal class DownloadTilesManagerImpl(
                                 }.awaitAll()
                             }
                     }
-                println("local tiles count = ${localTiles.values.first().size}")
+
                 val remoteTiles = remote
                     .map {
                         it.copy(mapType = remoteDataSource.getSchema(it.type.path))
