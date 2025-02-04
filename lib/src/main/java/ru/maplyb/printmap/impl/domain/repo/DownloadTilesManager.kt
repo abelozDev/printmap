@@ -12,6 +12,8 @@ internal interface DownloadTilesManager {
      * @return Map где key - карта, value - пути к файлам в локальной памяти*/
     suspend fun getTiles(maps: List<MapItem>, tiles: List<TileParams>): Map<MapItem, List<String?>>
 
+    suspend fun getApproximateImageSize(maps: List<MapItem>, tiles: List<TileParams>): Long
+
     companion object Factory {
         fun create(context: Context): DownloadTilesManager {
             val local = DataSource.createLocal()

@@ -20,6 +20,11 @@ interface MapPrint {
         zoom: Int,
         onResult: (Bitmap?) -> Unit
     )
+    suspend fun getPreviewSize(
+        mapList: List<MapItem>,
+        bound: BoundingBox,
+        zoom: Int,
+    )
 
     companion object Factory {
         fun create(context: Context): MapPrint = MapPrintImpl(context)

@@ -6,12 +6,14 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapType
 import ru.maplyb.printmap.impl.domain.model.TileSchema
 
+const val TILES_SIZE_TAG = "TILES_SIZE_TAG"
 internal class TilesUtil {
 
     private fun extractCoordinates(filePath: String): Triple<Int, Int, Int> {
@@ -64,7 +66,7 @@ internal class TilesUtil {
                 val range = if (newMaxY > newMinY) newMinY..newMaxY else newMinY downTo newMaxY
                 val paint = Paint().apply {
                     isFilterBitmap = true
-                    xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER) // Наложение слоев
+                    xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_OVER)
                 }
                 for (y in range) {
                     for (x in minX..maxX) {

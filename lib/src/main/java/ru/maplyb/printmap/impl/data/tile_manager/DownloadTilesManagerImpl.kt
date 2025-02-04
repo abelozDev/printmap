@@ -18,6 +18,72 @@ internal class DownloadTilesManagerImpl(
     private val remoteDataSource: DataSource
 ) : DownloadTilesManager {
 
+
+    override suspend fun getApproximateImageSize(
+        maps: List<MapItem>,
+        tiles: List<TileParams>
+    ): Long {
+        val local = maps.filter { it.type is MapType.Offline }
+        val remote = maps.filter { it.type is MapType.Online }
+
+        return coroutineScope {
+            withContext(Dispatchers.IO) {
+                val localSize = async {
+                    local
+                        .map {
+                            it.copy(mapType = localDataSource.getSchema(it.type.path))
+                        }
+                        .sumOf { map ->
+                            localDataSource.getTilesApproximateSize(map.type.path, tiles, map.alpha.toInt(), map.mapType)
+                        }
+                }.await()
+                val remoteSize =  async {
+                    remote
+                        .map {
+                            it.copy(mapType = remoteDataSource.getSchema(it.type.path))
+                        }
+                        .sumOf { map ->
+                            remoteDataSource.getTilesApproximateSize(map.type.path, tiles, map.alpha.toInt(), map.mapType)
+                        }
+                }.await()
+                localSize + remoteSize
+            }
+        }
+        /*return coroutineScope {
+            withContext(Dispatchers.IO) {
+                val localSize = async {
+                    local
+                        .map {
+                            it.copy(mapType = localDataSource.getSchema(it.type.path))
+                        }
+                        .sumOf { map ->
+                            tiles
+                                .sumOf { tile ->
+                                    try {
+                                        localDataSource.getTile(map.type.path, tile.x, tile.y, tile.z, map.mapType)?.size ?: 0
+                                    } catch (e: Exception) { 0 }
+                                }
+                        }
+                }
+                val remoteSize = async {
+                    remote
+                        .map {
+                            it.copy(mapType = remoteDataSource.getSchema(it.type.path))
+                        }
+                        .sumOf { map ->
+                            tiles
+                                .sumOf { tile ->
+                                    try {
+                                        remoteDataSource.getTile(map.type.path, tile.x, tile.y, tile.z, map.mapType)?.size ?: 0
+                                    } catch (e: Exception) { 0 }
+                                }
+                        }
+                }
+                return@withContext localSize.await().toLong() + remoteSize.await()
+            }
+        }*/
+    }
+
     override suspend fun getTiles(
         maps: List<MapItem>,
         tiles: List<TileParams>
@@ -27,72 +93,74 @@ internal class DownloadTilesManagerImpl(
         return coroutineScope {
             withContext(Dispatchers.IO) {
                 val chunkSize = 10
-                val localTiles = local
-                    .map {
-                        it.copy(mapType = localDataSource.getSchema(it.type.path))
-                    }
-                    .associateWith { map ->
-                        tiles
-                            .chunked(10)
-                            .flatMap { tileChunk ->
-                                tileChunk.map { tile ->
-                                    async {
-                                        try {
-                                            localDataSource.getTile(
-                                                map.type.path,
-                                                tile.x,
-                                                tile.y,
-                                                tile.z,
-                                                map.mapType
-                                            )
-                                                ?.let {
+                val localTiles = async {
+                    local
+                        .map {
+                            it.copy(mapType = localDataSource.getSchema(it.type.path))
+                        }
+                        .associateWith { map ->
+                            tiles
+                                .chunked(10)
+                                .flatMap { tileChunk ->
+                                    tileChunk.map { tile ->
+                                        async {
+                                            try {
+                                                localDataSource.getTile(map.type.path, tile.x, tile.y, tile.z, map.mapType)
+                                                    ?.let {
+                                                        fileSaveUtil.saveTileToPNG(
+                                                            it,
+                                                            generateName(
+                                                                map.type.path,
+                                                                tile.x,
+                                                                tile.y,
+                                                                tile.z
+                                                            ),
+                                                            map.alpha.toInt()
+                                                        )
+                                                    }
+                                            } catch (e: Exception) { null }
+                                        }
+                                    }.awaitAll()
+                                }
+                        }
+                }
+                val remoteTiles = async {
+                    remote
+                        .map {
+                            it.copy(mapType = remoteDataSource.getSchema(it.type.path))
+                        }
+                        .associateWith { map ->
+                            tiles
+                                .chunked(chunkSize)
+                                .flatMap { tileChunk ->
+                                    tileChunk.map { tile ->
+                                        async {
+                                            try {
+                                                remoteDataSource.getTile(
+                                                    map.type.path,
+                                                    tile.x,
+                                                    tile.y,
+                                                    tile.z,
+                                                    map.mapType
+                                                )?.let {
                                                     fileSaveUtil.saveTileToPNG(
                                                         it,
-                                                        generateName(map.type.path, tile.x, tile.y, tile.z),
+                                                        generateName(
+                                                            map.type.path,
+                                                            tile.x,
+                                                            tile.y,
+                                                            tile.z
+                                                        ),
                                                         map.alpha.toInt()
                                                     )
                                                 }
-
-                                        } catch (e: Exception) {
-                                            null
+                                            } catch (e: Exception) { null }
                                         }
-                                    }
-                                }.awaitAll()
-                            }
-                    }
-
-                val remoteTiles = remote
-                    .map {
-                        it.copy(mapType = remoteDataSource.getSchema(it.type.path))
-                    }
-                    .associateWith { map ->
-                        tiles
-                            .chunked(chunkSize)
-                            .flatMap { tileChunk ->
-                                tileChunk.map { tile ->
-                                    async {
-                                        try {
-                                            remoteDataSource.getTile(
-                                                map.type.path,
-                                                tile.x,
-                                                tile.y,
-                                                tile.z,
-                                                map.mapType
-                                            )?.let {
-                                                fileSaveUtil.saveTileToPNG(
-                                                    it,
-                                                    generateName(map.type.path, tile.x, tile.y, tile.z),
-                                                    map.alpha.toInt()
-                                                )
-                                            }
-                                        } catch (e: Exception) {
-                                            null
-                                        }
-                                    }
-                                }.awaitAll()
-                            }
-                    }
-                return@withContext localTiles + remoteTiles
+                                    }.awaitAll()
+                                }
+                        }
+                }
+                return@withContext localTiles.await() + remoteTiles.await()
             }
         }
     }

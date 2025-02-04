@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
             lonWest = 20.30710968815696,
             latSouth = 47.5057647015311,
             lonEast = 24.176979174180058,
-            )
+        )
         /* ,беларусб
           latNorth = 53.85397,
             lonWest = 25.77757,
@@ -86,24 +86,25 @@ class MainActivity : ComponentActivity() {
                 alpha = 250f,
                 position = 1
             ),
-            /*MapItem(
+            MapItem(
                 name = "Google",
                 type = MapType.Online("https://mt0.google.com//vt/lyrs=m"),
                 isVisible = true,
-                alpha = 200f,
-                position = 1
-            ),*/
+                alpha = 100f,
+                position = 2
+            ),
             MapItem(
                 name = "LocalTest",
                 type = MapType.Offline("storage/emulated/0/Download/Relief_Ukraine.mbtiles"),
                 isVisible = true,
                 alpha = 255f,
-                position = 2
+                position = 3
             )
         )
         setContent {
             val coroutineScope = rememberCoroutineScope()
             val context = LocalContext.current
+            val mapPrint = remember { MapPrint.create(context) }
             var bitmap by remember {
                 mutableStateOf<Bitmap?>(null)
             }
@@ -125,15 +126,20 @@ class MainActivity : ComponentActivity() {
                                      listOf(TileParams(x = 0, y = 3, z = 2))
                                  )*/
 //                                bitmap = BitmapFactory.decodeByteArray(result, 0, result.size)
-                                MapPrint.create(context)
-                                    .startFormingAMap(
-                                        map,
-                                        bbox,
-                                        zoom = 10,
-                                        onResult = {
-                                            bitmap = it
-                                        }
-                                    )
+                                mapPrint.getPreviewSize(
+                                    map,
+                                    bbox,
+                                    zoom = 10
+                                )
+
+                                mapPrint.startFormingAMap(
+                                    map,
+                                    bbox,
+                                    zoom = 10,
+                                    onResult = {
+                                        bitmap = it
+                                    }
+                                )
                             }
                         },
                         content = {
@@ -157,15 +163,17 @@ class MainActivity : ComponentActivity() {
 
     fun getStoragePermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            try {
-                val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
-                startActivity(intent)
-            } catch (e: ActivityNotFoundException) {
-                Toast.makeText(
-                    this,
-                    "Устройство не поддерживает запрос этого разрешения",
-                    Toast.LENGTH_LONG
-                ).show()
+            if (!Environment.isExternalStorageManager()) {
+                try {
+                    val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                    startActivity(intent)
+                } catch (e: ActivityNotFoundException) {
+                    Toast.makeText(
+                        this,
+                        "Устройство не поддерживает запрос этого разрешения",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
         }
     }

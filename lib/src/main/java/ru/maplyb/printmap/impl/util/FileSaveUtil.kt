@@ -41,4 +41,18 @@ class FileSaveUtil(private val context: Context) {
             }
         }
     }
+    suspend fun getTileSize(byteArray: ByteArray, alpha: Int): Long {
+        return withContext(Dispatchers.Default) {
+            val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+            if (bitmap != null) {
+                val resultBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(resultBitmap)
+                val paint = Paint().apply {
+                    this.alpha = alpha // Устанавливаем уровень прозрачности
+                }
+                canvas.drawBitmap(bitmap, 0f, 0f, paint)
+                resultBitmap.byteCount.toLong()
+            } else 0L
+        }
+    }
 }
