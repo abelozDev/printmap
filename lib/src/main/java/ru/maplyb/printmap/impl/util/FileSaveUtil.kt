@@ -43,6 +43,15 @@ internal class FileSaveUtil(private val context: Context) {
             }
         }
     }
+    suspend fun deleteTiles(tiles: List<String>) {
+        withContext(Dispatchers.IO) {
+            tiles.forEach {
+                val file = File(it)
+                if (file.exists()) file.delete()
+            }
+        }
+
+    }
     suspend fun getTileSize(byteArray: ByteArray, alpha: Int): Long {
         return withContext(Dispatchers.Default) {
             val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)

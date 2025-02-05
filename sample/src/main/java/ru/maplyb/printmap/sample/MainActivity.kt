@@ -16,6 +16,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +26,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -39,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
@@ -158,14 +162,18 @@ class MainActivity : ComponentActivity() {
                         }
                     )
                     Spacer(Modifier.height(16.dp))
-                    ImageItem(images)
+                    ImageItem(images) {
+                        mapPrint.deleteExistedMap()
+                    }
                 }
             }
         }
     }
 
     @Composable
-    fun ImageItem(images: List<DownloadedImage>) {
+    fun ImageItem(
+        images: List<DownloadedImage>,
+        delete: () -> Unit) {
         if (images.isEmpty()) return
         var selectedImage by remember {
             mutableIntStateOf(0)
@@ -187,10 +195,20 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
+            Text(
+                text = "Размер файла: ${formatSize(images[0].bitmap?.byteCount ?: 0)}"
+            )
             AsyncImage(
                 model = images[selectedImage].bitmap,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxWidth(),
                 contentDescription = images[selectedImage].description
+            )
+            Image(
+                modifier = Modifier.clickable {
+                    delete()
+                },
+                imageVector = Icons.Default.Delete,
+                contentDescription = null
             )
         }
     }
@@ -226,68 +244,16 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
+    fun formatSize(bytes: Int): String {
+        val units = arrayOf("Б", "КБ", "МБ", "ГБ", "ТБ")
+        var size = bytes.toDouble()
+        var unitIndex = 0
 
-}
-
-//z = 8, x = 190, y = 225
-//z = 8, x = 190, y = 226
-//z = 8, x = 190, y = 227
-//z = 8, x = 190, y = 228
-suspend fun getTileDataMbtiles(path: String, param: List<TileParams>): ByteArray {
-    return withContext(Dispatchers.IO) {
-        var result = byteArrayOf()
-        param.forEach { (x, y, z) ->
-            val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
-            println("z = $z, x = $x, y = $y")
-            val query =
-                "SELECT tile_data FROM tiles WHERE zoom_level = $z AND tile_column = $x AND tile_row = $y;"
-            try {
-                val cur = db.rawQuery(query, null)
-                if (cur.moveToFirst()) {
-                    do {
-                        result = cur.getBlob(0)
-                    } while (cur.moveToNext())
-                }
-                cur.close()
-            } catch (e: android.database.sqlite.SQLiteException) {
-            } finally {
-                db.close()
-            }
-            /*try {
-                val cursor = db.rawQuery(query, args)
-                if (cursor.moveToFirst()) {
-                    result[cursor.getInt(0)] = cursor.getInt(1)
-                }
-                cursor.close()
-            } catch (e: android.database.sqlite.SQLiteException) {
-                println("Error while fetching tile data: ${e.printStackTrace()}")
-                e.printStackTrace()
-            } finally {
-                db.close()
-            }*/
+        while (size >= 1024 && unitIndex < units.lastIndex) {
+            size /= 1024
+            unitIndex++
         }
-        return@withContext result
-    }
-}
 
-suspend fun getMetadataMbtiles(path: String): String? {
-    return withContext(Dispatchers.IO) {
-        var bounds: String? = null
-        val db: SQLiteDatabase = SQLiteDatabase.openOrCreateDatabase(File(path), null)
-
-        val query = "SELECT name,value FROM metadata WHERE name = 'bounds';"
-        try {
-            val cur = db.rawQuery(query, null)
-            if (cur.moveToFirst()) {
-                do {
-                    bounds = cur.getString(1)
-                } while (cur.moveToNext())
-            }
-            cur.close()
-        } catch (e: android.database.sqlite.SQLiteException) {
-            bounds = null
-        }
-        db.close()
-        bounds
+        return "%.2f %s".format(size, units[unitIndex])
     }
 }

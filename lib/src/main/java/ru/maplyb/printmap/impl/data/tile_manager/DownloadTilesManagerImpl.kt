@@ -52,6 +52,12 @@ internal class DownloadTilesManagerImpl(
         }
     }
 
+    override suspend fun deleteTiles(
+        tiles: List<String?>
+    ) {
+        fileSaveUtil.deleteTiles(tiles.filterNotNull())
+    }
+
     override suspend fun getTiles(
         maps: List<MapItem>,
         tiles: List<TileParams>,

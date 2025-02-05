@@ -9,12 +9,13 @@ internal interface PreferencesDataSource {
     fun onUpdate(path: (MapPath?) -> Unit)
     fun saveMapPath(key: String, value: MapPath)
     fun getMapPath(key: String): MapPath?
+    fun removeExistedMap()
 
     companion object {
         const val MAP_PREF_KEY = "MAP_PREF_KEY"
         const val MAP_PATH_KEY = "MAP_PATH_KEY"
         fun create(context: Context): PreferencesDataSource {
-            return PreferencesDataSourceImpl(context)
+            return PreferencesDataSourceImpl.apply { init(context) }
         }
     }
 }

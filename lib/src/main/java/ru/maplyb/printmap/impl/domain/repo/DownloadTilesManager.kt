@@ -17,7 +17,9 @@ internal interface DownloadTilesManager {
     ): Map<MapItem, List<String?>>
 
     suspend fun getApproximateImageSize(maps: List<MapItem>, tiles: List<TileParams>): Long
-
+    suspend fun deleteTiles(
+        tiles: List<String?>
+    )
     companion object Factory {
         fun create(context: Context): DownloadTilesManager {
             val local = DataSource.createLocal()

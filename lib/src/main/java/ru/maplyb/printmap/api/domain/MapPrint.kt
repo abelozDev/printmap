@@ -1,5 +1,6 @@
 package ru.maplyb.printmap.api.domain
 
+import android.app.Activity
 import android.content.Context
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.DownloadedImage
@@ -13,6 +14,7 @@ interface MapPrint {
 
     fun init(context: Context)
     /*fun ShowMapPrintDialog(mapList: List<MapItem>, bound: BoundingBox, zoom: Int)*/
+    fun deleteExistedMap()
     fun getTilesCount(
         bound: BoundingBox,
         zoom: Int,
@@ -31,6 +33,6 @@ interface MapPrint {
     )
 
     companion object Factory {
-        fun create(context: Context): MapPrint = MapPrintImpl(context)
+        fun create(activity: Activity): MapPrint = MapPrintImpl(activity)
     }
 }

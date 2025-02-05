@@ -51,6 +51,11 @@ internal class DownloadMapService : Service() {
         fun getService(): DownloadMapService = this@DownloadMapService
     }
 
+    override fun onCreate() {
+        super.onCreate()
+        prefs = PreferencesDataSource.create(this.applicationContext)
+    }
+
     private fun downloadMap(
         mapList: List<MapItem>,
         bound: BoundingBox,
@@ -90,6 +95,7 @@ internal class DownloadMapService : Service() {
             )?.let {
                 prefs?.saveMapPath(MAP_PATH_KEY, it)
             }
+            tileManager.deleteTiles(downloadedTiles.values.flatten())
             stopForeground(true)
             stopSelf()
         }
@@ -118,11 +124,6 @@ internal class DownloadMapService : Service() {
         )
         NotificationManagerCompat.from(this@DownloadMapService)
             .notify(DOWNLOAD_MAP_NOTIFICATION_ID, updatedNotification)
-    }
-
-    override fun onCreate() {
-        super.onCreate()
-        prefs = PreferencesDataSource.create(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

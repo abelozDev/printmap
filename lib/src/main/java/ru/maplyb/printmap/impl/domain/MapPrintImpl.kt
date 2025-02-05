@@ -1,10 +1,13 @@
 package ru.maplyb.printmap.impl.domain
 
+import android.app.Activity
+import android.app.Application
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.graphics.Bitmap
+import android.os.Bundle
 import android.os.IBinder
 import ru.maplyb.printmap.api.domain.MapPrint
 import ru.maplyb.printmap.api.model.BoundingBox
@@ -23,7 +26,7 @@ import ru.maplyb.printmap.impl.util.debugLog
 import ru.maplyb.printmap.impl.util.getBitmapFromPath
 import ru.maplyb.printmap.impl.util.limitSize
 
-internal class MapPrintImpl(private val context: Context) : MapPrint {
+internal class MapPrintImpl(private val activity: Activity) : MapPrint {
 
     private var mapResult: MapResult? = null
     private lateinit var mService: DownloadMapService
@@ -35,10 +38,24 @@ internal class MapPrintImpl(private val context: Context) : MapPrint {
             mService = binder.getService()
             mBound = true
         }
-
         override fun onServiceDisconnected(arg0: ComponentName) {
             mBound = false
         }
+    }
+    init {
+        activity.application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
+            override fun onActivityDestroyed(activity: Activity) {
+                if (activity == this@MapPrintImpl.activity) {
+                    activity.unbindService(connection)
+                }
+            }
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
+            override fun onActivityStarted(activity: Activity) {}
+            override fun onActivityResumed(activity: Activity) {}
+            override fun onActivityPaused(activity: Activity) {}
+            override fun onActivityStopped(activity: Activity) {}
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+        })
     }
 
     override fun onMapReady(result: (List<DownloadedImage>) -> Unit) {
@@ -47,16 +64,21 @@ internal class MapPrintImpl(private val context: Context) : MapPrint {
                 result(images)
             }
         }
-        prefs?.onUpdate {
-            if (it == null) return@onUpdate
-            val bitmap = getBitmapFromPath(it)
-            val list = createBitmaps(bitmap, context)
+        prefs?.onUpdate { path ->
+            val list = path?.let {
+                val bitmap = getBitmapFromPath(it)
+                createBitmaps(bitmap, activity)
+            } ?: emptyList()
             mapResult?.onMapReady(list)
         }
     }
 
     override fun init(context: Context) {
-        prefs = PreferencesDataSource.create(context)
+        prefs = PreferencesDataSource.create(context.applicationContext)
+    }
+
+    override fun deleteExistedMap() {
+        prefs?.removeExistedMap()
     }
 
     override fun getTilesCount(
@@ -70,29 +92,20 @@ internal class MapPrintImpl(private val context: Context) : MapPrint {
         mapList: List<MapItem>,
         bound: BoundingBox,
         zoom: Int,
-        /*onResult: (List<DownloadedImage>) -> Unit*/
     ) {
-        NotificationChannel.create(context)
-        val intent = Intent(context.applicationContext, DownloadMapService::class.java).run {
+        NotificationChannel.create(activity)
+        val intent = Intent(activity.applicationContext, DownloadMapService::class.java).run {
             putExtra(DownloadMapService.MAP_LIST_ARG, ArrayList(mapList))
             putExtra(DownloadMapService.BOUND_ARG, bound)
             putExtra(DownloadMapService.ZOOM_ARG, zoom)
         }
-        context.startService(intent)
-        context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
-        /*delay(200)
-        if (mBound) {
-            mService.setMapResult {
-                onResult(it)
-            }
-        }*/
+        activity.startService(intent)
+        activity.bindService(intent, connection, Context.BIND_AUTO_CREATE)
     }
 
     /** Считаем тестовый размер файла*/
     override suspend fun getPreviewSize(mapList: List<MapItem>, bound: BoundingBox, zoom: Int) {
         val tiles = GeoCalculator().calculateTotalTilesCount(bound, zoom)
-        val visibleMaps = mapList.filter { it.isVisible }
-        val tileManager = DownloadTilesManager.create(context)
         val approximateSize = 255 * 255 * 4 * tiles.size
         debugLog(TILES_SIZE_TAG, "Approximate size: $approximateSize")
     }
@@ -111,3 +124,4 @@ internal class MapPrintImpl(private val context: Context) : MapPrint {
         )
     }
 }
+
