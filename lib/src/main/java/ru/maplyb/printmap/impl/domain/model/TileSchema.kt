@@ -1,6 +1,9 @@
 package ru.maplyb.printmap.impl.domain.model
 
-enum class TileSchema {
+import java.io.Serializable
+
+
+enum class TileSchema: Serializable {
     GOOGLE,
     TMS
 }

@@ -11,6 +11,7 @@ import ru.maplyb.printmap.impl.domain.model.TileParams
 import ru.maplyb.printmap.impl.domain.repo.DataSource
 import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
 import ru.maplyb.printmap.impl.util.FileSaveUtil
+import java.util.concurrent.atomic.AtomicInteger
 
 internal class DownloadTilesManagerImpl(
     private val fileSaveUtil: FileSaveUtil,
@@ -49,47 +50,16 @@ internal class DownloadTilesManagerImpl(
                 localSize + remoteSize
             }
         }
-        /*return coroutineScope {
-            withContext(Dispatchers.IO) {
-                val localSize = async {
-                    local
-                        .map {
-                            it.copy(mapType = localDataSource.getSchema(it.type.path))
-                        }
-                        .sumOf { map ->
-                            tiles
-                                .sumOf { tile ->
-                                    try {
-                                        localDataSource.getTile(map.type.path, tile.x, tile.y, tile.z, map.mapType)?.size ?: 0
-                                    } catch (e: Exception) { 0 }
-                                }
-                        }
-                }
-                val remoteSize = async {
-                    remote
-                        .map {
-                            it.copy(mapType = remoteDataSource.getSchema(it.type.path))
-                        }
-                        .sumOf { map ->
-                            tiles
-                                .sumOf { tile ->
-                                    try {
-                                        remoteDataSource.getTile(map.type.path, tile.x, tile.y, tile.z, map.mapType)?.size ?: 0
-                                    } catch (e: Exception) { 0 }
-                                }
-                        }
-                }
-                return@withContext localSize.await().toLong() + remoteSize.await()
-            }
-        }*/
     }
 
     override suspend fun getTiles(
         maps: List<MapItem>,
-        tiles: List<TileParams>
+        tiles: List<TileParams>,
+        onProgress: (Int) -> Unit
     ): Map<MapItem, List<String?>> {
         val local = maps.filter { it.type is MapType.Offline }
         val remote = maps.filter { it.type is MapType.Online }
+        val downloadedSize = AtomicInteger(0)
         return coroutineScope {
             withContext(Dispatchers.IO) {
                 val chunkSize = 10
@@ -102,7 +72,7 @@ internal class DownloadTilesManagerImpl(
                             tiles
                                 .chunked(10)
                                 .flatMap { tileChunk ->
-                                    tileChunk.map { tile ->
+                                    val result = tileChunk.map { tile ->
                                         async {
                                             try {
                                                 localDataSource.getTile(map.type.path, tile.x, tile.y, tile.z, map.mapType)
@@ -121,6 +91,9 @@ internal class DownloadTilesManagerImpl(
                                             } catch (e: Exception) { null }
                                         }
                                     }.awaitAll()
+                                    val progress = downloadedSize.addAndGet(10)
+                                    onProgress(progress)
+                                    result
                                 }
                         }
                 }
@@ -133,7 +106,7 @@ internal class DownloadTilesManagerImpl(
                             tiles
                                 .chunked(chunkSize)
                                 .flatMap { tileChunk ->
-                                    tileChunk.map { tile ->
+                                    val result = tileChunk.map { tile ->
                                         async {
                                             try {
                                                 remoteDataSource.getTile(
@@ -157,6 +130,9 @@ internal class DownloadTilesManagerImpl(
                                             } catch (e: Exception) { null }
                                         }
                                     }.awaitAll()
+                                    val progress = downloadedSize.addAndGet(10)
+                                    onProgress(progress)
+                                    result
                                 }
                         }
                 }

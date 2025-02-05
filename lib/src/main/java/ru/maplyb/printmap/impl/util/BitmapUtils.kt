@@ -4,16 +4,27 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.opengl.GLES20
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import android.content.Context
+import androidx.window.layout.WindowMetricsCalculator
 
-/**Лимитирует размер bitmap в зависимости от доступного разрешения на устройстве*/
-internal fun Bitmap.limitSize(): Bitmap {
-    val maxSize = getMaxTextureSize()
+internal fun Bitmap.limitSize(context: Context): Bitmap {
+    val maxSize = getMaxBitmapSize(context)
 
-    val newWidth = width.coerceAtMost(maxSize)
-    val newHeight = height.coerceAtMost(maxSize)
+    val aspectRatio = width.toFloat() / height.toFloat()
+    val newWidth: Int
+    val newHeight: Int
+
+    if (width > height) {
+        // Если изображение шире, ограничиваем по ширине
+        newWidth = maxSize
+        newHeight = (newWidth / aspectRatio).toInt()
+    } else {
+        // Если изображение выше, ограничиваем по высоте
+        newHeight = maxSize
+        newWidth = (newHeight * aspectRatio).toInt()
+    }
 
     return if (width > maxSize || height > maxSize) {
         Bitmap.createScaledBitmap(this, newWidth, newHeight, true)
@@ -22,11 +33,34 @@ internal fun Bitmap.limitSize(): Bitmap {
     }
 }
 
-private fun getMaxTextureSize(): Int {
-    val maxSize = IntArray(1)
-    GLES20.glGetIntegerv(GLES20.GL_MAX_TEXTURE_SIZE, maxSize, 0)
-    return maxSize[0]
+private fun getMaxBitmapSize(context: Context): Int {
+    val windowMetrics = WindowMetricsCalculator.getOrCreate().computeCurrentWindowMetrics(context)
+    val currentBounds = windowMetrics.bounds // E.g. [0 0 1350 1800]
+    val screenWidth = currentBounds.width()
+    val screenHeight = currentBounds.height()
+
+    val maxMemory = Runtime.getRuntime().maxMemory() / 1024 / 1024
+    val memoryLimit = when {
+        maxMemory >= 512 -> 4096
+        maxMemory >= 256 -> 2048
+        else -> 1024
+    }
+    return minOf(screenWidth * 2, screenHeight * 2, memoryLimit)
 }
+fun Bitmap.cropCenter(cropWidth: Int, cropHeight: Int): Bitmap {
+    val x = (this.width - cropWidth) / 2
+    val y = (this.height - cropHeight) / 2
+    return Bitmap.createBitmap(this, x, y, cropWidth, cropHeight)
+}
+fun getBitmapFromPath(path: String): Bitmap? {
+    return try {
+        BitmapFactory.decodeFile(path)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
 suspend fun ByteArray?.getTileSize(alpha: Int): Long {
     if (this == null) return 0
     return withContext(Dispatchers.Default) {

@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     id("maven-publish")
+    alias(libs.plugins.jetbrains.kotlin.jvm) apply false
+    kotlin("plugin.serialization") version "2.1.10"
 }
 
 android {
@@ -53,6 +55,9 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    implementation(libs.window.manager)
+    implementation(libs.kotlinx.serialization.json)
 
     //network
     implementation(libs.retrofit)

@@ -1,11 +1,11 @@
 package ru.maplyb.printmap.sample
 
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.database.sqlite.SQLiteDatabase
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
@@ -14,18 +14,24 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -34,13 +40,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import ru.maplyb.printmap.api.domain.MapPrint
 import ru.maplyb.printmap.api.model.BoundingBox
+import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapType
 import ru.maplyb.printmap.impl.domain.model.TileParams
@@ -51,12 +59,23 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         getStoragePermission()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestNotificationPermission()
+        }
+        val mapPrint = MapPrint.create(this)
+        mapPrint.init(this)
         val bbox = BoundingBox(
-            latNorth = 48.80033250943958,
-            lonWest = 20.30710968815696,
-            latSouth = 47.5057647015311,
-            lonEast = 24.176979174180058,
+            latNorth = 51.655322,
+            lonWest = 22.327316,
+            latSouth = 46.976288,
+            lonEast = 38.433272,
         )
+        //накладывает offline на online
+        /*latNorth = 48.80033250943958,
+        lonWest = 20.30710968815696,
+        latSouth = 47.5057647015311,
+        lonEast = 24.176979174180058,*/
+
         /* ,беларусб
           latNorth = 53.85397,
             lonWest = 25.77757,
@@ -79,7 +98,7 @@ class MainActivity : ComponentActivity() {
                     lonWest = 24.85486,
                     */
         val map = listOf(
-            MapItem(
+            /*MapItem(
                 name = "OpenStreetMap",
                 type = MapType.Online("https://mt0.google.com/vt/lyrs=s"),
                 isVisible = true,
@@ -92,7 +111,7 @@ class MainActivity : ComponentActivity() {
                 isVisible = true,
                 alpha = 100f,
                 position = 2
-            ),
+            ),*/
             MapItem(
                 name = "LocalTest",
                 type = MapType.Offline("storage/emulated/0/Download/Relief_Ukraine.mbtiles"),
@@ -103,10 +122,14 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             val coroutineScope = rememberCoroutineScope()
-            val context = LocalContext.current
-            val mapPrint = remember { MapPrint.create(context) }
-            var bitmap by remember {
-                mutableStateOf<Bitmap?>(null)
+            var images by remember {
+                mutableStateOf<List<DownloadedImage>>(emptyList())
+            }
+            LaunchedEffect(Unit) {
+                mapPrint
+                    .onMapReady {
+                        images = it
+                    }
             }
             Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                 Column(
@@ -120,27 +143,12 @@ class MainActivity : ComponentActivity() {
                     Button(
                         onClick = {
                             coroutineScope.launch {
-//                                val result = getMetadataMbtiles("/storage/emulated/0/Download/basic.mbtiles")
-                                /* val result = getTileDataMbtiles(
-                                     "/storage/emulated/0/Download/basic.mbtiles",
-                                     listOf(TileParams(x = 0, y = 3, z = 2))
-                                 )*/
-//                                bitmap = BitmapFactory.decodeByteArray(result, 0, result.size)
-                                mapPrint.getPreviewSize(
-                                    map,
-                                    bbox,
-                                    zoom = 10
-                                )
-
-                                mapPrint.startFormingAMap(
-                                    map,
-                                    bbox,
-                                    zoom = 10,
-                                    onResult = {
-                                        bitmap = it
-                                    }
-                                )
-                            }
+                                    mapPrint.startFormingAMap(
+                                        map,
+                                        bbox,
+                                        zoom = 10,
+                                    )
+                                }
                         },
                         content = {
                             Text(
@@ -150,14 +158,40 @@ class MainActivity : ComponentActivity() {
                         }
                     )
                     Spacer(Modifier.height(16.dp))
-                    if (bitmap != null) {
-                        Image(
-                            bitmap = bitmap!!.asImageBitmap(),
-                            contentDescription = null
-                        )
-                    }
+                    ImageItem(images)
                 }
             }
+        }
+    }
+
+    @Composable
+    fun ImageItem(images: List<DownloadedImage>) {
+        if (images.isEmpty()) return
+        var selectedImage by remember {
+            mutableIntStateOf(0)
+        }
+        Column {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround,
+            ) {
+                items(images.size) { index ->
+                    val image = images[index]
+                    Button(
+                        content = {
+                            Text(text = image.description)
+                        },
+                        onClick = {
+                            selectedImage = index
+                        }
+                    )
+                }
+            }
+            AsyncImage(
+                model = images[selectedImage].bitmap,
+                modifier = Modifier.fillMaxSize(),
+                contentDescription = images[selectedImage].description
+            )
         }
     }
 
@@ -175,6 +209,21 @@ class MainActivity : ComponentActivity() {
                     ).show()
                 }
             }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun requestNotificationPermission() {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                0
+            )
         }
     }
 

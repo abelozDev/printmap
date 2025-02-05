@@ -5,12 +5,14 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.os.Environment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 
-class FileSaveUtil(private val context: Context) {
+internal class FileSaveUtil(private val context: Context) {
     suspend fun saveTileToPNG(byteArray: ByteArray, filePath: String, alpha: Int): String? {
         return withContext(Dispatchers.Default) {
             val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
@@ -53,6 +55,27 @@ class FileSaveUtil(private val context: Context) {
                 canvas.drawBitmap(bitmap, 0f, 0f, paint)
                 resultBitmap.byteCount.toLong()
             } else 0L
+        }
+    }
+    fun saveBitmapToGallery(context: Context, bitmap: Bitmap, fileName: String): String? {
+        val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+
+        if (!picturesDir.exists()) {
+            picturesDir.mkdirs()
+        }
+
+        val file = File(picturesDir, "$fileName.png")
+
+        try {
+            FileOutputStream(file).use { outputStream ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                outputStream.flush()
+            }
+
+            return file.absolutePath
+        } catch (e: IOException) {
+            e.printStackTrace()
+            return null
         }
     }
 }

@@ -5,4 +5,4 @@ data class BoundingBox(
     val latSouth: Double,
     val lonEast: Double,
     val lonWest: Double
-)
+): java.io.Serializable

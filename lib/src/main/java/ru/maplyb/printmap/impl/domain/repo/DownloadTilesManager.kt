@@ -10,7 +10,11 @@ internal interface DownloadTilesManager {
 
     /**Скичивает тайлы
      * @return Map где key - карта, value - пути к файлам в локальной памяти*/
-    suspend fun getTiles(maps: List<MapItem>, tiles: List<TileParams>): Map<MapItem, List<String?>>
+    suspend fun getTiles(
+        maps: List<MapItem>,
+        tiles: List<TileParams>,
+        onProgress: (Int) -> Unit
+    ): Map<MapItem, List<String?>>
 
     suspend fun getApproximateImageSize(maps: List<MapItem>, tiles: List<TileParams>): Long
 
