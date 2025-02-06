@@ -1,73 +1,70 @@
 package ru.maplyb.printmap.sample
 
-import android.Manifest
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.database.sqlite.SQLiteDatabase
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
-import android.provider.Settings
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import ru.maplyb.printmap.api.domain.MapPrint
 import ru.maplyb.printmap.api.model.BoundingBox
-import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapType
-import ru.maplyb.printmap.impl.domain.model.TileParams
-import java.io.File
+import ru.maplyb.printmap.api.utils.createBitmaps
+import ru.maplyb.printmap.sample.halpers.permission.getStoragePermission
+import ru.maplyb.printmap.sample.halpers.permission.requestNotificationPermission
+import ru.maplyb.printmap.sample.halpers.share.sendImageAsFile
+import ru.maplyb.printmap.sample.utils.formatSize
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        getStoragePermission()
+        getStoragePermission(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requestNotificationPermission()
+            requestNotificationPermission(this)
         }
         val mapPrint = MapPrint.create(this)
-        mapPrint.init(this)
         val bbox = BoundingBox(
             latNorth = 51.655322,
             lonWest = 22.327316,
@@ -108,31 +105,32 @@ class MainActivity : ComponentActivity() {
                 isVisible = true,
                 alpha = 250f,
                 position = 1
-            ),
+            ),*/
             MapItem(
                 name = "Google",
                 type = MapType.Online("https://mt0.google.com//vt/lyrs=m"),
                 isVisible = true,
-                alpha = 100f,
+                alpha = 250f,
                 position = 2
-            ),*/
-            MapItem(
+            ),
+            /*MapItem(
                 name = "LocalTest",
                 type = MapType.Offline("storage/emulated/0/Download/Relief_Ukraine.mbtiles"),
                 isVisible = true,
                 alpha = 255f,
                 position = 3
-            )
+            )*/
         )
         setContent {
             val coroutineScope = rememberCoroutineScope()
-            var images by remember {
-                mutableStateOf<List<DownloadedImage>>(emptyList())
+            var image by remember {
+                mutableStateOf<String?>(null)
             }
+            val context = LocalContext.current
             LaunchedEffect(Unit) {
                 mapPrint
                     .onMapReady {
-                        images = it
+                        image = it
                     }
             }
             Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -147,12 +145,12 @@ class MainActivity : ComponentActivity() {
                     Button(
                         onClick = {
                             coroutineScope.launch {
-                                    mapPrint.startFormingAMap(
-                                        map,
-                                        bbox,
-                                        zoom = 10,
-                                    )
-                                }
+                                mapPrint.startFormingAMap(
+                                    map,
+                                    bbox,
+                                    zoom = 10,
+                                )
+                            }
                         },
                         content = {
                             Text(
@@ -162,8 +160,14 @@ class MainActivity : ComponentActivity() {
                         }
                     )
                     Spacer(Modifier.height(16.dp))
-                    ImageItem(images) {
-                        mapPrint.deleteExistedMap()
+                    if (image != null) {
+                        ImageItem(
+                            image = image!!,
+                            context = context,
+                            delete = {
+                                mapPrint.deleteExistedMap()
+                            }
+                        )
                     }
                 }
             }
@@ -171,89 +175,106 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun ImageItem(
-        images: List<DownloadedImage>,
-        delete: () -> Unit) {
-        if (images.isEmpty()) return
-        var selectedImage by remember {
-            mutableIntStateOf(0)
+    private fun ImageItem(
+        image: String,
+        context: Context,
+        delete: () -> Unit
+    ) {
+        val imageBitmap by remember(image) {
+            mutableStateOf<Bitmap>(BitmapFactory.decodeFile(image))
         }
-        Column {
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround,
+        val images = remember {
+            createBitmaps(
+                resultBitmap = imageBitmap,
+                context = context
+            )
+        }
+        var selectedImage by remember {
+            mutableStateOf(images.first.bitmap)
+        }
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .padding(vertical = 16.dp)
+                    .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(8.dp)),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                items(images.size) { index ->
-                    val image = images[index]
-                    Button(
-                        content = {
-                            Text(text = image.description)
-                        },
-                        onClick = {
-                            selectedImage = index
-                        }
-                    )
-                }
+                ImageType(
+                    selected = selectedImage == images.first.bitmap,
+                    description = images.first.description,
+                    onClick = {
+                        selectedImage = images.first.bitmap
+                    }
+                )
+                ImageType(
+                    selected = selectedImage == images.second.bitmap,
+                    description = images.second.description,
+                    onClick = {
+                        selectedImage = images.second.bitmap
+                    }
+                )
             }
             Text(
-                text = "Размер файла: ${formatSize(images[0].bitmap?.byteCount ?: 0)}"
+                text = "Размер файла: ${formatSize(imageBitmap.byteCount)}"
             )
+            Spacer(Modifier.height(16.dp))
             AsyncImage(
-                model = images[selectedImage].bitmap,
+                model = selectedImage,
                 modifier = Modifier.fillMaxWidth(),
-                contentDescription = images[selectedImage].description
-            )
-            Image(
-                modifier = Modifier.clickable {
-                    delete()
-                },
-                imageVector = Icons.Default.Delete,
                 contentDescription = null
             )
-        }
-    }
-
-    fun getStoragePermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (!Environment.isExternalStorageManager()) {
-                try {
-                    val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
-                    startActivity(intent)
-                } catch (e: ActivityNotFoundException) {
-                    Toast.makeText(
-                        this,
-                        "Устройство не поддерживает запрос этого разрешения",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+            Spacer(Modifier.height(16.dp))
+            Row {
+                Image(
+                    modifier = Modifier.clickable {
+                        delete()
+                    },
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null
+                )
+                Spacer(Modifier.width(16.dp))
+                Image(
+                    modifier = Modifier.clickable {
+                        sendImageAsFile(this@MainActivity, image)
+                    },
+                    imageVector = Icons.Default.Share,
+                    contentDescription = null
+                )
             }
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    fun requestNotificationPermission() {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                0
+    @Composable
+    private fun RowScope.ImageType(
+        selected: Boolean,
+        description: String,
+        onClick: () -> Unit
+    ) {
+        val textColor by remember(selected) {
+            mutableStateOf(
+                if (selected) Color.White else Color.Black
             )
         }
-    }
-    fun formatSize(bytes: Int): String {
-        val units = arrayOf("Б", "КБ", "МБ", "ГБ", "ТБ")
-        var size = bytes.toDouble()
-        var unitIndex = 0
-
-        while (size >= 1024 && unitIndex < units.lastIndex) {
-            size /= 1024
-            unitIndex++
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .background(if (selected) Color.Gray else Color.Transparent)
+                .clickable {
+                    onClick()
+                }
+        ) {
+            Text(
+                modifier = Modifier.align(Alignment.Center),
+                color = textColor,
+                textAlign = TextAlign.Center,
+                text = description,
+            )
         }
-
-        return "%.2f %s".format(size, units[unitIndex])
     }
 }

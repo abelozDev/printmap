@@ -7,7 +7,11 @@ import android.graphics.Paint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import android.content.Context
+import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.window.layout.WindowMetricsCalculator
+import java.io.File
+import java.io.FileOutputStream
 
 internal fun Bitmap.limitSize(context: Context): Bitmap {
     val maxSize = getMaxBitmapSize(context)
@@ -47,11 +51,7 @@ private fun getMaxBitmapSize(context: Context): Int {
     }
     return minOf(screenWidth * 2, screenHeight * 2, memoryLimit)
 }
-fun Bitmap.cropCenter(cropWidth: Int, cropHeight: Int): Bitmap {
-    val x = (this.width - cropWidth) / 2
-    val y = (this.height - cropHeight) / 2
-    return Bitmap.createBitmap(this, x, y, cropWidth, cropHeight)
-}
+
 fun getBitmapFromPath(path: String): Bitmap? {
     return try {
         BitmapFactory.decodeFile(path)
@@ -75,4 +75,15 @@ suspend fun ByteArray?.getTileSize(alpha: Int): Long {
             resultBitmap.byteCount.toLong()
         } else 0L
     }
+}
+fun saveBitmapToExternalStorage(context: Context, bitmap: Bitmap, fileName: String): String? {
+    val file = File(context.getExternalFilesDir(null), "$fileName.png")
+    return try {
+        FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        file.absolutePath
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+
 }

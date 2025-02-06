@@ -80,7 +80,6 @@ internal class FileSaveUtil(private val context: Context) {
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
                 outputStream.flush()
             }
-
             return file.absolutePath
         } catch (e: IOException) {
             e.printStackTrace()

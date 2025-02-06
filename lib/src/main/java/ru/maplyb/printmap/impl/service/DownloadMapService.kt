@@ -26,6 +26,7 @@ import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
 import ru.maplyb.printmap.impl.util.FileSaveUtil
 import ru.maplyb.printmap.impl.util.GeoCalculator
 import ru.maplyb.printmap.impl.util.TilesUtil
+import ru.maplyb.printmap.impl.util.saveBitmapToExternalStorage
 import ru.maplyb.printmap.impl.util.serializable
 
 internal class DownloadMapService : Service() {
@@ -35,13 +36,13 @@ internal class DownloadMapService : Service() {
     /*private var mapResult: MapResult? = null*/
     private var prefs: PreferencesDataSource? = null
 
-   /* fun setMapResult(callback: (List<DownloadedImage>) -> Unit) {
-        this.mapResult = object : MapResult {
-            override fun onMapReady(images: List<DownloadedImage>) {
-                callback(images)
-            }
-        }
-    }*/
+    /* fun setMapResult(callback: (List<DownloadedImage>) -> Unit) {
+         this.mapResult = object : MapResult {
+             override fun onMapReady(images: List<DownloadedImage>) {
+                 callback(images)
+             }
+         }
+     }*/
 
     override fun onBind(p0: Intent?): IBinder = binder
 
@@ -87,14 +88,22 @@ internal class DownloadMapService : Service() {
                     tiles.maxOf { it.y },
                     zoom
                 )
-            val saver = FileSaveUtil(this@DownloadMapService)
-            saver.saveBitmapToGallery(
+//            val saver = FileSaveUtil(this@DownloadMapService)
+            saveBitmapToExternalStorage(
+                context = this@DownloadMapService,
+                bitmap = resultBitmap!!,
+                fileName = "${System.currentTimeMillis()}"
+            )
+                ?.let {
+                    prefs?.saveMapPath(MAP_PATH_KEY, it)
+                }
+            /*saver.saveBitmapToGallery(
                 this@DownloadMapService,
                 resultBitmap!!,
                 "${System.currentTimeMillis()}"
             )?.let {
                 prefs?.saveMapPath(MAP_PATH_KEY, it)
-            }
+            }*/
             tileManager.deleteTiles(downloadedTiles.values.flatten())
             stopForeground(true)
             stopSelf()
@@ -148,6 +157,8 @@ internal class DownloadMapService : Service() {
             .setContentText(progressText)
             .setProgress(maxProgress, progress, false)
             .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setOnlyAlertOnce(true)
+            .setOngoing(true)
             .build()
     }
 
