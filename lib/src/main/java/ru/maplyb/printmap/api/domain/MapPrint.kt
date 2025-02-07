@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.Context
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.DownloadedImage
+import ru.maplyb.printmap.api.model.Errors
 import ru.maplyb.printmap.api.model.MapItem
+import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.MapPrintImpl
 import ru.maplyb.printmap.impl.domain.local.MapPath
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
@@ -19,7 +21,7 @@ interface MapPrint {
     fun getTilesCount(
         bound: BoundingBox,
         zoom: Int,
-    ): List<TileParams>
+    ): OperationResult<List<TileParams>>
 
     suspend fun startFormingAMap(
         mapList: List<MapItem>,

@@ -1,4 +1,4 @@
-package ru.maplyb.printmap.sample.halpers.permission
+package ru.maplyb.printmap.api.halpers.permission
 
 import android.Manifest
 import android.app.Activity
@@ -12,7 +12,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 
-fun getStoragePermission(activity: Activity) {
+internal fun getStoragePermission(activity: Activity) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         if (!Environment.isExternalStorageManager()) {
             try {
@@ -30,7 +30,7 @@ fun getStoragePermission(activity: Activity) {
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-fun requestNotificationPermission(activity: Activity) {
+internal fun requestNotificationPermission(activity: Activity) {
     if (ActivityCompat.checkSelfPermission(
             activity,
             Manifest.permission.POST_NOTIFICATIONS

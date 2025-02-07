@@ -1,6 +1,6 @@
-package ru.maplyb.printmap.sample.utils
+package ru.maplib.printmap.print_gui.utils
 
-fun formatSize(bytes: Int): String {
+internal fun formatSize(bytes: Int): String {
     val units = arrayOf("Б", "КБ", "МБ", "ГБ", "ТБ")
     var size = bytes.toDouble()
     var unitIndex = 0

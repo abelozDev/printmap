@@ -1,279 +1,64 @@
 package ru.maplyb.printmap.sample
 
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
-import kotlinx.coroutines.launch
-import ru.maplyb.printmap.api.domain.MapPrint
+import ru.maplyb.printmap.api.presentation.DownloadMapSettingsScreen
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapType
-import ru.maplyb.printmap.api.utils.createBitmaps
-import ru.maplyb.printmap.sample.halpers.permission.getStoragePermission
-import ru.maplyb.printmap.sample.halpers.permission.requestNotificationPermission
-import ru.maplyb.printmap.sample.halpers.share.sendImageAsFile
-import ru.maplyb.printmap.sample.utils.formatSize
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        getStoragePermission(this)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requestNotificationPermission(this)
-        }
-        val mapPrint = MapPrint.create(this)
+//        ru.printmap.print_gui.halpers.permission.getStoragePermission(this)
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//            ru.printmap.print_gui.halpers.permission.requestNotificationPermission(this)
+//        }
         val bbox = BoundingBox(
             latNorth = 51.655322,
             lonWest = 22.327316,
             latSouth = 46.976288,
             lonEast = 38.433272,
         )
-        //накладывает offline на online
-        /*latNorth = 48.80033250943958,
-        lonWest = 20.30710968815696,
-        latSouth = 47.5057647015311,
-        lonEast = 24.176979174180058,*/
-
-        /* ,беларусб
-          latNorth = 53.85397,
-            lonWest = 25.77757,
-            latSouth = 53.37413,
-            lonEast = 29.49843,
-            */
-        //киев
-        /*
-        latNorth = 50.85835,
-                    lonWest = 29.70180,
-                    latSouth = 50.01655,
-                    lonEast = 31.72720,
-                    */
-
-        //украина + беларусь
-        /*
-        latNorth = 52.33238,
-                    latSouth = 51.13283,
-                    lonEast = 27.85486,
-                    lonWest = 24.85486,
-                    */
         val map = listOf(
-            /*MapItem(
+            MapItem(
                 name = "OpenStreetMap",
                 type = MapType.Online("https://mt0.google.com/vt/lyrs=s"),
                 isVisible = true,
                 alpha = 250f,
-                position = 1
-            ),*/
+                position = 1,
+                zoomMin = 0,
+                zoomMax = 8
+
+            ),
             MapItem(
                 name = "Google",
                 type = MapType.Online("https://mt0.google.com//vt/lyrs=m"),
                 isVisible = true,
                 alpha = 250f,
-                position = 2
+                position = 2,
+                zoomMin = 0,
+                zoomMax = 13
             ),
-            /*MapItem(
+            MapItem(
                 name = "LocalTest",
                 type = MapType.Offline("storage/emulated/0/Download/Relief_Ukraine.mbtiles"),
                 isVisible = true,
                 alpha = 255f,
-                position = 3
-            )*/
+                position = 3,
+                zoomMin = 0,
+                zoomMax = 13
+            )
         )
         setContent {
-            val coroutineScope = rememberCoroutineScope()
-            var image by remember {
-                mutableStateOf<String?>(null)
-            }
-            val context = LocalContext.current
-            LaunchedEffect(Unit) {
-                mapPrint
-                    .onMapReady {
-                        image = it
-                    }
-            }
-            Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    ///storage/emulated/0/Download/basic.mbtiles
-                    ///storage/emulated/0/Download/Relief_Ukraine.mbtiles
-                    Button(
-                        onClick = {
-                            coroutineScope.launch {
-                                mapPrint.startFormingAMap(
-                                    map,
-                                    bbox,
-                                    zoom = 10,
-                                )
-                            }
-                        },
-                        content = {
-                            Text(
-                                text = "Get Map",
-                                modifier = Modifier.padding()
-                            )
-                        }
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    if (image != null) {
-                        ImageItem(
-                            image = image!!,
-                            context = context,
-                            delete = {
-                                mapPrint.deleteExistedMap()
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    @Composable
-    private fun ImageItem(
-        image: String,
-        context: Context,
-        delete: () -> Unit
-    ) {
-        val imageBitmap by remember(image) {
-            mutableStateOf<Bitmap>(BitmapFactory.decodeFile(image))
-        }
-        val images = remember {
-            createBitmaps(
-                resultBitmap = imageBitmap,
-                context = context
-            )
-        }
-        var selectedImage by remember {
-            mutableStateOf(images.first.bitmap)
-        }
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .padding(vertical = 16.dp)
-                    .border(1.dp, Color.Black, RoundedCornerShape(8.dp))
-                    .clip(RoundedCornerShape(8.dp)),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ImageType(
-                    selected = selectedImage == images.first.bitmap,
-                    description = images.first.description,
-                    onClick = {
-                        selectedImage = images.first.bitmap
-                    }
-                )
-                ImageType(
-                    selected = selectedImage == images.second.bitmap,
-                    description = images.second.description,
-                    onClick = {
-                        selectedImage = images.second.bitmap
-                    }
-                )
-            }
-            Text(
-                text = "Размер файла: ${formatSize(imageBitmap.byteCount)}"
-            )
-            Spacer(Modifier.height(16.dp))
-            AsyncImage(
-                model = selectedImage,
-                modifier = Modifier.fillMaxWidth(),
-                contentDescription = null
-            )
-            Spacer(Modifier.height(16.dp))
-            Row {
-                Image(
-                    modifier = Modifier.clickable {
-                        delete()
-                    },
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = null
-                )
-                Spacer(Modifier.width(16.dp))
-                Image(
-                    modifier = Modifier.clickable {
-                        sendImageAsFile(this@MainActivity, image)
-                    },
-                    imageVector = Icons.Default.Share,
-                    contentDescription = null
-                )
-            }
-        }
-    }
-
-    @Composable
-    private fun RowScope.ImageType(
-        selected: Boolean,
-        description: String,
-        onClick: () -> Unit
-    ) {
-        val textColor by remember(selected) {
-            mutableStateOf(
-                if (selected) Color.White else Color.Black
-            )
-        }
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .background(if (selected) Color.Gray else Color.Transparent)
-                .clickable {
-                    onClick()
-                }
-        ) {
-            Text(
-                modifier = Modifier.align(Alignment.Center),
-                color = textColor,
-                textAlign = TextAlign.Center,
-                text = description,
+            DownloadMapSettingsScreen(
+                activity = this,
+                boundingBox = bbox,
+                maps = map,
+                zoom = 10
             )
         }
     }

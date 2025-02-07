@@ -2,10 +2,13 @@ package ru.maplyb.printmap.impl.util
 
 import android.database.sqlite.SQLiteDatabase
 import android.graphics.Bitmap
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ru.maplyb.printmap.api.model.BoundingBox
+import ru.maplyb.printmap.api.model.Errors
 import ru.maplyb.printmap.api.model.GeoPoint
+import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.model.TileParams
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -28,20 +31,24 @@ internal class GeoCalculator {
     /**Количество тайлов, размер файла*/
     fun calculateTotalTilesCount(
         boundingBox: BoundingBox, zoom: Int
-    ): List<TileParams> {
-        val bottomLeft = GeoPoint(boundingBox.latSouth, boundingBox.lonWest)
-        val topRight = GeoPoint(boundingBox.latNorth, boundingBox.lonEast)
-        val tiles = mutableListOf<TileParams>()
-        val (xMin, yMin) = degToNum(bottomLeft.latitude, bottomLeft.longitude, zoom)
-        val (xMax, yMax) = degToNum(topRight.latitude, topRight.longitude, zoom)
-        val xSorted = if (xMin < xMax) xMin..xMax else xMax..xMin
-        val ySorted = if (yMin < yMax) yMin..yMax else yMax..yMin
-        for (x in xSorted) {
-            for (y in ySorted) {
-                tiles.add(TileParams(x, y, zoom))
+    ): OperationResult<List<TileParams>> {
+        return try {
+            val bottomLeft = GeoPoint(boundingBox.latSouth, boundingBox.lonWest)
+            val topRight = GeoPoint(boundingBox.latNorth, boundingBox.lonEast)
+            val tiles = mutableListOf<TileParams>()
+            val (xMin, yMin) = degToNum(bottomLeft.latitude, bottomLeft.longitude, zoom)
+            val (xMax, yMax) = degToNum(topRight.latitude, topRight.longitude, zoom)
+            val xSorted = if (xMin < xMax) xMin..xMax else xMax..xMin
+            val ySorted = if (yMin < yMax) yMin..yMax else yMax..yMin
+            for (x in xSorted) {
+                for (y in ySorted) {
+                    tiles.add(TileParams(x, y, zoom))
+                }
             }
+            OperationResult.Success(tiles)
+        } catch (e: OutOfMemoryError) {
+            OperationResult.Error("Слишком большой размер карты. Попробуйте уменьшить размер или зум")
         }
-        return tiles
     }
     /**Из широты-долготы в x,y*/
     fun degToNum(latDeg: Double, lonDeg: Double, zoom: Int): kotlin.Pair<Int, Int> {

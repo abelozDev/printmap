@@ -1,0 +1,7 @@
+<resources>
+    <string name="tiles_count">Количество тайлов %1$s</string>
+    <string name="file_size">Размер файла: %1$s</string>
+    <string name="selected_maps">Выбранные карты</string>
+    <string name="settings_header">Настройки карты</string>
+    <string name="download">Загрузить</string>
+</resources>

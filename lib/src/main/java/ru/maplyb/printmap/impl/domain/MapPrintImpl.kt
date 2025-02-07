@@ -8,7 +8,9 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import ru.maplyb.printmap.api.domain.MapPrint
 import ru.maplyb.printmap.api.model.BoundingBox
+import ru.maplyb.printmap.api.model.Errors
 import ru.maplyb.printmap.api.model.MapItem
+import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.local.MapPath
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.domain.model.TileParams
@@ -17,8 +19,6 @@ import ru.maplyb.printmap.impl.service.MapResult
 import ru.maplyb.printmap.impl.service.NotificationChannel
 import ru.maplyb.printmap.impl.util.DestroyLifecycleCallback
 import ru.maplyb.printmap.impl.util.GeoCalculator
-import ru.maplyb.printmap.impl.util.TILES_SIZE_TAG
-import ru.maplyb.printmap.impl.util.debugLog
 
 internal class MapPrintImpl(
     private val activity: Activity,
@@ -69,7 +69,7 @@ internal class MapPrintImpl(
     override fun getTilesCount(
         bound: BoundingBox,
         zoom: Int,
-    ): List<TileParams> {
+    ): OperationResult<List<TileParams>> {
         return GeoCalculator().calculateTotalTilesCount(bound, zoom)
     }
 
@@ -90,9 +90,9 @@ internal class MapPrintImpl(
 
     /** Считаем тестовый размер файла*/
     override suspend fun getPreviewSize(mapList: List<MapItem>, bound: BoundingBox, zoom: Int) {
-        val tiles = GeoCalculator().calculateTotalTilesCount(bound, zoom)
+        /*val tiles = GeoCalculator().calculateTotalTilesCount(bound, zoom)
         val approximateSize = 255 * 255 * 4 * tiles.size
-        debugLog(TILES_SIZE_TAG, "Approximate size: $approximateSize")
+        debugLog(TILES_SIZE_TAG, "Approximate size: $approximateSize")*/
     }
 }
 

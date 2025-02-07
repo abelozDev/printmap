@@ -1,11 +1,11 @@
-package ru.maplyb.printmap.sample.halpers.share
+package ru.maplib.printmap.print_gui.halpers.share
 
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
 import java.io.File
 
-fun sendImageAsFile(context: Context, path: String) {
+internal fun sendImageAsFile(context: Context, path: String) {
     val file = File(path)
     try {
         if (file.exists()) {

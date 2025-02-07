@@ -62,7 +62,7 @@ internal class DownloadMapService : Service() {
         bound: BoundingBox,
         zoom: Int,
     ) {
-        val tiles = GeoCalculator().calculateTotalTilesCount(bound, zoom)
+        val tiles = GeoCalculator().calculateTotalTilesCount(bound, zoom).successDataOrNull() ?: return
         val visibleMaps = mapList.filter { it.isVisible }
         val fullSize = visibleMaps.size * tiles.size
         startForeground(

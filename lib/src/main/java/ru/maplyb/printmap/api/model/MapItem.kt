@@ -9,10 +9,11 @@ data class MapItem(
     val isVisible: Boolean,
     val alpha: Float,
     val position: Int,
-    val mapType: TileSchema = TileSchema.GOOGLE
-    //todo: Надо ли?
-    /*val zoomMin: Int,
-    val zoomMax: Int*/
+    val zoomMin: Int,
+    val zoomMax: Int,
+    val mapType: TileSchema = TileSchema.GOOGLE,
+    val selected: Boolean = false,
+
 ): Serializable
 
 sealed class MapType: Serializable {
