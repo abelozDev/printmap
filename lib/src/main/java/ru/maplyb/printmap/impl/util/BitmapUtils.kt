@@ -7,13 +7,11 @@ import android.graphics.Paint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import android.content.Context
-import android.net.Uri
-import androidx.core.content.FileProvider
 import androidx.window.layout.WindowMetricsCalculator
 import java.io.File
 import java.io.FileOutputStream
 
-internal fun Bitmap.limitSize(context: Context): Bitmap {
+fun Bitmap.limitSize(context: Context): Bitmap {
     val maxSize = getMaxBitmapSize(context)
 
     val aspectRatio = width.toFloat() / height.toFloat()

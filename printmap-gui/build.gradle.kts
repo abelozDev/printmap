@@ -1,21 +1,18 @@
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
 android {
-    namespace = "ru.maplyb.printmap.sample"
+    namespace = "ru.mapolib.printmap.gui"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "ru.maplyb.printmap.sample"
         minSdk = 24
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     buildTypes {
@@ -40,7 +37,9 @@ android {
 }
 
 dependencies {
-    implementation(project(":printmap-gui"))
+    api(project(":lib"))
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -53,4 +52,5 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.coil)
     implementation(libs.coil.compose)
+    implementation(libs.kotlinx.serialization.json)
 }

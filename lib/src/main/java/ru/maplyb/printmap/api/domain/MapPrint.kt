@@ -18,7 +18,7 @@ interface MapPrint {
 
     /*fun ShowMapPrintDialog(mapList: List<MapItem>, bound: BoundingBox, zoom: Int)*/
     fun deleteExistedMap()
-    fun getTilesCount(
+    suspend fun getTilesCount(
         bound: BoundingBox,
         zoom: Int,
     ): OperationResult<List<TileParams>>

@@ -13,6 +13,8 @@ internal object PreferencesDataSourceImpl: PreferencesDataSource {
 
     private var prefsListener: PrefsListener? = null
 
+    private var preferences: SharedPreferences? = null
+
     fun init(context: Context) {
         if (preferences == null) {
             preferences = context.getSharedPreferences(MAP_PREF_KEY, Context.MODE_PRIVATE)
@@ -27,7 +29,6 @@ internal object PreferencesDataSourceImpl: PreferencesDataSource {
         val mapPath = getMapPath(MAP_PATH_KEY)
         prefsListener?.onMapReady(mapPath)
     }
-    private var preferences: SharedPreferences? = null
 
 
     override fun saveMapPath(key: String, value: MapPath) {

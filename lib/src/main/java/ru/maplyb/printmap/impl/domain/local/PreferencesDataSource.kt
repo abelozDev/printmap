@@ -4,7 +4,7 @@ import android.content.Context
 import ru.maplyb.printmap.impl.data.local.PreferencesDataSourceImpl
 
 internal typealias MapPath =  String
-internal interface PreferencesDataSource {
+interface PreferencesDataSource {
 
     fun onUpdate(path: (MapPath?) -> Unit)
     fun saveMapPath(key: String, value: MapPath)

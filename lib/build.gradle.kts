@@ -4,7 +4,6 @@ plugins {
     id("maven-publish")
     alias(libs.plugins.jetbrains.kotlin.jvm) apply false
     kotlin("plugin.serialization") version "2.1.10"
-    alias(libs.plugins.kotlin.compose)
 }
 
 android {
@@ -27,9 +26,6 @@ android {
             )
         }
         debug {  }
-    }
-    buildFeatures {
-        compose = true
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -55,21 +51,9 @@ publishing {
 dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.window.manager)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    debugImplementation(libs.androidx.ui.tooling)
-
     implementation(libs.coil)
-    implementation(libs.coil.compose)
-
     implementation(libs.kotlinx.serialization.json)
     //network
     implementation(libs.retrofit)

@@ -62,7 +62,8 @@ internal class DownloadMapService : Service() {
         bound: BoundingBox,
         zoom: Int,
     ) {
-        val tiles = GeoCalculator().calculateTotalTilesCount(bound, zoom).successDataOrNull() ?: return
+        coroutineScope.launch {
+        val tiles = GeoCalculator().calculateTotalTilesCount(bound, zoom).successDataOrNull() ?: return@launch
         val visibleMaps = mapList.filter { it.isVisible }
         val fullSize = visibleMaps.size * tiles.size
         startForeground(
@@ -73,7 +74,6 @@ internal class DownloadMapService : Service() {
                 progress = 0
             )
         )
-        coroutineScope.launch {
             val tileManager = DownloadTilesManager.create(this@DownloadMapService)
 
             val downloadedTiles = tileManager.getTiles(visibleMaps, tiles) {

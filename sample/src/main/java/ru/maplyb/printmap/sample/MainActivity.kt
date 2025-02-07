@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import ru.maplyb.printmap.api.presentation.DownloadMapSettingsScreen
+import ru.mapolib.printmap.gui.presentation.settings.DownloadMapSettingsScreen
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapType
@@ -55,7 +55,7 @@ class MainActivity : ComponentActivity() {
         )
         setContent {
             DownloadMapSettingsScreen(
-                activity = this,
+                /*activity = this,*/
                 boundingBox = bbox,
                 maps = map,
                 zoom = 10

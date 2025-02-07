@@ -1,0 +1,23 @@
+package ru.mapolib.printmap.gui.api
+
+import android.app.Activity
+import kotlinx.coroutines.flow.StateFlow
+import ru.maplyb.printmap.api.model.BoundingBox
+import ru.maplyb.printmap.api.model.MapItem
+
+interface DownloadMapManager {
+
+    val state: StateFlow<DownloadMapState>
+
+    fun prepareDownloading(
+        boundingBox: BoundingBox,
+        maps: List<MapItem>,
+        zoom: Int
+    )
+
+    companion object {
+        fun create(activity: Activity): DownloadMapManager {
+            return DownloadMapManagerImpl.init(activity)
+        }
+    }
+}

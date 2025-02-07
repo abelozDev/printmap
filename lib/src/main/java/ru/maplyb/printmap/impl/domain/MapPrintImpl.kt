@@ -8,7 +8,6 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import ru.maplyb.printmap.api.domain.MapPrint
 import ru.maplyb.printmap.api.model.BoundingBox
-import ru.maplyb.printmap.api.model.Errors
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.local.MapPath
@@ -66,7 +65,7 @@ internal class MapPrintImpl(
         prefs.removeExistedMap()
     }
 
-    override fun getTilesCount(
+    override suspend fun getTilesCount(
         bound: BoundingBox,
         zoom: Int,
     ): OperationResult<List<TileParams>> {
