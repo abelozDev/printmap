@@ -1,21 +1,23 @@
 package ru.maplyb.printmap.impl.domain.local
 
 import android.content.Context
-import ru.maplyb.printmap.impl.data.local.PreferencesDataSourceImpl
+import kotlinx.coroutines.flow.Flow
+import ru.maplyb.printmap.impl.data.local.DataStoreSource
+import ru.maplyb.printmap.impl.data.local.DownloadStatus
 
 internal typealias MapPath =  String
 interface PreferencesDataSource {
 
-    fun onUpdate(path: (MapPath?) -> Unit)
-    fun saveMapPath(key: String, value: MapPath)
-    fun getMapPath(key: String): MapPath?
-    fun removeExistedMap()
+    suspend fun updateDownloadStatus(context: Context, status: DownloadStatus)
+    suspend fun setDownloaded(context: Context, path: String)
+    suspend fun setProgress(context: Context, progress: Int)
+    suspend fun setError(context: Context, message: String)
+    suspend fun remove(context: Context, path: String)
+    fun getDownloadStatus(context: Context): Flow<DownloadStatus>
 
     companion object {
-        const val MAP_PREF_KEY = "MAP_PREF_KEY"
-        const val MAP_PATH_KEY = "MAP_PATH_KEY"
-        fun create(context: Context): PreferencesDataSource {
-            return PreferencesDataSourceImpl.apply { init(context) }
+        fun create(): PreferencesDataSource {
+            return DataStoreSource
         }
     }
 }

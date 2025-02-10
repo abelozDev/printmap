@@ -61,7 +61,7 @@ internal class DownloadTilesManagerImpl(
     override suspend fun getTiles(
         maps: List<MapItem>,
         tiles: List<TileParams>,
-        onProgress: (Int) -> Unit
+        onProgress: suspend (Int) -> Unit
     ): Map<MapItem, List<String?>> {
         val local = maps.filter { it.type is MapType.Offline }
         val remote = maps.filter { it.type is MapType.Online }
@@ -97,7 +97,7 @@ internal class DownloadTilesManagerImpl(
                                             } catch (e: Exception) { null }
                                         }
                                     }.awaitAll()
-                                    val progress = downloadedSize.addAndGet(10)
+                                    val progress = downloadedSize.addAndGet(tileChunk.size)
                                     onProgress(progress)
                                     result
                                 }
@@ -136,7 +136,7 @@ internal class DownloadTilesManagerImpl(
                                             } catch (e: Exception) { null }
                                         }
                                     }.awaitAll()
-                                    val progress = downloadedSize.addAndGet(10)
+                                    val progress = downloadedSize.addAndGet(tileChunk.size)
                                     onProgress(progress)
                                     result
                                 }

@@ -13,6 +13,7 @@ import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.local.MapPath
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.domain.model.TileParams
+import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
 import ru.maplyb.printmap.impl.service.DownloadMapService
 import ru.maplyb.printmap.impl.service.MapResult
 import ru.maplyb.printmap.impl.service.NotificationChannel
@@ -23,7 +24,6 @@ internal class MapPrintImpl(
     private val activity: Activity,
     private val prefs: PreferencesDataSource
 ) : MapPrint {
-
     private var mapResult: MapResult? = null
     private lateinit var mService: DownloadMapService
     private var mBound: Boolean = false
@@ -40,6 +40,7 @@ internal class MapPrintImpl(
     }
 
     init {
+
         activity.application.registerActivityLifecycleCallbacks(DestroyLifecycleCallback { activity ->
             if (activity == this@MapPrintImpl.activity) {
                 try {
@@ -57,12 +58,9 @@ internal class MapPrintImpl(
                 result(image)
             }
         }
-        prefs.onUpdate { path ->
-            mapResult?.onMapReady(path)
-        }
     }
-    override fun deleteExistedMap() {
-        prefs.removeExistedMap()
+    override suspend fun deleteExistedMap(path: String) {
+        prefs.remove(activity, path)
     }
 
     override suspend fun getTilesCount(

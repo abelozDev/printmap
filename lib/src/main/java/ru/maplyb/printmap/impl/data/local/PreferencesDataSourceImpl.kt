@@ -5,11 +5,9 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import ru.maplyb.printmap.impl.domain.local.MapPath
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
-import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource.Companion.MAP_PATH_KEY
-import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource.Companion.MAP_PREF_KEY
 import ru.maplyb.printmap.impl.domain.local.PrefsListener
 
-internal object PreferencesDataSourceImpl: PreferencesDataSource {
+/*internal object PreferencesDataSourceImpl: PreferencesDataSource {
 
     private var prefsListener: PrefsListener? = null
 
@@ -48,4 +46,5 @@ internal object PreferencesDataSourceImpl: PreferencesDataSource {
         }
         prefsListener?.onMapReady(null)
     }
-}
+}*/
+

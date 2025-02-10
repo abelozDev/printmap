@@ -1,22 +1,35 @@
 package ru.maplyb.printmap.sample
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ru.mapolib.printmap.gui.presentation.settings.DownloadMapSettingsScreen
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapType
+import ru.mapolib.printmap.gui.api.DownloadMapManager
+import ru.mapolib.printmap.gui.api.DownloadMapState
+import ru.mapolib.printmap.gui.halpers.permission.getStoragePermission
+import ru.mapolib.printmap.gui.halpers.permission.requestNotificationPermission
+import ru.mapolib.printmap.gui.presentation.MainScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-//        ru.printmap.print_gui.halpers.permission.getStoragePermission(this)
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-//            ru.printmap.print_gui.halpers.permission.requestNotificationPermission(this)
-//        }
+        getStoragePermission(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestNotificationPermission(this)
+        }
+
+        val downloadManager = DownloadMapManager.create(this)
         val bbox = BoundingBox(
             latNorth = 51.655322,
             lonWest = 22.327316,
@@ -54,12 +67,33 @@ class MainActivity : ComponentActivity() {
             )
         )
         setContent {
-            DownloadMapSettingsScreen(
-                /*activity = this,*/
+            val downloadState by downloadManager.state.collectAsStateWithLifecycle()
+            Button(
+                onClick = {
+                    when(downloadState) {
+                        DownloadMapState.Idle -> {
+                            downloadManager.prepareDownloading(
+                                boundingBox = bbox,
+                                maps = map,
+                                zoom = 10
+                            )
+                        }
+                        else -> downloadManager.open()
+                    }
+                },
+                content = {
+                    Text(
+                        text = "Get Map",
+                    )
+                }
+            )
+            MainScreen()
+            /*DownloadMapSettingsScreen(
+                *//*activity = this,*//*
                 boundingBox = bbox,
                 maps = map,
                 zoom = 10
-            )
+            )*/
         }
     }
 }

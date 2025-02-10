@@ -17,7 +17,7 @@ interface MapPrint {
     fun onMapReady(result: (MapPath?) -> Unit)
 
     /*fun ShowMapPrintDialog(mapList: List<MapItem>, bound: BoundingBox, zoom: Int)*/
-    fun deleteExistedMap()
+    suspend fun deleteExistedMap(path: String)
     suspend fun getTilesCount(
         bound: BoundingBox,
         zoom: Int,
@@ -37,7 +37,7 @@ interface MapPrint {
 
     companion object Factory {
         fun create(activity: Activity): MapPrint {
-            val prefs = PreferencesDataSource.create(activity.applicationContext)
+            val prefs = PreferencesDataSource.create()
             return MapPrintImpl(activity, prefs)
         }
     }

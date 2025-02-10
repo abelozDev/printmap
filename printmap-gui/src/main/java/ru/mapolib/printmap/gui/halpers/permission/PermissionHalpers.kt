@@ -12,7 +12,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 
-internal fun getStoragePermission(activity: Activity) {
+fun getStoragePermission(activity: Activity) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         if (!Environment.isExternalStorageManager()) {
             try {
@@ -30,7 +30,7 @@ internal fun getStoragePermission(activity: Activity) {
 }
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-internal fun requestNotificationPermission(activity: Activity) {
+fun requestNotificationPermission(activity: Activity) {
     if (ActivityCompat.checkSelfPermission(
             activity,
             Manifest.permission.POST_NOTIFICATIONS

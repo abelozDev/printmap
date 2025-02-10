@@ -9,11 +9,14 @@ interface DownloadMapManager {
 
     val state: StateFlow<DownloadMapState>
 
+    suspend fun deleteMap(path: String)
     fun prepareDownloading(
         boundingBox: BoundingBox,
         maps: List<MapItem>,
         zoom: Int
     )
+    fun hide()
+    fun open()
 
     companion object {
         fun create(activity: Activity): DownloadMapManager {

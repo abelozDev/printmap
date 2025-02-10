@@ -60,4 +60,6 @@ dependencies {
     implementation(libs.moshi)
     implementation(libs.retrofit.moshi.converter)
     implementation(libs.okhttp.loggint.interceptor)
+
+    implementation(libs.datastore)
 }

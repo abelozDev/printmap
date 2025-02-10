@@ -20,8 +20,8 @@ import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.maplyb.printmap.api.model.MapItem
+import ru.maplyb.printmap.impl.data.local.DownloadStatus
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
-import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource.Companion.MAP_PATH_KEY
 import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
 import ru.maplyb.printmap.impl.util.FileSaveUtil
 import ru.maplyb.printmap.impl.util.GeoCalculator
@@ -33,16 +33,7 @@ internal class DownloadMapService : Service() {
 
     private val binder = LocalBinder()
 
-    /*private var mapResult: MapResult? = null*/
     private var prefs: PreferencesDataSource? = null
-
-    /* fun setMapResult(callback: (List<DownloadedImage>) -> Unit) {
-         this.mapResult = object : MapResult {
-             override fun onMapReady(images: List<DownloadedImage>) {
-                 callback(images)
-             }
-         }
-     }*/
 
     override fun onBind(p0: Intent?): IBinder = binder
 
@@ -54,7 +45,7 @@ internal class DownloadMapService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        prefs = PreferencesDataSource.create(this.applicationContext)
+        prefs = PreferencesDataSource.create()
     }
 
     private fun downloadMap(
@@ -78,6 +69,13 @@ internal class DownloadMapService : Service() {
 
             val downloadedTiles = tileManager.getTiles(visibleMaps, tiles) {
                 updateNotification("Загрузка тайлов", fullSize, it)
+                prefs?.setProgress(
+                    context = this@DownloadMapService,
+                    progress = (it.toFloat()/fullSize * 100).toInt()
+                )
+                println("PROGRESS = ${it}")
+                println("PROGRESS = ${fullSize}")
+                println("PROGRESS = ${it/fullSize * 100}")
             }
             val resultBitmap = TilesUtil()
                 .mergeTilesSortedByCoordinates(
@@ -88,22 +86,17 @@ internal class DownloadMapService : Service() {
                     tiles.maxOf { it.y },
                     zoom
                 )
-//            val saver = FileSaveUtil(this@DownloadMapService)
             saveBitmapToExternalStorage(
                 context = this@DownloadMapService,
                 bitmap = resultBitmap!!,
                 fileName = "${System.currentTimeMillis()}"
             )
                 ?.let {
-                    prefs?.saveMapPath(MAP_PATH_KEY, it)
+                    prefs?.setDownloaded(
+                        context = this@DownloadMapService,
+                        path = it
+                    )
                 }
-            /*saver.saveBitmapToGallery(
-                this@DownloadMapService,
-                resultBitmap!!,
-                "${System.currentTimeMillis()}"
-            )?.let {
-                prefs?.saveMapPath(MAP_PATH_KEY, it)
-            }*/
             tileManager.deleteTiles(downloadedTiles.values.flatten())
             stopForeground(true)
             stopSelf()

@@ -13,7 +13,7 @@ internal interface DownloadTilesManager {
     suspend fun getTiles(
         maps: List<MapItem>,
         tiles: List<TileParams>,
-        onProgress: (Int) -> Unit
+        onProgress: suspend (Int) -> Unit
     ): Map<MapItem, List<String?>>
 
     suspend fun getApproximateImageSize(maps: List<MapItem>, tiles: List<TileParams>): Long

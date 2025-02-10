@@ -4,5 +4,6 @@
     <string name="selected_maps">Выбранные карты</string>
     <string name="settings_header">Настройки карты</string>
     <string name="download">Загрузить</string>
+    <string name="progress">%1$s %%</string>
     <string name="out_of_memory_map_size">Слишком большой размер карты. Попробуйте уменьшить размер или зум</string>
 </resources>

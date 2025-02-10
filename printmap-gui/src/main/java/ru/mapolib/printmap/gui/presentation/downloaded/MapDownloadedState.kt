@@ -1,7 +1,5 @@
 package ru.mapolib.printmap.gui.presentation.downloaded
 
-import ru.maplyb.printmap.api.model.BoundingBox
-import ru.maplyb.printmap.api.model.MapItem
 import ru.mapolib.printmap.gui.presentation.util.PrintMapEffect
 import ru.mapolib.printmap.gui.presentation.util.PrintMapEvent
 
@@ -17,4 +15,6 @@ data class MapDownloadedUiState(
 sealed interface MapDownloadedEvent: PrintMapEvent {
     data object DeleteImage: MapDownloadedEvent
 }
-sealed interface MapDownloadedEffect: PrintMapEffect
+sealed interface MapDownloadedEffect: PrintMapEffect {
+    data class DeleteMap(val path: String): MapDownloadedEffect
+}
