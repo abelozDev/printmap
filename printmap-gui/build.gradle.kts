@@ -43,7 +43,7 @@ publishing {
             afterEvaluate {
                 from(components["release"])
                 groupId = "com.github.abelozDev"
-                artifactId = "printmap"
+                artifactId = "gui"
             }
         }
     }
