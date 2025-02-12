@@ -44,7 +44,6 @@ publishing {
                 from(components["release"])
                 groupId = "com.github.abelozDev"
                 artifactId = "printmap"
-                version = "1.0.2"
             }
         }
     }
