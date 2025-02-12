@@ -1,8 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    id("maven-publish")
-    alias(libs.plugins.jetbrains.kotlin.jvm) apply false
     kotlin("plugin.serialization") version "2.1.10"
 }
 
@@ -33,18 +31,6 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
-    }
-}
-publishing {
-    publications {
-        register<MavenPublication>("release") {
-            afterEvaluate {
-                from(components["release"])
-                groupId = "com.github.abelozDev"
-                artifactId = "printmap"
-                version = "1.0.2"
-            }
-        }
     }
 }
 
