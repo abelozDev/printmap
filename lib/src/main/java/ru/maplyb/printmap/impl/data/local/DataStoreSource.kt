@@ -90,6 +90,18 @@ internal object DataStoreSource: PreferencesDataSource {
         )
     }
 
+    override suspend fun clear(context: Context) {
+        updateDownloadStatus(
+            context = context,
+            status = DownloadStatus(
+                progress = null,
+                filePath = null,
+                isFinished = false,
+                errorMessage = null
+            )
+        )
+    }
+
     override suspend fun remove(context: Context, path: String) {
         DownloadTilesManager.create(context).deleteTiles(listOf(path))
         updateDownloadStatus(

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -64,7 +65,7 @@ internal fun MapDownloadedScreen(
         viewModel
             .effect
             .onEach {
-                when(it) {
+                when (it) {
                     is MapDownloadedEffect.DeleteMap -> onDeleteMap(it.path)
                 }
             }
@@ -76,15 +77,13 @@ internal fun MapDownloadedScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(Modifier.height(16.dp))
-        if (state.image != null) {
-            ImageItem(
-                image = state.image!!,
-                context = context,
-                delete = {
-                    viewModel.onEffect(MapDownloadedEffect.DeleteMap(path))
-                }
-            )
-        }
+        ImageItem(
+            image = path,
+            context = context,
+            delete = {
+                viewModel.onEffect(MapDownloadedEffect.DeleteMap(path))
+            }
+        )
     }
 }
 
@@ -140,13 +139,14 @@ private fun ImageItem(
             )
         }
         Text(
-            text = "Размер файла: ${formatSize(imageBitmap.byteCount)}"
+            text = "Размер файла: ${formatSize(imageBitmap.byteCount.toLong())}"
         )
         Spacer(Modifier.height(16.dp))
         AsyncImage(
             model = images[selectedImage].bitmap,
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(max = 400.dp)
                 .height(maxHeight.dp)
                 .onGloballyPositioned { layoutCoordinates ->
                     println("onGloballyPositioned ${layoutCoordinates.size}")

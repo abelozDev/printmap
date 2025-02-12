@@ -1,9 +1,13 @@
 package ru.maplyb.printmap.impl.data.tile_manager
 
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapType
@@ -22,7 +26,7 @@ internal class DownloadTilesManagerImpl(
 
     override suspend fun getApproximateImageSize(
         maps: List<MapItem>,
-        tiles: List<TileParams>
+        tiles: List<TileParams>,
     ): Long {
         val local = maps.filter { it.type is MapType.Offline }
         val remote = maps.filter { it.type is MapType.Online }
@@ -35,16 +39,26 @@ internal class DownloadTilesManagerImpl(
                             it.copy(mapType = localDataSource.getSchema(it.type.path))
                         }
                         .sumOf { map ->
-                            localDataSource.getTilesApproximateSize(map.type.path, tiles, map.alpha.toInt(), map.mapType)
+                            localDataSource.getTilesApproximateSize(
+                                map.type.path,
+                                tiles,
+                                map.alpha.toInt(),
+                                map.mapType
+                            )
                         }
                 }.await()
-                val remoteSize =  async {
+                val remoteSize = async {
                     remote
                         .map {
                             it.copy(mapType = remoteDataSource.getSchema(it.type.path))
                         }
                         .sumOf { map ->
-                            remoteDataSource.getTilesApproximateSize(map.type.path, tiles, map.alpha.toInt(), map.mapType)
+                            remoteDataSource.getTilesApproximateSize(
+                                map.type.path,
+                                tiles,
+                                map.alpha.toInt(),
+                                map.mapType
+                            )
                         }
                 }.await()
                 localSize + remoteSize
@@ -61,89 +75,116 @@ internal class DownloadTilesManagerImpl(
     override suspend fun getTiles(
         maps: List<MapItem>,
         tiles: List<TileParams>,
+        quality: Int,
         onProgress: suspend (Int) -> Unit
     ): Map<MapItem, List<String?>> {
         val local = maps.filter { it.type is MapType.Offline }
         val remote = maps.filter { it.type is MapType.Online }
         val downloadedSize = AtomicInteger(0)
+        val downloadedFiles = mutableListOf<String?>()
         return coroutineScope {
             withContext(Dispatchers.IO) {
-                val chunkSize = 10
-                val localTiles = async {
-                    local
-                        .map {
-                            it.copy(mapType = localDataSource.getSchema(it.type.path))
+                try {
+                    val chunkSize = 10
+                    val localTiles =  getTilesForMaps(
+                        dataSource = localDataSource,
+                        items = local,
+                        tiles = tiles,
+                        chunkSize = chunkSize,
+                        quality = quality,
+                        addToDownloaded = {
+                            downloadedFiles.add(it)
+                        },
+                        onDownload = {
+                            val progress = downloadedSize.addAndGet(it)
+                            onProgress(progress)
                         }
-                        .associateWith { map ->
-                            tiles
-                                .chunked(10)
-                                .flatMap { tileChunk ->
-                                    val result = tileChunk.map { tile ->
-                                        async {
-                                            try {
-                                                localDataSource.getTile(map.type.path, tile.x, tile.y, tile.z, map.mapType)
-                                                    ?.let {
-                                                        fileSaveUtil.saveTileToPNG(
-                                                            it,
-                                                            generateName(
-                                                                map.type.path,
-                                                                tile.x,
-                                                                tile.y,
-                                                                tile.z
-                                                            ),
-                                                            map.alpha.toInt()
-                                                        )
-                                                    }
-                                            } catch (e: Exception) { null }
-                                        }
-                                    }.awaitAll()
-                                    val progress = downloadedSize.addAndGet(tileChunk.size)
-                                    onProgress(progress)
-                                    result
-                                }
+                    )
+                    val remoteTiles = getTilesForMaps(
+                        dataSource = remoteDataSource,
+                        items = remote,
+                        tiles = tiles,
+                        chunkSize = chunkSize,
+                        quality = quality,
+                        addToDownloaded = {
+                            downloadedFiles.add(it)
+                        },
+                        onDownload = {
+                            val progress = downloadedSize.addAndGet(it)
+                            onProgress(progress)
                         }
+                    )
+                    return@withContext localTiles.await() + remoteTiles.await()
+                } catch (e: CancellationException) {
+                    withContext(NonCancellable) {
+                        fileSaveUtil.deleteTiles(downloadedFiles.filterNotNull())
+                    }
+                    throw e
                 }
-                val remoteTiles = async {
-                    remote
-                        .map {
-                            it.copy(mapType = remoteDataSource.getSchema(it.type.path))
-                        }
-                        .associateWith { map ->
-                            tiles
-                                .chunked(chunkSize)
-                                .flatMap { tileChunk ->
-                                    val result = tileChunk.map { tile ->
-                                        async {
-                                            try {
-                                                remoteDataSource.getTile(
-                                                    map.type.path,
-                                                    tile.x,
-                                                    tile.y,
-                                                    tile.z,
-                                                    map.mapType
-                                                )?.let {
-                                                    fileSaveUtil.saveTileToPNG(
-                                                        it,
-                                                        generateName(
-                                                            map.type.path,
-                                                            tile.x,
-                                                            tile.y,
-                                                            tile.z
-                                                        ),
-                                                        map.alpha.toInt()
-                                                    )
-                                                }
-                                            } catch (e: Exception) { null }
-                                        }
-                                    }.awaitAll()
-                                    val progress = downloadedSize.addAndGet(tileChunk.size)
-                                    onProgress(progress)
-                                    result
-                                }
-                        }
-                }
-                return@withContext localTiles.await() + remoteTiles.await()
             }
+        }
+    }
+
+    private suspend fun getTilesForMaps(
+        dataSource: DataSource,
+        items: List<MapItem>,
+        tiles: List<TileParams>,
+        chunkSize: Int,
+        quality: Int,
+        addToDownloaded: (String?) -> Unit,
+        onDownload: suspend (Int) -> Unit
+    ): Deferred<Map<MapItem, List<String?>>> {
+        return coroutineScope {
+            async {
+                items
+                    .map {
+                        it.copy(mapType = dataSource.getSchema(it.type.path))
+                    }
+                    .associateWith { map ->
+                        tiles
+                            .chunked(chunkSize)
+                            .flatMap { tileChunk ->
+                                val result = tileChunk.map { tile ->
+                                    async {
+                                        ensureActive()
+                                        downloadAndSave(
+                                            dataSource = dataSource,
+                                            map = map,
+                                            x = tile.x,
+                                            y = tile.y,
+                                            z = tile.z,
+                                            quality = quality
+                                        ).apply { addToDownloaded(this) }
+                                    }
+                                }.awaitAll()
+                                onDownload(tileChunk.size)
+                                result
+                            }
+                    }
+            }
+        }
+    }
+
+    private suspend fun downloadAndSave(
+        dataSource: DataSource,
+        map: MapItem,
+        x: Int,
+        y: Int,
+        z: Int,
+        quality: Int
+    ): String? {
+        return try {
+            dataSource.getTile(map.type.path, x, y, z, map.mapType)
+                ?.let {
+                    fileSaveUtil.saveTileToPNG(
+                        it,
+                        generateName(map.type.path, x, y, z),
+                        map.alpha.toInt(),
+                        quality
+                    )
+                }
+        } catch (e: Exception) {
+            null
         }
     }
 

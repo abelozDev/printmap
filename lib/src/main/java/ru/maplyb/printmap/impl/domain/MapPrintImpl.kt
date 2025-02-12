@@ -1,6 +1,7 @@
 package ru.maplyb.printmap.impl.domain
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -30,6 +31,7 @@ internal class MapPrintImpl(
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             val binder = service as DownloadMapService.LocalBinder
+            println("onServiceConnected")
             mService = binder.getService()
             mBound = true
         }
@@ -40,16 +42,21 @@ internal class MapPrintImpl(
     }
 
     init {
-
+        println("onServiceConnected init")
         activity.application.registerActivityLifecycleCallbacks(DestroyLifecycleCallback { activity ->
             if (activity == this@MapPrintImpl.activity) {
                 try {
                     activity.unbindService(connection)
-                } catch (_: IllegalStateException) {
+                } catch (_: IllegalArgumentException) {
                 }
             }
         }
         )
+        if (isServiceRunning(activity, DownloadMapService::class.java)) {
+            println("onServiceConnected isServiceRunning")
+            val intent = Intent(activity.applicationContext, DownloadMapService::class.java)
+            activity.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        }
     }
 
     override fun onMapReady(result: (MapPath?) -> Unit) {
@@ -59,6 +66,14 @@ internal class MapPrintImpl(
             }
         }
     }
+
+    override fun cancelDownloading() {
+        mService.cancelDownloading()
+        if (mBound) {
+            activity.unbindService(connection)
+        }
+    }
+
     override suspend fun deleteExistedMap(path: String) {
         prefs.remove(activity, path)
     }
@@ -74,10 +89,12 @@ internal class MapPrintImpl(
         mapList: List<MapItem>,
         bound: BoundingBox,
         zoom: Int,
+        quality: Int
     ) {
+        val maps = mapList.filter { it.selected }
         NotificationChannel.create(activity)
         val intent = Intent(activity.applicationContext, DownloadMapService::class.java).run {
-            putExtra(DownloadMapService.MAP_LIST_ARG, ArrayList(mapList))
+            putExtra(DownloadMapService.MAP_LIST_ARG, ArrayList(maps))
             putExtra(DownloadMapService.BOUND_ARG, bound)
             putExtra(DownloadMapService.ZOOM_ARG, zoom)
         }
@@ -92,4 +109,11 @@ internal class MapPrintImpl(
         debugLog(TILES_SIZE_TAG, "Approximate size: $approximateSize")*/
     }
 }
+
+private fun isServiceRunning(activity: Activity, serviceClass: Class<*>): Boolean {
+    val manager = activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    return manager.getRunningServices(Int.MAX_VALUE)
+        .any { it.service.className == serviceClass.name }
+}
+
 

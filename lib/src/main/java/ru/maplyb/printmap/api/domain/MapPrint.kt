@@ -16,6 +16,7 @@ interface MapPrint {
 
     fun onMapReady(result: (MapPath?) -> Unit)
 
+    fun cancelDownloading()
     /*fun ShowMapPrintDialog(mapList: List<MapItem>, bound: BoundingBox, zoom: Int)*/
     suspend fun deleteExistedMap(path: String)
     suspend fun getTilesCount(
@@ -27,6 +28,7 @@ interface MapPrint {
         mapList: List<MapItem>,
         bound: BoundingBox,
         zoom: Int,
+        quality: Int
         /*onResult: (List<DownloadedImage>) -> Unit*/
     )
     suspend fun getPreviewSize(

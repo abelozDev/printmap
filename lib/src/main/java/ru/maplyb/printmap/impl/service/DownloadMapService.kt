@@ -2,7 +2,9 @@ package ru.maplyb.printmap.impl.service
 
 import android.Manifest
 import android.app.Notification
+import android.app.NotificationManager
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Binder
@@ -15,6 +17,7 @@ import androidx.core.app.NotificationManagerCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.BoundingBox
@@ -43,6 +46,20 @@ internal class DownloadMapService : Service() {
         fun getService(): DownloadMapService = this@DownloadMapService
     }
 
+    fun cancelDownloading() {
+        coroutineScope.launch {
+            prefs?.clear(
+                context = this@DownloadMapService,
+            )
+        }.invokeOnCompletion {
+            coroutineScope.cancel()
+        }
+        stopSelf()
+        stopForeground(true)
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(DOWNLOAD_MAP_NOTIFICATION_ID)
+    }
+
     override fun onCreate() {
         super.onCreate()
         prefs = PreferencesDataSource.create()
@@ -52,6 +69,7 @@ internal class DownloadMapService : Service() {
         mapList: List<MapItem>,
         bound: BoundingBox,
         zoom: Int,
+        quality: Int
     ) {
         coroutineScope.launch {
         val tiles = GeoCalculator().calculateTotalTilesCount(bound, zoom).successDataOrNull() ?: return@launch
@@ -67,15 +85,12 @@ internal class DownloadMapService : Service() {
         )
             val tileManager = DownloadTilesManager.create(this@DownloadMapService)
 
-            val downloadedTiles = tileManager.getTiles(visibleMaps, tiles) {
+            val downloadedTiles = tileManager.getTiles(visibleMaps, tiles, quality) {
                 updateNotification("Загрузка тайлов", fullSize, it)
                 prefs?.setProgress(
                     context = this@DownloadMapService,
                     progress = (it.toFloat()/fullSize * 100).toInt()
                 )
-                println("PROGRESS = ${it}")
-                println("PROGRESS = ${fullSize}")
-                println("PROGRESS = ${it/fullSize * 100}")
             }
             val resultBitmap = TilesUtil()
                 .mergeTilesSortedByCoordinates(
@@ -130,12 +145,13 @@ internal class DownloadMapService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent != null) {
+            val quality = intent.getIntExtra(ZOOM_ARG, 0)
             val mapList = intent.serializable(MAP_LIST_ARG) as? ArrayList<MapItem>
                 ?: throw TypeCastException("Fail cast to MapItem")
             val bound = intent.serializable(BOUND_ARG) as? BoundingBox
                 ?: throw TypeCastException("fail cast to BoundingBox")
             val zoom = intent.getIntExtra(ZOOM_ARG, 0)
-            downloadMap(mapList.toList(), bound, zoom)
+            downloadMap(mapList.toList(), bound, zoom, quality)
         }
         return super.onStartCommand(intent, flags, startId)
     }
@@ -159,6 +175,7 @@ internal class DownloadMapService : Service() {
         const val MAP_LIST_ARG = "mapList"
         const val BOUND_ARG = "bound"
         const val ZOOM_ARG = "zoom"
+        const val QUALITY_ARG = "quality"
         const val DOWNLOAD_MAP_NOTIFICATION_ID = 788843
     }
 

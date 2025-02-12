@@ -13,7 +13,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 
 internal class FileSaveUtil(private val context: Context) {
-    suspend fun saveTileToPNG(byteArray: ByteArray, filePath: String, alpha: Int): String? {
+    suspend fun saveTileToPNG(byteArray: ByteArray, filePath: String, alpha: Int, quality: Int): String? {
         return withContext(Dispatchers.Default) {
             val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
             if (bitmap != null) {
@@ -30,7 +30,7 @@ internal class FileSaveUtil(private val context: Context) {
                     val file = File(externalFilesDir, filePath)
                     try {
                         FileOutputStream(file).use { fos ->
-                            resultBitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
+                            resultBitmap.compress(Bitmap.CompressFormat.PNG, quality, fos)
                         }
                         file.absolutePath
                     } catch (e: Exception) {
@@ -50,7 +50,6 @@ internal class FileSaveUtil(private val context: Context) {
                 if (file.exists()) file.delete()
             }
         }
-
     }
     suspend fun getTileSize(byteArray: ByteArray, alpha: Int): Long {
         return withContext(Dispatchers.Default) {

@@ -6,4 +6,5 @@
     <string name="download">Загрузить</string>
     <string name="progress">%1$s %%</string>
     <string name="out_of_memory_map_size">Слишком большой размер карты. Попробуйте уменьшить размер или зум</string>
+    <string name="file_size_error">Слишком большой размер файла. Уменьшите площадь либо зум</string>
 </resources>

@@ -13,6 +13,7 @@ internal interface DownloadTilesManager {
     suspend fun getTiles(
         maps: List<MapItem>,
         tiles: List<TileParams>,
+        quality: Int,
         onProgress: suspend (Int) -> Unit
     ): Map<MapItem, List<String?>>
 

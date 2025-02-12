@@ -13,6 +13,7 @@ interface PreferencesDataSource {
     suspend fun setProgress(context: Context, progress: Int)
     suspend fun setError(context: Context, message: String)
     suspend fun remove(context: Context, path: String)
+    suspend fun clear(context: Context)
     fun getDownloadStatus(context: Context): Flow<DownloadStatus>
 
     companion object {

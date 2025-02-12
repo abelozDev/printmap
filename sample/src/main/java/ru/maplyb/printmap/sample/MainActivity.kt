@@ -10,7 +10,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import ru.mapolib.printmap.gui.presentation.settings.DownloadMapSettingsScreen
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapType
@@ -30,12 +29,22 @@ class MainActivity : ComponentActivity() {
         }
 
         val downloadManager = DownloadMapManager.create(this)
+
         val bbox = BoundingBox(
-            latNorth = 51.655322,
+            latNorth = 60.0,
+            lonWest = -10.0,
+            latSouth = 52.0,
+            lonEast = 10.0,
+        )
+        /*latNorth = 51.655322,
             lonWest = 22.327316,
             latSouth = 46.976288,
-            lonEast = 38.433272,
-        )
+            lonEast = 38.433272,*/
+
+        /*latNorth = 48.80033250943958,
+        lonWest = 20.30710968815696,
+        latSouth = 47.5057647015311,
+        lonEast = 24.176979174180058,*/
         val map = listOf(
             MapItem(
                 name = "OpenStreetMap",
@@ -44,7 +53,7 @@ class MainActivity : ComponentActivity() {
                 alpha = 250f,
                 position = 1,
                 zoomMin = 0,
-                zoomMax = 8
+                zoomMax = 13
 
             ),
             MapItem(

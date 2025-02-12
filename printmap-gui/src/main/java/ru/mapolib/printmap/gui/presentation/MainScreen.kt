@@ -45,12 +45,19 @@ fun MainScreen() {
                         vertical = 16.dp,
                     )
             ) {
-                when(state) {
+                when (state) {
                     is DownloadMapState.Downloading -> {
-                        ProgressScreen((state as DownloadMapState.Downloading).progress)
+                        ProgressScreen(
+                            progress = (state as DownloadMapState.Downloading).progress,
+                            cancelDownloading = {
+                                downloadManager.cancelDownloading()
+                            }
+                        )
                     }
+
                     is DownloadMapState.Failure -> TODO()
                     is DownloadMapState.Finished -> {
+                        println("image path: ${(state as DownloadMapState.Finished).path}")
                         MapDownloadedScreen(
                             path = (state as DownloadMapState.Finished).path,
                             onDeleteMap = {
@@ -60,12 +67,18 @@ fun MainScreen() {
                             }
                         )
                     }
+
                     DownloadMapState.Idle -> TODO()
                     is DownloadMapState.PrepareDownloading -> {
                         DownloadMapSettingsScreen(
                             boundingBox = (state as DownloadMapState.PrepareDownloading).boundingBox,
                             maps = (state as DownloadMapState.PrepareDownloading).maps,
-                            zoom = (state as DownloadMapState.PrepareDownloading).zoom
+                            zoom = (state as DownloadMapState.PrepareDownloading).zoom,
+                            startFormingAMap = { maps, boundingBox, zoom, quality ->
+                                scope.launch {
+                                    downloadManager.startFormingAMap(maps, boundingBox, zoom, quality)
+                                }
+                            }
                         )
                     }
                 }

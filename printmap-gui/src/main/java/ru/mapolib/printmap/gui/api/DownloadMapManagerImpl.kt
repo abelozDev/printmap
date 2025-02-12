@@ -1,13 +1,14 @@
 package ru.mapolib.printmap.gui.api
 
 import android.app.Activity
-import androidx.compose.foundation.text.selection.DisableSelection
-import androidx.lifecycle.flowWithLifecycle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.domain.MapPrint
 import ru.maplyb.printmap.api.model.BoundingBox
@@ -18,58 +19,57 @@ import ru.maplyb.printmap.impl.util.DestroyLifecycleCallback
 internal object DownloadMapManagerImpl : DownloadMapManager {
     private val _state = MutableStateFlow<DownloadMapState>(DownloadMapState.Idle)
     override val state = _state.asStateFlow()
-    private val scope = CoroutineScope(Job())
+    private var scope = CoroutineScope(SupervisorJob())
+
+
+    private var preferences: PreferencesDataSource? = null
+    var mapPrint: MapPrint? = null
+
+    fun cancelDownloading() {
+        mapPrint?.cancelDownloading()
+    }
+
     override suspend fun deleteMap(path: String) {
         mapPrint?.deleteExistedMap(path)
     }
 
-    private var preferences: PreferencesDataSource? = null
-    private var mapPrint: MapPrint? = null
-    private var isInit = false
-
     fun init(activity: Activity): DownloadMapManagerImpl {
-        if (!isInit) {
-            isInit = true
-            mapPrint = MapPrint.create(activity)
-            preferences = PreferencesDataSource.create()
-            scope.launch {
-                preferences
-                    ?.getDownloadStatus(activity)
-                    ?.collect { downloadStatus ->
-                        _state.value = when {
-                            downloadStatus.isFinished && downloadStatus.filePath != null -> {
-                                DownloadMapState.Finished(downloadStatus.filePath!!)
-                            }
+        println("DownloadMapManagerImpl init")
+        mapPrint = MapPrint.create(activity)
+        preferences = PreferencesDataSource.create()
+        if (!scope.isActive) {
+            scope = CoroutineScope(SupervisorJob())
+        }
+        scope.launch {
+            preferences
+                ?.getDownloadStatus(activity)
+                ?.collect { downloadStatus ->
+                    _state.value = when {
+                        downloadStatus.isFinished && downloadStatus.filePath != null -> {
+                            DownloadMapState.Finished(downloadStatus.filePath!!)
+                        }
 
-                            downloadStatus.errorMessage != null -> {
-                                DownloadMapState.Failure(downloadStatus.errorMessage!!)
-                            }
+                        downloadStatus.errorMessage != null -> {
+                            DownloadMapState.Failure(downloadStatus.errorMessage!!)
+                        }
 
-                            downloadStatus.progress != null -> {
-                                DownloadMapState.Downloading(
-                                    downloadStatus.progress!!,
-                                    isOpen = _state.value.isOpen
-                                )
-                            }
+                        downloadStatus.progress != null -> {
+                            DownloadMapState.Downloading(
+                                downloadStatus.progress!!,
+                                isOpen = _state.value.isOpen
+                            )
+                        }
 
-                            else -> {
-                                DownloadMapState.Idle
-                            }
+                        else -> {
+                            DownloadMapState.Idle
                         }
                     }
-            }
-            /*mapPrint?.onMapReady {
-                if (it == null) {
-                    _state.value = DownloadMapState.Idle
-                } else {
-                    _state.value = DownloadMapState.Finished(it, true)
                 }
-            }*/
         }
         activity.application.registerActivityLifecycleCallbacks(DestroyLifecycleCallback { act ->
             if (act == activity) {
                 try {
-                    scope.cancel()
+                    scope.coroutineContext.cancelChildren()
                 } catch (_: IllegalStateException) {
                 }
             }
@@ -84,6 +84,15 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
 
     override fun open() {
         _state.value = _state.value.open()
+    }
+
+    suspend fun startFormingAMap(
+        maps: List<MapItem>,
+        boundingBox: BoundingBox,
+        zoom: Int,
+        quality: Int
+    ) {
+        mapPrint?.startFormingAMap(maps, boundingBox, zoom, quality)
     }
 
     override fun prepareDownloading(
