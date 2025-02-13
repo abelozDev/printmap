@@ -42,6 +42,7 @@ publishing {
                 from(components["release"])
                 groupId = "com.github.abelozDev"
                 artifactId = "lib"
+                version = libs.versions.lib.version
             }
         }
     }

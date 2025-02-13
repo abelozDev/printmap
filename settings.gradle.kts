@@ -23,5 +23,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "printmap"
 include(":lib")
-include(":sample")
-include(":printmap-gui")
+include(":gui")

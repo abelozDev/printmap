@@ -25,6 +25,7 @@ android {
                 "proguard-rules.pro"
             )
         }
+        debug {  }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -44,6 +45,7 @@ publishing {
                 from(components["release"])
                 groupId = "com.github.abelozDev"
                 artifactId = "gui"
+                version = libs.versions.lib.version
             }
         }
     }
