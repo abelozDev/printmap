@@ -23,7 +23,17 @@ internal class RemoteDataSource: DataSource {
     }
     override suspend fun getTile(path: String, x: Int, y: Int, z: Int, schema: TileSchema): ByteArray? {
         return try {
-            val tile = api.getMap(path, x, y, z)
+            var currentPath = path
+            val coordinatesMap = mapOf(
+                "x" to x,
+                "y" to y,
+                "z" to z
+            )
+            coordinatesMap.forEach { (key, value) ->
+                currentPath = currentPath.replace("{$key}", "$value")
+            }
+            println("currentPath: $currentPath")
+            val tile = api.getMap(currentPath)
             return tile.bytes()
         } catch (e: Exception) {
             println("FATAL EXCEPTION = ${e.message}")

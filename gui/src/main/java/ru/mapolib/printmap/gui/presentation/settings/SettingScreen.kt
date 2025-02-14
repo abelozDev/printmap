@@ -238,15 +238,17 @@ private fun MapTypesItem(
     maps: List<MapItem>,
     onChange: (MapItem) -> Unit
 ) {
-    Text(
-        modifier = Modifier.padding(
-            start = 8.dp,
-            bottom = 16.dp
-        ),
-        fontWeight = FontWeight.Bold,
-        fontSize = 16.sp,
-        text = header,
-    )
+    if (maps.isNotEmpty()) {
+        Text(
+            modifier = Modifier.padding(
+                start = 8.dp,
+                bottom = 16.dp
+            ),
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            text = header,
+        )
+    }
     maps.forEach { map ->
         Row {
             Text(

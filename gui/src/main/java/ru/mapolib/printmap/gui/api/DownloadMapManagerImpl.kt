@@ -111,7 +111,14 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
         maps: List<MapItem>,
         zoom: Int
     ) {
-        _state.value = DownloadMapState.PrepareDownloading(boundingBox, maps, zoom, true)
+        val modifiedMaps = maps
+            .map {
+                val clampedValue = it.alpha.coerceIn(0f, 1f)
+                it.copy(
+                    alpha = (clampedValue * 255)
+                )
+            }
+        _state.value = DownloadMapState.PrepareDownloading(boundingBox, modifiedMaps, zoom, true)
     }
 }
 

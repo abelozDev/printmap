@@ -13,8 +13,5 @@ internal interface Api {
     @GET()
     suspend fun getMap(
         @Url url: String,
-        @Query ("x") x: Int,
-        @Query ("y") y: Int,
-        @Query ("z") z: Int
     ): ResponseBody
 }

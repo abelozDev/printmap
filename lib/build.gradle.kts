@@ -62,4 +62,5 @@ dependencies {
     implementation(libs.okhttp.loggint.interceptor)
 
     implementation(libs.datastore)
+    implementation(libs.androidx.ui.android)
 }
