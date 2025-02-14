@@ -8,7 +8,6 @@ import ru.maplyb.printmap.impl.domain.model.TileParams
 import ru.maplyb.printmap.impl.domain.model.TileSchema
 import ru.maplyb.printmap.impl.domain.repo.DataSource
 import ru.maplyb.printmap.impl.util.GeoCalculator
-import ru.maplyb.printmap.impl.util.TILES_SIZE_TAG
 import ru.maplyb.printmap.impl.util.debugLog
 import ru.maplyb.printmap.impl.util.getTileSize
 import java.io.ByteArrayOutputStream
