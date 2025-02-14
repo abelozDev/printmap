@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -20,6 +21,8 @@ import kotlinx.coroutines.launch
 import ru.mapolib.printmap.gui.api.DownloadMapManagerImpl
 import ru.mapolib.printmap.gui.api.DownloadMapState
 import ru.mapolib.printmap.gui.presentation.downloaded.MapDownloadedScreen
+import ru.mapolib.printmap.gui.presentation.failure.FailureScreen
+import ru.mapolib.printmap.gui.presentation.progress.ProgressScreen
 import ru.mapolib.printmap.gui.presentation.settings.DownloadMapSettingsScreen
 
 @Composable
@@ -27,6 +30,7 @@ fun MainScreen() {
     val downloadManager = remember { DownloadMapManagerImpl }
     val state by downloadManager.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     if (state.isOpen) {
         Dialog(
             onDismissRequest = {
@@ -55,7 +59,15 @@ fun MainScreen() {
                         )
                     }
 
-                    is DownloadMapState.Failure -> TODO()
+                    is DownloadMapState.Failure -> {
+                        FailureScreen(
+                            message = (state as DownloadMapState.Failure).message,
+                            dismiss = {
+                                downloadManager.dismissFailure(context)
+                            }
+                        )
+                    }
+
                     is DownloadMapState.Finished -> {
                         println("image path: ${(state as DownloadMapState.Finished).path}")
                         MapDownloadedScreen(
@@ -76,7 +88,12 @@ fun MainScreen() {
                             zoom = (state as DownloadMapState.PrepareDownloading).zoom,
                             startFormingAMap = { maps, boundingBox, zoom, quality ->
                                 scope.launch {
-                                    downloadManager.startFormingAMap(maps, boundingBox, zoom, quality)
+                                    downloadManager.startFormingAMap(
+                                        maps,
+                                        boundingBox,
+                                        zoom,
+                                        quality
+                                    )
                                 }
                             }
                         )

@@ -21,12 +21,10 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.BoundingBox
-import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.maplyb.printmap.api.model.MapItem
-import ru.maplyb.printmap.impl.data.local.DownloadStatus
+import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
-import ru.maplyb.printmap.impl.util.FileSaveUtil
 import ru.maplyb.printmap.impl.util.GeoCalculator
 import ru.maplyb.printmap.impl.util.TilesUtil
 import ru.maplyb.printmap.impl.util.saveBitmapToExternalStorage
@@ -56,7 +54,8 @@ internal class DownloadMapService : Service() {
         }
         stopSelf()
         stopForeground(true)
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(DOWNLOAD_MAP_NOTIFICATION_ID)
     }
 
@@ -72,47 +71,62 @@ internal class DownloadMapService : Service() {
         quality: Int
     ) {
         coroutineScope.launch {
-        val tiles = GeoCalculator().calculateTotalTilesCount(bound, zoom).successDataOrNull() ?: return@launch
-        val visibleMaps = mapList.filter { it.isVisible }
-        val fullSize = visibleMaps.size * tiles.size
-        startForeground(
-            DOWNLOAD_MAP_NOTIFICATION_ID,
-            createNotification(
-                progressText = "Начало загрузки",
-                maxProgress = fullSize,
-                progress = 0
+            val tiles = GeoCalculator().calculateTotalTilesCount(bound, zoom).successDataOrNull()
+                ?: return@launch
+            val visibleMaps = mapList.filter { it.isVisible }
+            val fullSize = visibleMaps.size * tiles.size
+            startForeground(
+                DOWNLOAD_MAP_NOTIFICATION_ID,
+                createNotification(
+                    progressText = "Начало загрузки",
+                    maxProgress = fullSize,
+                    progress = 0
+                )
             )
-        )
             val tileManager = DownloadTilesManager.create(this@DownloadMapService)
 
             val downloadedTiles = tileManager.getTiles(visibleMaps, tiles, quality) {
                 updateNotification("Загрузка тайлов", fullSize, it)
                 prefs?.setProgress(
                     context = this@DownloadMapService,
-                    progress = (it.toFloat()/fullSize * 100).toInt()
+                    progress = (it.toFloat() / fullSize * 100).toInt()
                 )
             }
-            val resultBitmap = TilesUtil()
-                .mergeTilesSortedByCoordinates(
-                    downloadedTiles,
-                    tiles.minOf { it.x },
-                    tiles.maxOf { it.x },
-                    tiles.minOf { it.y },
-                    tiles.maxOf { it.y },
-                    zoom
-                )
-            saveBitmapToExternalStorage(
-                context = this@DownloadMapService,
-                bitmap = resultBitmap!!,
-                fileName = "${System.currentTimeMillis()}"
-            )
-                ?.let {
-                    prefs?.setDownloaded(
-                        context = this@DownloadMapService,
-                        path = it
-                    )
+            when (downloadedTiles) {
+                is OperationResult.Error -> {
+                    prefs?.setError(this@DownloadMapService, downloadedTiles.message)
                 }
-            tileManager.deleteTiles(downloadedTiles.values.flatten())
+                is OperationResult.Success -> {
+                    TilesUtil()
+                        .mergeTilesSortedByCoordinates(
+                            downloadedTiles.data,
+                            tiles.minOf { it.x },
+                            tiles.maxOf { it.x },
+                            tiles.minOf { it.y },
+                            tiles.maxOf { it.y },
+                            zoom
+                        ).onSuccess {
+                            saveBitmapToExternalStorage(
+                                context = this@DownloadMapService,
+                                bitmap = it!!,
+                                fileName = "${System.currentTimeMillis()}"
+                            )
+                                ?.let {
+                                    prefs?.setDownloaded(
+                                        context = this@DownloadMapService,
+                                        path = it
+                                    )
+                                }
+                        }
+                        .onFailure {
+                            prefs?.setError(
+                                this@DownloadMapService,
+                                "Ошибка при формировании конечного файла: ${it.message}"
+                            )
+                        }
+                    tileManager.deleteTiles(downloadedTiles.data.values.flatten())
+                }
+            }
             stopForeground(true)
             stopSelf()
         }
@@ -175,7 +189,6 @@ internal class DownloadMapService : Service() {
         const val MAP_LIST_ARG = "mapList"
         const val BOUND_ARG = "bound"
         const val ZOOM_ARG = "zoom"
-        const val QUALITY_ARG = "quality"
         const val DOWNLOAD_MAP_NOTIFICATION_ID = 788843
     }
 

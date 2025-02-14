@@ -1,20 +1,21 @@
 plugins {
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    id("maven-publish")
-    alias(libs.plugins.jetbrains.kotlin.jvm) apply false
 }
 
 android {
-    namespace = "ru.mapolib.printmap.gui"
-    compileSdk = libs.versions.compile.sdk.get().toInt()
+    namespace = "ru.maplyb.printmap.sample"
+    compileSdk = 35
 
     defaultConfig {
+        applicationId = "ru.maplyb.printmap.sample"
         minSdk = 24
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
     }
 
     buildTypes {
@@ -25,7 +26,6 @@ android {
                 "proguard-rules.pro"
             )
         }
-        debug {  }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -38,22 +38,9 @@ android {
         compose = true
     }
 }
-publishing {
-    publications {
-        register<MavenPublication>("release") {
-            afterEvaluate {
-                from(components["release"])
-                groupId = "com.github.abelozDev"
-                artifactId = "gui"
-                version = libs.versions.lib.version
-            }
-        }
-    }
-}
+
 dependencies {
-    api(project(":lib"))
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(project(":gui"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -66,5 +53,4 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.coil)
     implementation(libs.coil.compose)
-    implementation(libs.kotlinx.serialization.json)
 }

@@ -11,6 +11,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapType
+import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.model.TileParams
 import ru.maplyb.printmap.impl.domain.repo.DataSource
 import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
@@ -77,7 +78,7 @@ internal class DownloadTilesManagerImpl(
         tiles: List<TileParams>,
         quality: Int,
         onProgress: suspend (Int) -> Unit
-    ): Map<MapItem, List<String?>> {
+    ): OperationResult<Map<MapItem, List<String?>>> {
         val local = maps.filter { it.type is MapType.Offline }
         val remote = maps.filter { it.type is MapType.Online }
         val downloadedSize = AtomicInteger(0)
@@ -114,12 +115,23 @@ internal class DownloadTilesManagerImpl(
                             onProgress(progress)
                         }
                     )
-                    return@withContext localTiles.await() + remoteTiles.await()
+                    val result = localTiles.await() + remoteTiles.await()
+                    return@withContext if (result.flatMap { it.value }.filterNotNull().isEmpty()) {
+                        OperationResult.Error("Не удалось получить ни одно файла")
+                    } else {
+                        OperationResult.Success(result)
+                    }
                 } catch (e: CancellationException) {
                     withContext(NonCancellable) {
                         fileSaveUtil.deleteTiles(downloadedFiles.filterNotNull())
                     }
                     throw e
+                }
+                catch (e: Exception) {
+                    withContext(NonCancellable) {
+                        fileSaveUtil.deleteTiles(downloadedFiles.filterNotNull())
+                    }
+                    return@withContext OperationResult.Error(e.message ?: "Ошибка при получении файлов.")
                 }
             }
         }

@@ -10,7 +10,7 @@ internal fun sendImageAsFile(context: Context, path: String) {
     try {
         if (file.exists()) {
             val uri =
-                FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                FileProvider.getUriForFile(context, "${context.packageName}.printmap.fileprovider", file)
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = "*/*" // Указываем, что это файл
                 putExtra(Intent.EXTRA_STREAM, uri) // Прикрепляем URI файла

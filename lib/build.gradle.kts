@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "ru.maplyb.printmap"
-    compileSdk = 35
+    compileSdk = libs.versions.compile.sdk.get().toInt()
 
     defaultConfig {
         minSdk = 24

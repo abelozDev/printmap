@@ -2,6 +2,7 @@ package ru.maplyb.printmap.impl.domain.repo
 
 import android.content.Context
 import ru.maplyb.printmap.api.model.MapItem
+import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.data.tile_manager.DownloadTilesManagerImpl
 import ru.maplyb.printmap.impl.domain.model.TileParams
 import ru.maplyb.printmap.impl.util.FileSaveUtil
@@ -15,7 +16,7 @@ internal interface DownloadTilesManager {
         tiles: List<TileParams>,
         quality: Int,
         onProgress: suspend (Int) -> Unit
-    ): Map<MapItem, List<String?>>
+    ): OperationResult<Map<MapItem, List<String?>>>
 
     suspend fun getApproximateImageSize(maps: List<MapItem>, tiles: List<TileParams>): Long
     suspend fun deleteTiles(

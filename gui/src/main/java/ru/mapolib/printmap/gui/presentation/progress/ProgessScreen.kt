@@ -1,4 +1,4 @@
-package ru.mapolib.printmap.gui.presentation
+package ru.mapolib.printmap.gui.presentation.progress
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

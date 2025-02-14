@@ -1,10 +1,9 @@
 package ru.mapolib.printmap.gui.api
 
 import android.app.Activity
+import android.content.Context
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,10 +22,16 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
 
 
     private var preferences: PreferencesDataSource? = null
-    var mapPrint: MapPrint? = null
+    private var mapPrint: MapPrint? = null
 
     fun cancelDownloading() {
         mapPrint?.cancelDownloading()
+    }
+
+    fun dismissFailure(context: Context) {
+        scope.launch {
+            preferences?.clear(context)
+        }
     }
 
     override suspend fun deleteMap(path: String) {
@@ -46,11 +51,17 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
                 ?.collect { downloadStatus ->
                     _state.value = when {
                         downloadStatus.isFinished && downloadStatus.filePath != null -> {
-                            DownloadMapState.Finished(downloadStatus.filePath!!)
+                            DownloadMapState.Finished(
+                                downloadStatus.filePath!!,
+                                isOpen = _state.value.isOpen
+                            )
                         }
 
                         downloadStatus.errorMessage != null -> {
-                            DownloadMapState.Failure(downloadStatus.errorMessage!!)
+                            DownloadMapState.Failure(
+                                downloadStatus.errorMessage!!,
+                                isOpen = _state.value.isOpen
+                            )
                         }
 
                         downloadStatus.progress != null -> {

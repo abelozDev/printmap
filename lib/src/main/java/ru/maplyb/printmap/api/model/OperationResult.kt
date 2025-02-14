@@ -1,6 +1,5 @@
 package ru.maplyb.printmap.api.model
 
-import ru.maplyb.printmap.api.model.OperationResult.Success
 
 sealed interface OperationResult<out T> {
     data class Success<T>(val data: T) : OperationResult<T>
