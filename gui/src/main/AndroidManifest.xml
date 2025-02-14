@@ -3,8 +3,8 @@
 
     <application>
         <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.printmap.fileprovider"
+            android:name=".utils.PrintmapFileProvider"
+            android:authorities="ru.mapolib.printmap.gui.fileprovider"
             android:grantUriPermissions="true"
             android:exported="false">
             <meta-data
