@@ -11,7 +11,7 @@ import kotlinx.coroutines.withContext
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.impl.domain.model.TileSchema
 
-internal class TilesUtil {
+internal class MergeTiles {
 
     private fun extractCoordinates(filePath: String): Triple<Int, Int, Int> {
         val regex = """.*_x=(\d+)_y=(\d+)_z=(\d+)\.jpg""".toRegex()
@@ -35,8 +35,8 @@ internal class TilesUtil {
             val horizontalSize = (maxX - minX).coerceAtLeast(1)
             val verticalSize = (maxY - minY).coerceAtLeast(1)
 
-            val resultWidth = 255 * horizontalSize
-            val resultHeight = 255 * verticalSize
+            val resultWidth = 256 * horizontalSize
+            val resultHeight = 256 * verticalSize
             val resultBitmap =
                 Bitmap.createBitmap(resultWidth, resultHeight, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(resultBitmap)
@@ -86,4 +86,6 @@ internal class TilesUtil {
             }
         }
     }
+
+
 }

@@ -41,8 +41,8 @@ android {
 
 dependencies {
     implementation(project(":gui"))
-    /*implementation("com.github.abelozDev.printmap:lib:1.0.6")
-    implementation("com.github.abelozDev.printmap:gui:1.0.6")*/
+    /*implementation("com.github.abelozDev.printmap:lib:1.0.7")
+    implementation("com.github.abelozDev.printmap:gui:1.0.7")*/
     implementation(project(":gui"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

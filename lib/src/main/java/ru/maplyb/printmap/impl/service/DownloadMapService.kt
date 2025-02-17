@@ -21,12 +21,14 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.BoundingBox
+import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
+import ru.maplyb.printmap.impl.util.DrawInBitmap
 import ru.maplyb.printmap.impl.util.GeoCalculator
-import ru.maplyb.printmap.impl.util.TilesUtil
+import ru.maplyb.printmap.impl.util.MergeTiles
 import ru.maplyb.printmap.impl.util.saveBitmapToExternalStorage
 import ru.maplyb.printmap.impl.util.serializable
 
@@ -97,7 +99,7 @@ internal class DownloadMapService : Service() {
                     prefs?.setError(this@DownloadMapService, downloadedTiles.message)
                 }
                 is OperationResult.Success -> {
-                    TilesUtil()
+                    MergeTiles()
                         .mergeTilesSortedByCoordinates(
                             downloadedTiles.data,
                             tiles.minOf { it.x },
@@ -106,9 +108,25 @@ internal class DownloadMapService : Service() {
                             tiles.maxOf { it.y },
                             zoom
                         ).onSuccess {
+                            //50.38030022353232, 30.226485489123323
+                            //49.00163585767624, 34.47819411725312
+                            val lines = listOf(
+                                GeoPoint(
+                                    50.38030022353232, 30.226485489123323
+                                ),
+                                GeoPoint(
+                                    49.00163585767624, 34.47819411725312
+                                )
+                            )
+                            val bitmapWithDraw = DrawInBitmap().draw(
+                                bitmap = it!!,
+                                bound,
+                                lines = lines,
+                                zoom = zoom
+                            )
                             saveBitmapToExternalStorage(
                                 context = this@DownloadMapService,
-                                bitmap = it!!,
+                                bitmap = bitmapWithDraw,
                                 fileName = "${System.currentTimeMillis()}"
                             )
                                 ?.let {

@@ -29,20 +29,33 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
         super.onCreate(savedInstanceState)
         btn = findViewById(ru.maplyb.printmap.R.id.get_map)
         composeView = findViewById(ru.maplyb.printmap.R.id.compose_view)
-        enableEdgeToEdge()
         getStoragePermission(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestNotificationPermission(this)
         }
         val downloadManager = DownloadMapManager.create(this)
-        val type = MapType.Online("https://mt0.google.com//vt/lyrs=y&x={x}&y={y}&z={z}")
+        val type = MapType.Online("https://mt0.google.com//vt/lyrs=m&x={x}&y={y}&z={z}")
         val item = MapItem("google", type, true, 1f, 0, 1, 24)
-        val list = listOf(item)
+        val local = MapItem(
+            name = "LocalTest",
+            type = MapType.Offline("storage/emulated/0/Download/Relief_Ukraine.mbtiles"),
+            isVisible = true,
+            alpha = 1f,
+            position = 3,
+            zoomMin = 0,
+            zoomMax = 13
+        )
+        val list = listOf(item, local)
         btn.setOnClickListener {
             when (downloadManager.state.value) {
                 DownloadMapState.Idle -> {
                     downloadManager.prepareDownloading(
-                        boundingBox = BoundingBox(55.892186, 55.816814, 38.516507, 38.357271),
+                        boundingBox = BoundingBox(
+                            latNorth = 51.655322,
+                            lonWest = 22.327316,
+                            latSouth = 46.976288,
+                            lonEast = 38.433272
+                        ),
                         maps = list,
                         zoom = 10
                     )
@@ -52,12 +65,6 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             }
         }
 
-        val bbox = BoundingBox(
-            latNorth = 60.0,
-            lonWest = -10.0,
-            latSouth = 52.0,
-            lonEast = 10.0,
-        )
         val map = listOf(
             MapItem(
                 name = "OpenStreetMap",
