@@ -21,12 +21,16 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.BoundingBox
+import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.MapItem
+import ru.maplyb.printmap.api.model.MapObject
+import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
+import ru.maplyb.printmap.impl.util.DrawInBitmap
 import ru.maplyb.printmap.impl.util.GeoCalculator
-import ru.maplyb.printmap.impl.util.TilesUtil
+import ru.maplyb.printmap.impl.util.MergeTiles
 import ru.maplyb.printmap.impl.util.saveBitmapToExternalStorage
 import ru.maplyb.printmap.impl.util.serializable
 
@@ -68,6 +72,7 @@ internal class DownloadMapService : Service() {
         mapList: List<MapItem>,
         bound: BoundingBox,
         zoom: Int,
+        objects: Map<MapObjectStyle, List<MapObject>>,
         quality: Int
     ) {
         coroutineScope.launch {
@@ -97,7 +102,7 @@ internal class DownloadMapService : Service() {
                     prefs?.setError(this@DownloadMapService, downloadedTiles.message)
                 }
                 is OperationResult.Success -> {
-                    TilesUtil()
+                    MergeTiles()
                         .mergeTilesSortedByCoordinates(
                             downloadedTiles.data,
                             tiles.minOf { it.x },
@@ -106,9 +111,19 @@ internal class DownloadMapService : Service() {
                             tiles.maxOf { it.y },
                             zoom
                         ).onSuccess {
+                            //50.38030022353232, 30.226485489123323
+                            //49.00163585767624, 34.47819411725312
+                            val currentBound = GeoCalculator().tilesToBoundingBox(tiles, zoom)
+                            val bitmapWithDraw = DrawInBitmap().draw(
+                                bitmap = it!!,
+                                currentBound
+                                /*bound*/,
+                                objects = objects,
+                                zoom = zoom
+                            )
                             saveBitmapToExternalStorage(
                                 context = this@DownloadMapService,
-                                bitmap = it!!,
+                                bitmap = bitmapWithDraw,
                                 fileName = "${System.currentTimeMillis()}"
                             )
                                 ?.let {
@@ -162,10 +177,12 @@ internal class DownloadMapService : Service() {
             val quality = intent.getIntExtra(ZOOM_ARG, 0)
             val mapList = intent.serializable(MAP_LIST_ARG) as? ArrayList<MapItem>
                 ?: throw TypeCastException("Fail cast to MapItem")
+            val objects = intent.serializable(OBJECTS_ARG) as? HashMap<MapObjectStyle, List<MapObject>>
+                ?: throw TypeCastException("Fail cast to MapItem")
             val bound = intent.serializable(BOUND_ARG) as? BoundingBox
                 ?: throw TypeCastException("fail cast to BoundingBox")
             val zoom = intent.getIntExtra(ZOOM_ARG, 0)
-            downloadMap(mapList.toList(), bound, zoom, quality)
+            downloadMap(mapList.toList(), bound, zoom, objects, quality)
         }
         return super.onStartCommand(intent, flags, startId)
     }
@@ -189,6 +206,7 @@ internal class DownloadMapService : Service() {
         const val MAP_LIST_ARG = "mapList"
         const val BOUND_ARG = "bound"
         const val ZOOM_ARG = "zoom"
+        const val OBJECTS_ARG = "objects"
         const val DOWNLOAD_MAP_NOTIFICATION_ID = 788843
     }
 

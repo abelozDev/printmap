@@ -86,13 +86,15 @@ fun MainScreen() {
                             boundingBox = (state as DownloadMapState.PrepareDownloading).boundingBox,
                             maps = (state as DownloadMapState.PrepareDownloading).maps,
                             zoom = (state as DownloadMapState.PrepareDownloading).zoom,
-                            startFormingAMap = { maps, boundingBox, zoom, quality ->
+                            objects = (state as DownloadMapState.PrepareDownloading).objects,
+                            startFormingAMap = { maps, boundingBox, zoom, quality, objects ->
                                 scope.launch {
                                     downloadManager.startFormingAMap(
-                                        maps,
-                                        boundingBox,
-                                        zoom,
-                                        quality
+                                        maps = maps,
+                                        boundingBox = boundingBox,
+                                        zoom = zoom,
+                                        objects = objects,
+                                        quality = quality
                                     )
                                 }
                             }

@@ -11,7 +11,7 @@ import kotlinx.coroutines.withContext
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.impl.domain.model.TileSchema
 
-internal class TilesUtil {
+internal class MergeTiles {
 
     private fun extractCoordinates(filePath: String): Triple<Int, Int, Int> {
         val regex = """.*_x=(\d+)_y=(\d+)_z=(\d+)\.jpg""".toRegex()
@@ -32,11 +32,11 @@ internal class TilesUtil {
         zoom: Int
     ): Result<Bitmap?> {
         return runCatching {
-            val horizontalSize = (maxX - minX).coerceAtLeast(1)
-            val verticalSize = (maxY - minY).coerceAtLeast(1)
+            val horizontalSize = (maxX + 1 - minX).coerceAtLeast(1)
+            val verticalSize = (maxY + 1 - minY).coerceAtLeast(1)
 
-            val resultWidth = 255 * horizontalSize
-            val resultHeight = 255 * verticalSize
+            val resultWidth = 256 * horizontalSize
+            val resultHeight = 256 * verticalSize
             val resultBitmap =
                 Bitmap.createBitmap(resultWidth, resultHeight, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(resultBitmap)
@@ -73,9 +73,12 @@ internal class TilesUtil {
                         for (x in minX..maxX) {
                             val tile =
                                 bitmapsWithCoords?.find { it.first == x && it.second == y }?.third
+
                             val xOffset = (x - minX) * 255
+
                             val yOffset =
-                                if ((newMaxY > newMinY)) (y - newMinY) * 255 else (newMinY - y) * 255
+                                if (newMaxY > newMinY) (y - newMinY) * 255 else (newMinY - y) * 255
+
                             if (tile != null) {
                                 canvas.drawBitmap(tile, xOffset.toFloat(), yOffset.toFloat(), paint)
                             }
@@ -86,4 +89,6 @@ internal class TilesUtil {
             }
         }
     }
+
+
 }

@@ -4,6 +4,8 @@ import android.app.Activity
 import kotlinx.coroutines.flow.StateFlow
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.MapItem
+import ru.maplyb.printmap.api.model.MapObject
+import ru.maplyb.printmap.api.model.MapObjectStyle
 
 interface DownloadMapManager {
 
@@ -13,6 +15,7 @@ interface DownloadMapManager {
     fun prepareDownloading(
         boundingBox: BoundingBox,
         maps: List<MapItem>,
+        objects: Map<MapObjectStyle, List<MapObject>>,
         zoom: Int
     )
     fun hide()

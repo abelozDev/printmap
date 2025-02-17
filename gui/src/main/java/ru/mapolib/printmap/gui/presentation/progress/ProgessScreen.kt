@@ -29,8 +29,9 @@ fun ProgressScreen(
         Text(
             text = stringResource(ru.maplyb.printmap.R.string.progress, progress.toString())
         )
-        Spacer(Modifier.height(8.dp))
-        CircularProgressIndicator()
+        CircularProgressIndicator(
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
         Button(
             content = {
                 Text(

@@ -63,4 +63,7 @@ dependencies {
 
     implementation(libs.datastore)
     implementation(libs.androidx.ui.android)
+
+    //geo
+    implementation(libs.proj4j)
 }

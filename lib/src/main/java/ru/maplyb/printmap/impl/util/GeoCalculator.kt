@@ -3,8 +3,14 @@ package ru.maplyb.printmap.impl.util
 import android.database.sqlite.SQLiteDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.osgeo.proj4j.CRSFactory
+import org.osgeo.proj4j.CoordinateTransform
+import org.osgeo.proj4j.CoordinateTransformFactory
+import org.osgeo.proj4j.Proj4jException
+import org.osgeo.proj4j.ProjCoordinate
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.GeoPoint
+import ru.maplyb.printmap.api.model.GeoPointMercator
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.model.TileParams
 import java.io.File
@@ -54,6 +60,31 @@ internal class GeoCalculator {
         val xTile = ((lonDeg + 180.0) / 360.0 * n).toInt()
         val yTile = ((1.0 - asinh(tan(latRad)) / Math.PI) / 2.0 * n).toInt()
         return xTile to yTile
+    }
+    fun tilesToBoundingBox(tiles: List<TileParams>, zoom: Int): BoundingBox {
+        // Находим минимальные и максимальные значения x и y
+        val xMin = tiles.minOf { it.x }
+        val yMin = tiles.minOf { it.y }
+        val xMax = tiles.maxOf { it.x }
+        val yMax = tiles.maxOf { it.y }
+
+        // Преобразуем крайние значения в географические координаты
+        val bottomLeft = numToDeg(xMin, yMax + 1, zoom) // Добавляем 1 к yMax для нижней границы
+        val topRight = numToDeg(xMax + 1, yMin, zoom) // Добавляем 1 к xMax для правой границы
+
+        return BoundingBox(
+            latNorth = topRight.latitude,
+            lonWest = bottomLeft.longitude,
+            latSouth = bottomLeft.latitude,
+            lonEast = topRight.longitude
+        )
+    }
+    fun numToDeg(x: Int, y: Int, zoom: Int): GeoPoint {
+        val n = 1 shl zoom // 2^zoom
+        val lon = x / n.toDouble() * 360.0 - 180.0
+        val latRad = Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n.toDouble())))
+        val lat = Math.toDegrees(latRad)
+        return GeoPoint(lat, lon)
     }
 
 
@@ -111,5 +142,50 @@ internal class GeoCalculator {
             bounds
         }
     }
+
+    fun degreeToMercator(point: GeoPoint): GeoPointMercator {
+        val crsFactory = CRSFactory()
+        val crsDegree = crsFactory.createFromName("EPSG:4326") // WGS 84 (широта/долгота)
+        val crsMercator = crsFactory.createFromName("EPSG:3857") // Web Mercator
+
+        val transformFactory = CoordinateTransformFactory()
+        val transform: CoordinateTransform = transformFactory.createTransform(crsDegree, crsMercator)
+
+        val sourceCoord = ProjCoordinate(point.longitude, point.latitude) // Порядок: долгота, широта
+        val targetCoord = ProjCoordinate()
+
+        try {
+            transform.transform(sourceCoord, targetCoord)
+        } catch (e: Proj4jException) {
+            e.printStackTrace()
+            // Возвращаем значение по умолчанию или выбрасываем исключение
+            throw RuntimeException("Failed to transform coordinates: ${e.message}")
+        }
+
+        return GeoPointMercator(targetCoord.x, targetCoord.y)
+    }
+
+    fun mercatorToDegree(point: GeoPointMercator): GeoPoint {
+        val crsFactory = CRSFactory()
+        val crsMercator = crsFactory.createFromName("EPSG:3857") // Web Mercator
+        val crsDegree = crsFactory.createFromName("EPSG:4326") // WGS 84 (широта/долгота)
+
+        val transformFactory = CoordinateTransformFactory()
+        val transform: CoordinateTransform = transformFactory.createTransform(crsMercator, crsDegree)
+
+        val sourceCoord = ProjCoordinate(point.x, point.y) // Координаты в меркаторе
+        val targetCoord = ProjCoordinate()
+
+        try {
+            transform.transform(sourceCoord, targetCoord)
+        } catch (e: Proj4jException) {
+            e.printStackTrace()
+            // Возвращаем значение по умолчанию или выбрасываем исключение
+            throw RuntimeException("Failed to transform coordinates: ${e.message}")
+        }
+
+        return GeoPoint(targetCoord.y, targetCoord.x) // Порядок: широта, долгота
+    }
+
 }
 

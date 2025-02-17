@@ -6,6 +6,8 @@ import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.maplyb.printmap.api.model.Errors
 import ru.maplyb.printmap.api.model.MapItem
+import ru.maplyb.printmap.api.model.MapObject
+import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.MapPrintImpl
 import ru.maplyb.printmap.impl.domain.local.MapPath
@@ -27,6 +29,7 @@ interface MapPrint {
     suspend fun startFormingAMap(
         mapList: List<MapItem>,
         bound: BoundingBox,
+        objects: Map<MapObjectStyle, List<MapObject>>,
         zoom: Int,
         quality: Int
         /*onResult: (List<DownloadedImage>) -> Unit*/

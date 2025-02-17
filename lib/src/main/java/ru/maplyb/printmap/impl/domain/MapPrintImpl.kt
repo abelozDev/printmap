@@ -10,6 +10,8 @@ import android.os.IBinder
 import ru.maplyb.printmap.api.domain.MapPrint
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.MapItem
+import ru.maplyb.printmap.api.model.MapObject
+import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.local.MapPath
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
@@ -88,6 +90,7 @@ internal class MapPrintImpl(
     override suspend fun startFormingAMap(
         mapList: List<MapItem>,
         bound: BoundingBox,
+        objects: Map<MapObjectStyle, List<MapObject>>,
         zoom: Int,
         quality: Int
     ) {
@@ -97,6 +100,7 @@ internal class MapPrintImpl(
             putExtra(DownloadMapService.MAP_LIST_ARG, ArrayList(maps))
             putExtra(DownloadMapService.BOUND_ARG, bound)
             putExtra(DownloadMapService.ZOOM_ARG, zoom)
+            putExtra(DownloadMapService.OBJECTS_ARG, HashMap(objects))
         }
         activity.startService(intent)
         activity.bindService(intent, connection, Context.BIND_AUTO_CREATE)
