@@ -3,8 +3,14 @@ package ru.maplyb.printmap.impl.util
 import android.database.sqlite.SQLiteDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.osgeo.proj4j.CRSFactory
+import org.osgeo.proj4j.CoordinateTransform
+import org.osgeo.proj4j.CoordinateTransformFactory
+import org.osgeo.proj4j.Proj4jException
+import org.osgeo.proj4j.ProjCoordinate
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.GeoPoint
+import ru.maplyb.printmap.api.model.GeoPointMercator
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.model.TileParams
 import java.io.File
@@ -111,5 +117,50 @@ internal class GeoCalculator {
             bounds
         }
     }
+
+    fun degreeToMercator(point: GeoPoint): GeoPointMercator {
+        val crsFactory = CRSFactory()
+        val crsDegree = crsFactory.createFromName("EPSG:4326") // WGS 84 (широта/долгота)
+        val crsMercator = crsFactory.createFromName("EPSG:3857") // Web Mercator
+
+        val transformFactory = CoordinateTransformFactory()
+        val transform: CoordinateTransform = transformFactory.createTransform(crsDegree, crsMercator)
+
+        val sourceCoord = ProjCoordinate(point.longitude, point.latitude) // Порядок: долгота, широта
+        val targetCoord = ProjCoordinate()
+
+        try {
+            transform.transform(sourceCoord, targetCoord)
+        } catch (e: Proj4jException) {
+            e.printStackTrace()
+            // Возвращаем значение по умолчанию или выбрасываем исключение
+            throw RuntimeException("Failed to transform coordinates: ${e.message}")
+        }
+
+        return GeoPointMercator(targetCoord.x, targetCoord.y)
+    }
+
+    fun mercatorToDegree(point: GeoPointMercator): GeoPoint {
+        val crsFactory = CRSFactory()
+        val crsMercator = crsFactory.createFromName("EPSG:3857") // Web Mercator
+        val crsDegree = crsFactory.createFromName("EPSG:4326") // WGS 84 (широта/долгота)
+
+        val transformFactory = CoordinateTransformFactory()
+        val transform: CoordinateTransform = transformFactory.createTransform(crsMercator, crsDegree)
+
+        val sourceCoord = ProjCoordinate(point.x, point.y) // Координаты в меркаторе
+        val targetCoord = ProjCoordinate()
+
+        try {
+            transform.transform(sourceCoord, targetCoord)
+        } catch (e: Proj4jException) {
+            e.printStackTrace()
+            // Возвращаем значение по умолчанию или выбрасываем исключение
+            throw RuntimeException("Failed to transform coordinates: ${e.message}")
+        }
+
+        return GeoPoint(targetCoord.y, targetCoord.x) // Порядок: широта, долгота
+    }
+
 }
 

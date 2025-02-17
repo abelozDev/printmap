@@ -48,7 +48,35 @@ class DrawInBitmap {
         )
     }
 
+    fun myConvertGeoToPixel(lat: Double,
+                            lon: Double,
+                            zoom: Int,
+                            boundingBox: BoundingBox,
+                            tileSize: Int,
+                            bitmapWidth: Int,
+                            bitmapHeight: Int): Pair<Float, Float>{
 
+        val tilesCount = 1 shl zoom
+
+        val pointMercator = GeoCalculator().degreeToMercator(GeoPoint(lat, lon))
+
+        // Преобразуем в пиксели, с учетом размера тайла
+        val pixelX = (pointMercator.x * tileSize).toFloat()
+        val pixelY = (pointMercator.y * tileSize).toFloat()
+
+        // Масштабируем координаты относительно размеров изображения
+        val normalizedX = (pixelX / (tileSize * tilesCount)) * bitmapWidth
+        val normalizedY = (pixelY / (tileSize * tilesCount)) * bitmapHeight
+
+        // Логируем результаты
+        Log.d("GeoToPixel", "GeoCoords: ($lat, $lon), PixelCoords: ($pixelX, $pixelY)")
+        Log.d("GeoToPixel", "Normalized PixelCoords: ($normalizedX, $normalizedY)")
+
+        return normalizedX.coerceIn(0f, bitmapWidth.toFloat()) to normalizedY.coerceIn(
+            0f,
+            bitmapHeight.toFloat()
+        )
+    }
 
     //50.38030022353232, 30.226485489123323
     //49.00163585767624, 34.47819411725312
