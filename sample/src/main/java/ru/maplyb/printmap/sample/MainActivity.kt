@@ -13,7 +13,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ru.maplyb.printmap.api.model.BoundingBox
+import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.MapItem
+import ru.maplyb.printmap.api.model.MapObject
+import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.api.model.MapType
 import ru.mapolib.printmap.gui.api.DownloadMapManager
 import ru.mapolib.printmap.gui.api.DownloadMapState
@@ -45,6 +48,35 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             zoomMin = 0,
             zoomMax = 13
         )
+        val lines = listOf(
+            GeoPoint(
+                50.38030022353232, 30.226485489123323
+            ),
+            GeoPoint(
+                49.00163585767624, 34.47819411725312
+            )
+        )
+        val objects = mapOf(
+            MapObjectStyle(
+                color = android.graphics.Color.RED,
+                width = 5f
+            ) to listOf(
+                MapObject(
+                    name = "qwe",
+                    position = GeoPoint(
+                        50.38030022353232, 30.226485489123323
+                    ),
+                    isVisible = true
+                ),
+                MapObject(
+                    name = "ewq",
+                    position = GeoPoint(
+                        49.00163585767624, 34.47819411725312
+                    ),
+                    isVisible = true
+                )
+            )
+        )
         val list = listOf(item, local)
         btn.setOnClickListener {
             when (downloadManager.state.value) {
@@ -57,7 +89,8 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                             lonEast = 38.433272
                         ),
                         maps = list,
-                        zoom = 10
+                        zoom = 10,
+                        objects = objects
                     )
                 }
 
@@ -95,49 +128,8 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                 zoomMax = 13
             )
         )
-        /*setContent {
-            val downloadState by downloadManager.state.collectAsStateWithLifecycle()
-            Button(
-                onClick = {
-                    when(downloadState) {
-                        DownloadMapState.Idle -> {
-                            downloadManager.prepareDownloading(
-                                boundingBox = bbox,
-                                maps = map,
-                                zoom = 10
-                            )
-                        }
-                        else -> downloadManager.open()
-                    }
-                },
-                content = {
-                    Text(
-                        text = "Get Map",
-                    )
-                }
-            )
-            MainScreen()
-            *//*DownloadMapSettingsScreen(
-                *//**//*activity = this,*//**//*
-                boundingBox = bbox,
-                maps = map,
-                zoom = 10
-            )*//*
-        }*/
 
         composeView.setContent {
-            val downloadState by downloadManager.state.collectAsStateWithLifecycle()
-            /*when (downloadState) {
-                DownloadMapState.Idle -> {
-                    downloadManager.prepareDownloading(
-                        boundingBox = BoundingBox(55.892186, 55.816814, 38.516507, 38.357271),
-                        maps = list,
-                        zoom = 10
-                    )
-                }
-
-                else -> downloadManager.open()
-            }*/
             MainScreen()
         }
     }

@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.MapItem
+import ru.maplyb.printmap.api.model.MapObject
+import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.use_case.GetTilesCountAndFileSizeUseCase
 import ru.mapolib.printmap.gui.presentation.util.PrintMapViewModel
@@ -20,7 +22,8 @@ internal class SettingViewModel(
     private val getTilesCountAndFileSizeUseCase: GetTilesCountAndFileSizeUseCase,
     zoom: Int,
     boundingBox: BoundingBox,
-    maps: List<MapItem>
+    maps: List<MapItem>,
+    objects: Map<MapObjectStyle, List<MapObject>>,
 ) : PrintMapViewModel<SettingEvent, SettingEffect>() {
 
     private val _state = MutableStateFlow(
@@ -28,8 +31,9 @@ internal class SettingViewModel(
             boundingBox = boundingBox,
             zoom = zoom,
             maps = maps,
-            tilesCount = 0
-        )
+            tilesCount = 0,
+            objects = objects
+            )
     )
     val state = _state.asStateFlow()
 
@@ -96,7 +100,8 @@ internal class SettingViewModel(
                     maps = _state.value.maps,
                     boundingBox = _state.value.boundingBox,
                     zoom = _state.value.zoom,
-                    quality = _state.value.quality
+                    quality = _state.value.quality,
+                    objects = _state.value.objects
                 )
             )
         }
@@ -138,7 +143,8 @@ internal class SettingViewModel(
         fun create(
             zoom: Int,
             boundingBox: BoundingBox,
-            maps: List<MapItem>
+            maps: List<MapItem>,
+            objects: Map<MapObjectStyle, List<MapObject>>,
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 if (modelClass.isAssignableFrom(SettingViewModel::class.java)) {
@@ -148,7 +154,8 @@ internal class SettingViewModel(
                         getTilesCountAndFileSizeUseCase = getTilesCountUseCase,
                         zoom = zoom,
                         boundingBox = boundingBox,
-                        maps = maps
+                        maps = maps,
+                        objects = objects
                     ) as T
                 }
                 throw IllegalArgumentException("Unknown ViewModel class")

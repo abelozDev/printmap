@@ -2,13 +2,15 @@ package ru.mapolib.printmap.gui.presentation.settings
 
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.MapItem
+import ru.maplyb.printmap.api.model.MapObject
+import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.mapolib.printmap.gui.presentation.util.PrintMapEffect
 import ru.mapolib.printmap.gui.presentation.util.PrintMapEvent
 
 sealed interface SettingState {
-    data object Initial: SettingState
-    data class Error(val message: String): SettingState
-    data object Progress: SettingState
+    data object Initial : SettingState
+    data class Error(val message: String) : SettingState
+    data object Progress : SettingState
 }
 
 data class SettingUiState(
@@ -17,6 +19,7 @@ data class SettingUiState(
     val zoom: Int,
     val quality: Int = 100,
     val maps: List<MapItem>,
+    val objects: Map<MapObjectStyle, List<MapObject>>,
     val tilesCount: Int,
     val boundingBox: BoundingBox,
     val progress: Boolean = false
@@ -26,18 +29,20 @@ data class SettingUiState(
     }
 }
 
-sealed interface SettingEvent: PrintMapEvent {
-    data class UpdateZoom(val newZoom: Int): SettingEvent
-    data object GetTilesCount: SettingEvent
-    data class UpdateQuality(val newQuality: Int): SettingEvent
-    data class UpdateMap(val map: MapItem): SettingEvent
-    data object StartDownloadingMap: SettingEvent
+sealed interface SettingEvent : PrintMapEvent {
+    data class UpdateZoom(val newZoom: Int) : SettingEvent
+    data object GetTilesCount : SettingEvent
+    data class UpdateQuality(val newQuality: Int) : SettingEvent
+    data class UpdateMap(val map: MapItem) : SettingEvent
+    data object StartDownloadingMap : SettingEvent
 }
-sealed interface SettingEffect: PrintMapEffect {
+
+sealed interface SettingEffect : PrintMapEffect {
     data class StartFormingAMap(
         val maps: List<MapItem>,
         val boundingBox: BoundingBox,
         val zoom: Int,
-        val quality: Int
-    ): SettingEffect
+        val quality: Int,
+        val objects: Map<MapObjectStyle, List<MapObject>>,
+        ) : SettingEffect
 }

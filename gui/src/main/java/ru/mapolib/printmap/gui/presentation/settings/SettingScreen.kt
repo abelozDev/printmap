@@ -41,6 +41,8 @@ import kotlinx.coroutines.flow.onEach
 import ru.maplyb.printmap.R
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.MapItem
+import ru.maplyb.printmap.api.model.MapObject
+import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.api.model.MapType
 import ru.mapolib.printmap.gui.utils.formatSize
 import kotlin.math.roundToInt
@@ -50,7 +52,14 @@ internal fun DownloadMapSettingsScreen(
     boundingBox: BoundingBox,
     maps: List<MapItem>,
     zoom: Int,
-    startFormingAMap: (maps: List<MapItem>, boundingBox: BoundingBox, zoom: Int, quality: Int) -> Unit
+    objects: Map<MapObjectStyle, List<MapObject>>,
+    startFormingAMap: (
+        maps: List<MapItem>,
+        boundingBox: BoundingBox,
+        zoom: Int,
+        quality: Int,
+        objects: Map<MapObjectStyle, List<MapObject>>,
+    ) -> Unit
 ) {
     if (zoom !in 0..28) throw IllegalArgumentException("zoom must be in 0..28")
     val viewModel = viewModel<SettingViewModel>(
@@ -59,7 +68,8 @@ internal fun DownloadMapSettingsScreen(
             boundingBox = boundingBox,
             maps = maps.map {
                 it.copy(selected = zoom in it.zoomMin..it.zoomMax)
-            }
+            },
+            objects = objects
         )
     )
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -70,7 +80,8 @@ internal fun DownloadMapSettingsScreen(
                     it.maps,
                     it.boundingBox,
                     it.zoom,
-                    it.quality
+                    it.quality,
+                    it.objects
                 )
             }
         }
@@ -276,7 +287,8 @@ private fun PreviewDownloadMapSettingsScreen() {
         ),
         maps = emptyList(),
         zoom = 10,
-        { _, _, _, _ ->
+        objects = mapOf(),
+        { _, _, _, _, _ ->
 
         }
     )

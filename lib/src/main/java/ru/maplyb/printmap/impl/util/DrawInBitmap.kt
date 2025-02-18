@@ -6,6 +6,8 @@ import android.graphics.Color
 import android.graphics.Paint
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.GeoPoint
+import ru.maplyb.printmap.api.model.MapObject
+import ru.maplyb.printmap.api.model.MapObjectStyle
 
 class DrawInBitmap {
     fun myConvertGeoToPixel(
@@ -41,37 +43,39 @@ class DrawInBitmap {
     fun draw(
         bitmap: Bitmap,
         boundingBox: BoundingBox,
-        lines: List<GeoPoint>,
+        objects: Map<MapObjectStyle, List<MapObject>>,
         zoom: Int,
     ): Bitmap {
         val canvas = Canvas(bitmap)
-        val paint = Paint().apply {
-            color = Color.BLUE    // Цвет линии
-            strokeWidth = 5f     // Толщина линии
-            isAntiAlias = true   // Убираем зазубрины на линиях
+        objects.forEach { (style, objects) ->
+            val paint = Paint().apply {
+                color = style.color    // Цвет линии
+                strokeWidth = style.width     // Толщина линии
+                isAntiAlias = true   // Убираем зазубрины на линиях
+            }
+            val linesInPixels = objects.map {
+                myConvertGeoToPixel(
+                    it.position.latitude,
+                    it.position.longitude,
+                    zoom,
+                    boundingBox,
+                    tileSize = 256,
+                    bitmapWidth = bitmap.width,
+                    bitmapHeight = bitmap.height
+                )
+            }
+            for (i in 1..linesInPixels.lastIndex) {
+                val start = linesInPixels[i - 1]
+                val end = linesInPixels[i]
+                // Преобразование GeoPoint в пиксели (понадобится функция преобразования)
+                val startX = start.first
+                val startY = start.second
+                val endX = end.first
+                val endY = end.second
+                // Рисуем линию между двумя точками
+                canvas.drawLine(startX, startY, endX, endY, paint)
+            }
         }
-        val linesInPixels = lines.map {
-            myConvertGeoToPixel(
-                it.latitude,
-                it.longitude,
-                zoom,
-                boundingBox,
-                tileSize = 255,
-                bitmapWidth = bitmap.width,
-                bitmapHeight = bitmap.height
-            )
-        }
-        for (i in 1..linesInPixels.lastIndex) {
-            val start = linesInPixels[i - 1]
-            val end = linesInPixels[i]
-            // Преобразование GeoPoint в пиксели (понадобится функция преобразования)
-            val startX = start.first
-            val startY = start.second
-            val endX = end.first
-            val endY = end.second
-            // Рисуем линию между двумя точками
-            canvas.drawLine(startX, startY, endX, endY, paint)
-        }
-        return bitmap
+            return bitmap
     }
 }
