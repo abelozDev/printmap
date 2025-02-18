@@ -61,6 +61,31 @@ internal class GeoCalculator {
         val yTile = ((1.0 - asinh(tan(latRad)) / Math.PI) / 2.0 * n).toInt()
         return xTile to yTile
     }
+    fun tilesToBoundingBox(tiles: List<TileParams>, zoom: Int): BoundingBox {
+        // Находим минимальные и максимальные значения x и y
+        val xMin = tiles.minOf { it.x }
+        val yMin = tiles.minOf { it.y }
+        val xMax = tiles.maxOf { it.x }
+        val yMax = tiles.maxOf { it.y }
+
+        // Преобразуем крайние значения в географические координаты
+        val bottomLeft = numToDeg(xMin, yMax + 1, zoom) // Добавляем 1 к yMax для нижней границы
+        val topRight = numToDeg(xMax + 1, yMin, zoom) // Добавляем 1 к xMax для правой границы
+
+        return BoundingBox(
+            latNorth = topRight.latitude,
+            lonWest = bottomLeft.longitude,
+            latSouth = bottomLeft.latitude,
+            lonEast = topRight.longitude
+        )
+    }
+    fun numToDeg(x: Int, y: Int, zoom: Int): GeoPoint {
+        val n = 1 shl zoom // 2^zoom
+        val lon = x / n.toDouble() * 360.0 - 180.0
+        val latRad = Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n.toDouble())))
+        val lat = Math.toDegrees(latRad)
+        return GeoPoint(lat, lon)
+    }
 
 
     fun boundingBoxToTiles(bbox: BoundingBox, zoom: Int): List<Pair<Int, Int>> {

@@ -4,15 +4,11 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.util.Log
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.GeoPoint
-import kotlin.math.ln
-import kotlin.math.sin
 
 class DrawInBitmap {
-
-    fun convertGeoToPixel(
+    fun myConvertGeoToPixel(
         lat: Double,
         lon: Double,
         zoom: Int,
@@ -21,52 +17,22 @@ class DrawInBitmap {
         bitmapWidth: Int,
         bitmapHeight: Int
     ): Pair<Float, Float> {
-        val tilesCount = 1 shl zoom
-
-        // Преобразуем долготу в координаты X (в пикселях)
-        val x = (lon - boundingBox.lonWest) / (boundingBox.lonEast - boundingBox.lonWest) * tilesCount
-
-        // Преобразуем широту в координаты Y с использованием проекции Mercator
-        val sinLat = sin(Math.toRadians(lat))
-        val y = (1.0 - ln((1.0 + sinLat) / (1.0 - sinLat)) / (2.0 * Math.PI)) * tilesCount / 2.0
-
-        // Преобразуем в пиксели, с учетом размера тайла
-        val pixelX = (x * tileSize).toFloat()
-        val pixelY = (y * tileSize).toFloat()
-
-        // Масштабируем координаты относительно размеров изображения
-        val normalizedX = (pixelX / (tileSize * tilesCount)) * bitmapWidth
-        val normalizedY = (pixelY / (tileSize * tilesCount)) * bitmapHeight
-
-        // Логируем результаты
-        Log.d("GeoToPixel", "GeoCoords: ($lat, $lon), PixelCoords: ($pixelX, $pixelY)")
-        Log.d("GeoToPixel", "Normalized PixelCoords: ($normalizedX, $normalizedY)")
-
-        return normalizedX.coerceIn(0f, bitmapWidth.toFloat()) to normalizedY.coerceIn(
-            0f,
-            bitmapHeight.toFloat()
-        )
-    }
-
-    fun myConvertGeoToPixel(lat: Double,
-                            lon: Double,
-                            zoom: Int,
-                            boundingBox: BoundingBox,
-                            tileSize: Int,
-                            bitmapWidth: Int,
-                            bitmapHeight: Int): Pair<Float, Float>{
 
         val pointMercator = GeoCalculator().degreeToMercator(GeoPoint(lat, lon))
-        val leftTopPoint = GeoCalculator().degreeToMercator(GeoPoint(boundingBox.latNorth, boundingBox.lonEast))
-        val rightBottomPoint = GeoCalculator().degreeToMercator(GeoPoint(boundingBox.latSouth, boundingBox.lonWest))
+        val leftTopPoint =
+            GeoCalculator().degreeToMercator(GeoPoint(boundingBox.latNorth, boundingBox.lonEast))
+        val rightBottomPoint =
+            GeoCalculator().degreeToMercator(GeoPoint(boundingBox.latSouth, boundingBox.lonWest))
 
-        val lengthX = maxOf(rightBottomPoint.x - leftTopPoint.x, leftTopPoint.x - rightBottomPoint.x)
-        val lengthY = maxOf(leftTopPoint.y - rightBottomPoint.y, rightBottomPoint.y - leftTopPoint.y)
-        val pixelSizeX = lengthX/bitmapWidth
-        val pixelSizeY = lengthY/bitmapHeight
+        val lengthX =
+            maxOf(rightBottomPoint.x - leftTopPoint.x, leftTopPoint.x - rightBottomPoint.x)
+        val lengthY =
+            maxOf(leftTopPoint.y - rightBottomPoint.y, rightBottomPoint.y - leftTopPoint.y)
+        val pixelSizeX = lengthX / bitmapWidth
+        val pixelSizeY = lengthY / bitmapHeight
         val maxX = minOf(leftTopPoint.x, rightBottomPoint.x)
-        val pointPixelX = ((pointMercator.x - maxX)/pixelSizeX).toFloat()
-        val pointPixelY = ((leftTopPoint.y - pointMercator.y)/pixelSizeY).toFloat()
+        val pointPixelX = ((pointMercator.x - maxX) / pixelSizeX).toFloat()
+        val pointPixelY = ((leftTopPoint.y - pointMercator.y) / pixelSizeY).toFloat()
 
         return pointPixelX to pointPixelY
     }

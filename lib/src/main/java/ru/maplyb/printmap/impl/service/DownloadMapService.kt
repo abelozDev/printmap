@@ -118,9 +118,11 @@ internal class DownloadMapService : Service() {
                                     49.00163585767624, 34.47819411725312
                                 )
                             )
+                            val currentBound = GeoCalculator().tilesToBoundingBox(tiles, zoom)
                             val bitmapWithDraw = DrawInBitmap().draw(
                                 bitmap = it!!,
-                                bound,
+                                currentBound
+                                /*bound*/,
                                 lines = lines,
                                 zoom = zoom
                             )

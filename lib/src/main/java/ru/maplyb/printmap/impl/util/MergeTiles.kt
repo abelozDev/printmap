@@ -32,8 +32,8 @@ internal class MergeTiles {
         zoom: Int
     ): Result<Bitmap?> {
         return runCatching {
-            val horizontalSize = (maxX - minX).coerceAtLeast(1)
-            val verticalSize = (maxY - minY).coerceAtLeast(1)
+            val horizontalSize = (maxX + 1 - minX).coerceAtLeast(1)
+            val verticalSize = (maxY + 1 - minY).coerceAtLeast(1)
 
             val resultWidth = 256 * horizontalSize
             val resultHeight = 256 * verticalSize
@@ -73,9 +73,12 @@ internal class MergeTiles {
                         for (x in minX..maxX) {
                             val tile =
                                 bitmapsWithCoords?.find { it.first == x && it.second == y }?.third
+
                             val xOffset = (x - minX) * 255
+
                             val yOffset =
-                                if ((newMaxY > newMinY)) (y - newMinY) * 255 else (newMinY - y) * 255
+                                if (newMaxY > newMinY) (y - newMinY) * 255 else (newMinY - y) * 255
+
                             if (tile != null) {
                                 canvas.drawBitmap(tile, xOffset.toFloat(), yOffset.toFloat(), paint)
                             }
