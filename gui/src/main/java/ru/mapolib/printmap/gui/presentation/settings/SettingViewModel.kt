@@ -90,18 +90,27 @@ internal class SettingViewModel(
             SettingEvent.StartDownloadingMap -> {
                 startDownloadingMap()
             }
+
+            SettingEvent.ShowPolylineChanged -> {
+                _state.update {
+                    it.copy(
+                        showPolyline = !it.showPolyline
+                    )
+                }
+            }
         }
     }
 
     private fun startDownloadingMap() {
         viewModelScope.launch {
+            val showPolyline = if (_state.value.showPolyline) _state.value.objects else emptyMap()
             onEffect(
                 SettingEffect.StartFormingAMap(
                     maps = _state.value.maps,
                     boundingBox = _state.value.boundingBox,
                     zoom = _state.value.zoom,
                     quality = _state.value.quality,
-                    objects = _state.value.objects
+                    objects = showPolyline
                 )
             )
         }

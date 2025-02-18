@@ -19,6 +19,7 @@ data class SettingUiState(
     val zoom: Int,
     val quality: Int = 100,
     val maps: List<MapItem>,
+    val showPolyline: Boolean = true,
     val objects: Map<MapObjectStyle, List<MapObject>>,
     val tilesCount: Int,
     val boundingBox: BoundingBox,
@@ -35,6 +36,7 @@ sealed interface SettingEvent : PrintMapEvent {
     data class UpdateQuality(val newQuality: Int) : SettingEvent
     data class UpdateMap(val map: MapItem) : SettingEvent
     data object StartDownloadingMap : SettingEvent
+    data object ShowPolylineChanged: SettingEvent
 }
 
 sealed interface SettingEffect : PrintMapEffect {

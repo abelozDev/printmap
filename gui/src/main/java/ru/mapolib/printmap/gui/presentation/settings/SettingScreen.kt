@@ -172,6 +172,20 @@ internal fun DownloadMapSettingsScreen(
                 //todo
             }
         )
+        Row {
+            Text(
+                modifier = Modifier
+                    .padding(8.dp),
+                text = stringResource(ru.mapolib.printmap.gui.R.string.show_polyline)
+            )
+            Spacer(Modifier.weight(1f))
+            Checkbox(
+                checked = state.showPolyline,
+                onCheckedChange = {
+                    viewModel.sendEvent(SettingEvent.ShowPolylineChanged)
+                }
+            )
+        }
         Row(
             modifier = Modifier
                 .clickable {

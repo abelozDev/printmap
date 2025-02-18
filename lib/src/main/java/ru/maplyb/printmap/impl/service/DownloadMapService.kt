@@ -113,14 +113,15 @@ internal class DownloadMapService : Service() {
                         ).onSuccess {
                             //50.38030022353232, 30.226485489123323
                             //49.00163585767624, 34.47819411725312
+
                             val currentBound = GeoCalculator().tilesToBoundingBox(tiles, zoom)
-                            val bitmapWithDraw = DrawInBitmap().draw(
+                            val bitmapWithDraw = if (objects.isNotEmpty()) DrawInBitmap().draw(
                                 bitmap = it!!,
                                 currentBound
                                 /*bound*/,
                                 objects = objects,
                                 zoom = zoom
-                            )
+                            ) else it!!
                             saveBitmapToExternalStorage(
                                 context = this@DownloadMapService,
                                 bitmap = bitmapWithDraw,
