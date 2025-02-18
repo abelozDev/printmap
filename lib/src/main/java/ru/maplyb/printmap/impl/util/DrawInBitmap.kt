@@ -13,9 +13,7 @@ class DrawInBitmap {
     fun myConvertGeoToPixel(
         lat: Double,
         lon: Double,
-        zoom: Int,
         boundingBox: BoundingBox,
-        tileSize: Int,
         bitmapWidth: Int,
         bitmapHeight: Int
     ): Pair<Float, Float> {
@@ -57,9 +55,7 @@ class DrawInBitmap {
                 myConvertGeoToPixel(
                     it.position.latitude,
                     it.position.longitude,
-                    zoom,
                     boundingBox,
-                    tileSize = 256,
                     bitmapWidth = bitmap.width,
                     bitmapHeight = bitmap.height
                 )

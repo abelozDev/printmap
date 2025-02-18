@@ -1132,7 +1132,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             MapObjectStyle(
                 color = android.graphics.Color.RED,
                 width = 5f
-            ) to listOf(
+            ) to lines/*listOf(
                 MapObject(
                     name = "qwe",
                     position = GeoPoint(
@@ -1147,7 +1147,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                     ),
                     isVisible = true
                 )
-            )
+            )*/
         )
         val list = listOf(item, local)
         btn.setOnClickListener {
@@ -1162,7 +1162,11 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                         ),
                         maps = list,
                         zoom = 10,
-                        objects = objects
+                        objects = objects.map {
+                            it.key to it.value.map {
+                                MapObject(it)
+                            }
+                        }.toMap()
                     )
                 }
 
