@@ -11,8 +11,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.domain.MapPrint
 import ru.maplyb.printmap.api.model.BoundingBox
+import ru.maplyb.printmap.api.model.Line
 import ru.maplyb.printmap.api.model.MapItem
-import ru.maplyb.printmap.api.model.MapObject
 import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.util.DestroyLifecycleCallback
@@ -103,7 +103,7 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
         maps: List<MapItem>,
         boundingBox: BoundingBox,
         zoom: Int,
-        objects: Map<MapObjectStyle, List<MapObject>>,
+        objects: List<Line>,
         quality: Int
     ) {
         mapPrint?.startFormingAMap(maps, boundingBox, objects, zoom, quality)
@@ -112,7 +112,7 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
     override fun prepareDownloading(
         boundingBox: BoundingBox,
         maps: List<MapItem>,
-        objects: Map<MapObjectStyle, List<MapObject>>,
+        objects: List<Line>,
         zoom: Int
     ) {
         val modifiedMaps = maps
@@ -134,7 +134,7 @@ sealed interface DownloadMapState {
         val boundingBox: BoundingBox,
         val maps: List<MapItem>,
         val zoom: Int,
-        val objects: Map<MapObjectStyle, List<MapObject>>,
+        val objects: List<Line>,
         override val isOpen: Boolean = false
     ) : DownloadMapState {
         override fun hide(): DownloadMapState {

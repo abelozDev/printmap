@@ -11,9 +11,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.BoundingBox
+import ru.maplyb.printmap.api.model.Line
 import ru.maplyb.printmap.api.model.MapItem
-import ru.maplyb.printmap.api.model.MapObject
-import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.use_case.GetTilesCountAndFileSizeUseCase
 import ru.mapolib.printmap.gui.presentation.util.PrintMapViewModel
@@ -23,7 +22,7 @@ internal class SettingViewModel(
     zoom: Int,
     boundingBox: BoundingBox,
     maps: List<MapItem>,
-    objects: Map<MapObjectStyle, List<MapObject>>,
+    objects: List<Line>,
 ) : PrintMapViewModel<SettingEvent, SettingEffect>() {
 
     private val _state = MutableStateFlow(
@@ -103,7 +102,7 @@ internal class SettingViewModel(
 
     private fun startDownloadingMap() {
         viewModelScope.launch {
-            val showPolyline = if (_state.value.showPolyline) _state.value.objects else emptyMap()
+            val showPolyline = if (_state.value.showPolyline) _state.value.objects else emptyList()
             onEffect(
                 SettingEffect.StartFormingAMap(
                     maps = _state.value.maps,
@@ -153,7 +152,7 @@ internal class SettingViewModel(
             zoom: Int,
             boundingBox: BoundingBox,
             maps: List<MapItem>,
-            objects: Map<MapObjectStyle, List<MapObject>>,
+            objects: List<Line>,
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 if (modelClass.isAssignableFrom(SettingViewModel::class.java)) {

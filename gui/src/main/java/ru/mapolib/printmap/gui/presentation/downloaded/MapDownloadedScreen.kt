@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -38,6 +39,9 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
@@ -46,6 +50,7 @@ import kotlinx.coroutines.flow.onEach
 import ru.maplyb.printmap.api.domain.MapPrint
 import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.mapolib.printmap.gui.halpers.share.sendImageAsFile
+import ru.mapolib.printmap.gui.presentation.settings.SettingViewModel
 
 import ru.mapolib.printmap.gui.utils.createBitmaps
 import ru.mapolib.printmap.gui.utils.formatSize
@@ -56,11 +61,24 @@ internal fun MapDownloadedScreen(
     onDeleteMap: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val viewModel = viewModel<MapDownloadedViewModel>(
+    val downloadedViewModelStore = remember { ViewModelStore() }
+    val downloadedViewModelStoreOwner = remember {
+        object : ViewModelStoreOwner {
+            override val viewModelStore: ViewModelStore
+                get() = downloadedViewModelStore
+        }
+    }
+    val viewModel = ViewModelProvider(
+        owner = downloadedViewModelStoreOwner,
         factory = MapDownloadedViewModel.create(path)
-    )
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    )[MapDownloadedViewModel::class.java]
 
+    DisposableEffect(Unit) {
+        onDispose {
+            downloadedViewModelStore.clear()
+        }
+    }
+    val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
         viewModel
             .effect

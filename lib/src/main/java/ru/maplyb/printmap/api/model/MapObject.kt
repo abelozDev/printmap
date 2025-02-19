@@ -5,3 +5,8 @@ data class MapObject(
 //    val isVisible: Boolean,
     val position: GeoPoint
 ): java.io.Serializable
+
+data class Line(
+    val style: MapObjectStyle,
+    val objects: List<GeoPoint>
+): java.io.Serializable

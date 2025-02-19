@@ -5,17 +5,11 @@ import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ComposeView
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.GeoPoint
+import ru.maplyb.printmap.api.model.Line
 import ru.maplyb.printmap.api.model.MapItem
-import ru.maplyb.printmap.api.model.MapObject
 import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.api.model.MapType
 import ru.mapolib.printmap.gui.api.DownloadMapManager
@@ -1127,27 +1121,15 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             GeoPoint(49.70650921959129, 37.90092247913631),
             GeoPoint(49.69385604051197, 37.90368103270846),
         )
-
-        val objects = mapOf(
-            MapObjectStyle(
-                color = android.graphics.Color.RED,
-                width = 5f
-            ) to lines/*listOf(
-                MapObject(
-                    name = "qwe",
-                    position = GeoPoint(
-                        50.38030022353232, 30.226485489123323
-                    ),
-                    isVisible = true
+        val objects = listOf(
+            Line(
+                MapObjectStyle(
+                    color = android.graphics.Color.RED,
+                    width = 5f,
+                    name = "qwe"
                 ),
-                MapObject(
-                    name = "ewq",
-                    position = GeoPoint(
-                        49.00163585767624, 34.47819411725312
-                    ),
-                    isVisible = true
-                )
-            )*/
+                lines
+            )
         )
         val list = listOf(item, local)
         btn.setOnClickListener {
@@ -1162,11 +1144,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                         ),
                         maps = list,
                         zoom = 10,
-                        objects = objects.map {
-                            it.key to it.value.map {
-                                MapObject(it)
-                            }
-                        }.toMap()
+                        objects = objects
                     )
                 }
 

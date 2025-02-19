@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -22,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,14 +37,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import ru.maplyb.printmap.R
 import ru.maplyb.printmap.api.model.BoundingBox
+import ru.maplyb.printmap.api.model.Line
 import ru.maplyb.printmap.api.model.MapItem
-import ru.maplyb.printmap.api.model.MapObject
 import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.api.model.MapType
 import ru.mapolib.printmap.gui.utils.formatSize
@@ -52,17 +58,25 @@ internal fun DownloadMapSettingsScreen(
     boundingBox: BoundingBox,
     maps: List<MapItem>,
     zoom: Int,
-    objects: Map<MapObjectStyle, List<MapObject>>,
+    objects: List<Line>,
     startFormingAMap: (
         maps: List<MapItem>,
         boundingBox: BoundingBox,
         zoom: Int,
         quality: Int,
-        objects: Map<MapObjectStyle, List<MapObject>>,
+        objects: List<Line>,
     ) -> Unit
 ) {
+    val settingsViewModelStore = remember { ViewModelStore() }
+    val settingsViewModelStoreOwner = remember {
+        object : ViewModelStoreOwner {
+            override val viewModelStore: ViewModelStore
+                get() = settingsViewModelStore
+        }
+    }
     if (zoom !in 0..28) throw IllegalArgumentException("zoom must be in 0..28")
-    val viewModel = viewModel<SettingViewModel>(
+    val viewModel = ViewModelProvider(
+        owner = settingsViewModelStoreOwner,
         factory = SettingViewModel.create(
             zoom = zoom,
             boundingBox = boundingBox,
@@ -71,7 +85,12 @@ internal fun DownloadMapSettingsScreen(
             },
             objects = objects
         )
-    )
+    )[SettingViewModel::class.java]
+    DisposableEffect(Unit) {
+        onDispose {
+            settingsViewModelStore.clear()
+        }
+    }
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
         viewModel.effect.onEach {
@@ -93,6 +112,7 @@ internal fun DownloadMapSettingsScreen(
     Column(
         modifier = Modifier
             .padding(16.dp)
+            .verticalScroll(rememberScrollState())
     ) {
         Text(
             text = stringResource(R.string.settings_header),
@@ -301,7 +321,7 @@ private fun PreviewDownloadMapSettingsScreen() {
         ),
         maps = emptyList(),
         zoom = 10,
-        objects = mapOf(),
+        objects = emptyList(),
         { _, _, _, _, _ ->
 
         }

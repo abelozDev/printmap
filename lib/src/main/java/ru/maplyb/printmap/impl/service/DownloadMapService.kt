@@ -22,9 +22,8 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.GeoPoint
+import ru.maplyb.printmap.api.model.Line
 import ru.maplyb.printmap.api.model.MapItem
-import ru.maplyb.printmap.api.model.MapObject
-import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
@@ -72,7 +71,7 @@ internal class DownloadMapService : Service() {
         mapList: List<MapItem>,
         bound: BoundingBox,
         zoom: Int,
-        objects: Map<MapObjectStyle, List<MapObject>>,
+        objects: List<Line>,
         quality: Int
     ) {
         coroutineScope.launch {
@@ -117,10 +116,8 @@ internal class DownloadMapService : Service() {
                             val currentBound = GeoCalculator().tilesToBoundingBox(tiles, zoom)
                             val bitmapWithDraw = if (objects.isNotEmpty()) DrawInBitmap().draw(
                                 bitmap = it!!,
-                                currentBound
-                                /*bound*/,
+                                currentBound,
                                 objects = objects,
-                                zoom = zoom
                             ) else it!!
                             saveBitmapToExternalStorage(
                                 context = this@DownloadMapService,
@@ -178,7 +175,7 @@ internal class DownloadMapService : Service() {
             val quality = intent.getIntExtra(ZOOM_ARG, 0)
             val mapList = intent.serializable(MAP_LIST_ARG) as? ArrayList<MapItem>
                 ?: throw TypeCastException("Fail cast to MapItem")
-            val objects = intent.serializable(OBJECTS_ARG) as? HashMap<MapObjectStyle, List<MapObject>>
+            val objects = intent.serializable(OBJECTS_ARG) as? ArrayList<Line>
                 ?: throw TypeCastException("Fail cast to MapItem")
             val bound = intent.serializable(BOUND_ARG) as? BoundingBox
                 ?: throw TypeCastException("fail cast to BoundingBox")

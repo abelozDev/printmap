@@ -25,6 +25,10 @@ abstract class PrintMapViewModel<Event : PrintMapEvent, Effect : PrintMapEffect>
         }
     }
 
+    override fun onCleared() {
+        super.onCleared()
+        println("onCleared ${this.javaClass.simpleName}")
+    }
     fun sendEvent(event: Event) {
         consumeEvent(event)
     }

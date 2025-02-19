@@ -1,9 +1,8 @@
 package ru.mapolib.printmap.gui.presentation.settings
 
 import ru.maplyb.printmap.api.model.BoundingBox
+import ru.maplyb.printmap.api.model.Line
 import ru.maplyb.printmap.api.model.MapItem
-import ru.maplyb.printmap.api.model.MapObject
-import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.mapolib.printmap.gui.presentation.util.PrintMapEffect
 import ru.mapolib.printmap.gui.presentation.util.PrintMapEvent
 
@@ -20,7 +19,7 @@ data class SettingUiState(
     val quality: Int = 100,
     val maps: List<MapItem>,
     val showPolyline: Boolean = true,
-    val objects: Map<MapObjectStyle, List<MapObject>>,
+    val objects: List<Line>,
     val tilesCount: Int,
     val boundingBox: BoundingBox,
     val progress: Boolean = false
@@ -45,6 +44,6 @@ sealed interface SettingEffect : PrintMapEffect {
         val boundingBox: BoundingBox,
         val zoom: Int,
         val quality: Int,
-        val objects: Map<MapObjectStyle, List<MapObject>>,
+        val objects: List<Line>,
         ) : SettingEffect
 }

@@ -164,6 +164,27 @@ internal class GeoCalculator {
 
         return GeoPointMercator(targetCoord.x, targetCoord.y)
     }
+    fun degreeToMercator(points: List<GeoPoint>): List<GeoPointMercator> {
+        val crsFactory = CRSFactory()
+        val crsDegree = crsFactory.createFromName("EPSG:4326") // WGS 84 (широта/долгота)
+        val crsMercator = crsFactory.createFromName("EPSG:3857") // Web Mercator
+        val transformFactory = CoordinateTransformFactory()
+        val transform: CoordinateTransform = transformFactory.createTransform(crsDegree, crsMercator)
+        val result = mutableListOf<GeoPointMercator>()
+        points.forEach {
+            val sourceCoord = ProjCoordinate(it.longitude, it.latitude) // Порядок: долгота, широта
+            val targetCoord = ProjCoordinate()
+            try {
+                transform.transform(sourceCoord, targetCoord)
+            } catch (e: Proj4jException) {
+                e.printStackTrace()
+                // Возвращаем значение по умолчанию или выбрасываем исключение
+                throw RuntimeException("Failed to transform coordinates: ${e.message}")
+            }
+            result.add(GeoPointMercator(targetCoord.x, targetCoord.y))
+        }
+        return result
+    }
 
     fun mercatorToDegree(point: GeoPointMercator): GeoPoint {
         val crsFactory = CRSFactory()
