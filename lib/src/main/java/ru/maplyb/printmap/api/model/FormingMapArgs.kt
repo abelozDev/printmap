@@ -5,7 +5,7 @@ import java.io.Serializable
 data class FormingMapArgs(
     val mapList: List<MapItem>,
     val bound: BoundingBox,
-    val objects: List<Layer>,
+    val layers: List<Layer>,
     val zoom: Int,
     val quality: Int,
     val author: String

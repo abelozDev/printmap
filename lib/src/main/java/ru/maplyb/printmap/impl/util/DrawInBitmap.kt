@@ -8,35 +8,44 @@ import kotlinx.coroutines.withContext
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.Layer
+import ru.maplyb.printmap.api.model.LayerObject
 
 class DrawInBitmap {
 
     suspend fun drawLayers(
         bitmap: Bitmap,
         boundingBox: BoundingBox,
-        objects: List<Layer>,
+        layers: List<Layer>,
     ): Bitmap {
         val canvas = Canvas(bitmap)
-        objects.forEach { layer ->
-            when(layer) {
-                is Layer.Line -> drawLine(
-                    canvas = canvas,
-                    bitmap = bitmap,
-                    boundingBox = boundingBox,
-                    objects = layer
-                )
-                is Layer.Polygon -> drawPolygon(
-                    bitmap = bitmap,
-                    boundingBox = boundingBox,
-                    objects = layer
-                )
-                is Layer.Radius -> TODO()
+        layers
+            .flatMap { it.objects }
+            .forEach { objects ->
+                when(objects) {
+                    is LayerObject.Line -> drawLine(
+                        canvas = canvas,
+                        bitmap = bitmap,
+                        boundingBox = boundingBox,
+                        objects = objects
+                    )
+                    is LayerObject.Polygon -> drawPolygon(
+                        bitmap = bitmap,
+                        boundingBox = boundingBox,
+                        objects = objects
+                    )
+                    is LayerObject.Radius -> TODO()
+                    is LayerObject.Text -> drawTextOnBitmap(
+                        canvas = canvas,
+                        bitmap = bitmap,
+                        boundingBox = boundingBox,
+                        text = objects
+                    )
+                }
             }
-        }
         return bitmap
     }
 
-    fun myConvertGeoToPixel(
+    fun convertGeoToPixel(
         objects: List<GeoPoint>,
         boundingBox: BoundingBox,
         bitmapWidth: Int,
@@ -66,7 +75,7 @@ class DrawInBitmap {
     suspend fun drawPolygon(
         bitmap: Bitmap,
         boundingBox: BoundingBox,
-        objects: Layer.Polygon,
+        objects: LayerObject.Polygon,
     ): Bitmap {
         return withContext(Dispatchers.Default) {
             val canvas = Canvas(bitmap)
@@ -75,7 +84,7 @@ class DrawInBitmap {
                 strokeWidth = objects.style.width     // Толщина линии
                 isAntiAlias = true   // Убираем зазубрины на линиях
             }
-            val pointsInPixels = myConvertGeoToPixel(
+            val pointsInPixels = convertGeoToPixel(
                 objects.objects,
                 boundingBox,
                 bitmapWidth = bitmap.width,
@@ -83,7 +92,7 @@ class DrawInBitmap {
             )
             for (i in 1..pointsInPixels.size) {
                 val (start, end) = if (i == pointsInPixels.size) {
-                    pointsInPixels[0] to pointsInPixels[i-1]
+                    pointsInPixels[0] to pointsInPixels[i - 1]
                 } else {
                     pointsInPixels[i - 1] to pointsInPixels[i]
                 }
@@ -103,7 +112,7 @@ class DrawInBitmap {
         canvas: Canvas,
         bitmap: Bitmap,
         boundingBox: BoundingBox,
-        objects: Layer.Line,
+        objects: LayerObject.Line,
     ) {
         withContext(Dispatchers.Default) {
             val startTime = System.currentTimeMillis()
@@ -112,7 +121,7 @@ class DrawInBitmap {
                 strokeWidth = objects.style.width     // Толщина линии
                 isAntiAlias = true   // Убираем зазубрины на линиях
             }
-            val linesInPixels = myConvertGeoToPixel(
+            val linesInPixels = convertGeoToPixel(
                 objects.objects,
                 boundingBox,
                 bitmapWidth = bitmap.width,
@@ -130,5 +139,31 @@ class DrawInBitmap {
                 canvas.drawLine(startX, startY, endX, endY, paint)
             }
         }
+    }
+
+    fun drawTextOnBitmap(
+        canvas: Canvas,
+        bitmap: Bitmap,
+        boundingBox: BoundingBox,
+        text: LayerObject.Text,
+    ) {
+        val linesInPixels = convertGeoToPixel(
+            listOf(text.coords),
+            boundingBox,
+            bitmapWidth = bitmap.width,
+            bitmapHeight = bitmap.height
+        )
+        val paint = Paint().apply {
+            color = text.style.color
+            this.textSize = text.style.width
+            isAntiAlias = true
+            textAlign = Paint.Align.LEFT
+        }
+
+        canvas.save()
+        canvas.translate(linesInPixels.first().first, linesInPixels.first().second)
+        canvas.rotate(text.angle)
+        canvas.drawText(text.text, 0f, 0f, paint)
+        canvas.restore()
     }
 }

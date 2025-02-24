@@ -95,7 +95,7 @@ fun MainScreen() {
                                         args = FormingMapArgs(
                                             mapList = maps,
                                             bound = boundingBox,
-                                            objects = objects,
+                                            layers = objects,
                                             zoom = zoom,
                                             quality = quality,
                                             author = (state as DownloadMapState.PrepareDownloading).author

@@ -21,7 +21,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.FormingMapArgs
-import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
@@ -113,7 +112,7 @@ internal class DownloadMapService : Service() {
                             args.zoom
                         ).onSuccess { bitmap ->
                             val currentBound = GeoCalculator().tilesToBoundingBox(tiles, args.zoom)
-                            val bitmapWithDraw = if (args.objects.isNotEmpty()) {
+                            val bitmapWithDraw = if (args.layers.isNotEmpty()) {
                                 prefs?.setProgress(
                                     context = this@DownloadMapService,
                                     progress = 100,
@@ -123,7 +122,7 @@ internal class DownloadMapService : Service() {
                                 drawLayers.drawLayers(
                                     bitmap = bitmap!!,
                                     currentBound,
-                                    objects = args.objects,
+                                    layers = args.layers,
                                 )
                         } else bitmap!!
                     prefs?.setProgress(

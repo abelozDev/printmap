@@ -17,7 +17,7 @@ fun ExpandableItem(
     items: List<Expandable>,
     onChange: (Expandable) -> Unit
 ) {
-    if (items.isNotEmpty()) {
+    if (items.isNotEmpty() && items.first().header != null) {
         Text(
             modifier = Modifier.padding(
                 start = 8.dp,
@@ -25,7 +25,7 @@ fun ExpandableItem(
             ),
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
-            text = items.first().header,
+            text = items.first().header!!,
         )
     }
     items.forEach { map ->

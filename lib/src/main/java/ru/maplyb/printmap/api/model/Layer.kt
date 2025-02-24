@@ -2,31 +2,35 @@ package ru.maplyb.printmap.api.model
 
 import java.io.Serializable
 
-sealed interface Layer: Serializable, Expandable {
+data class Layer(
+    override val name: String,
+    override val selected: Boolean,
+    val objects: List<LayerObject>,
+    override val header: String? = null,
+): Serializable, Expandable
+
+sealed interface LayerObject: Serializable {
+    /*val objects: List<GeoPoint>*/
     val style: MapObjectStyle
-    override val name: String
-    override val selected: Boolean
     data class Line(
         override val style: MapObjectStyle,
-        override val selected: Boolean = true,
-        override val name: String,
-        override val header: String = "Линии",
         val objects: List<GeoPoint>,
-    ): Layer
+    ): LayerObject
 
     data class Polygon(
         override val style: MapObjectStyle,
-        override val selected: Boolean = true,
-        override val name: String,
-        override val header: String = "Полигоны",
         val objects: List<GeoPoint>,
-    ): Layer
+    ): LayerObject
 
     data class Radius(
-        override val name: String,
-        override val selected: Boolean = true,
         override val style: MapObjectStyle,
-        override val header: String = "Радиусы",
         val objects: List<GeoPoint>,
-    ): Layer
+    ): LayerObject
+
+    data class Text(
+        val coords: GeoPoint,
+        val text: String,
+        val angle: Float,
+        override val style: MapObjectStyle
+    ): LayerObject
 }

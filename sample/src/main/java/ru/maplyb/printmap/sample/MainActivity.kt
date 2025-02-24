@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.ComposeView
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.Layer
+import ru.maplyb.printmap.api.model.LayerObject
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.api.model.MapType
@@ -1132,23 +1133,49 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
         )
 
         val objects = listOf(
-            Layer.Line(
-                style = MapObjectStyle(
-                    color = android.graphics.Color.RED,
-                    width = 5f,
-                    name = "qwe"
+            Layer(
+                objects = listOf(
+                    LayerObject.Line(
+                        style = MapObjectStyle(
+                            color = android.graphics.Color.RED,
+                            width = 5f,
+                            name = "qwe"
+                        ),
+                        objects = lines,
+                    )
                 ),
-                objects = lines,
-                name = "LBS"
+                name = "LBS",
+                selected = true,
             ),
-            Layer.Polygon(
-                style = MapObjectStyle(
-                    color = android.graphics.Color.BLUE,
-                    width = 5f,
-                    name = "polygon"
+            Layer(
+                objects = listOf(
+                    LayerObject.Polygon(
+                        style = MapObjectStyle(
+                            color = android.graphics.Color.BLUE,
+                            width = 5f,
+                            name = "polygon"
+                        ),
+                        objects = polygonLines,
+                    )
                 ),
-                objects = polygonLines,
+                selected = true,
                 name = "polygon"
+            ),
+            Layer(
+                objects = listOf(
+                    LayerObject.Text(
+                        style = MapObjectStyle(
+                            color = android.graphics.Color.BLUE,
+                            width = 100f,
+                            name = "text"
+                        ),
+                        text = "text",
+                        angle = 0f,
+                        coords = GeoPoint(48.36492246251455, 30.67441794587366)
+                    )
+                ),
+                selected = true,
+                name = "text"
             )
         )
         val itemToADD = MapItem(

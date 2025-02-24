@@ -52,15 +52,6 @@ fun LayersExpandable(
         )
     }
     Spacer(Modifier.height(16.dp))
-    val polygons by remember(layers) {
-        mutableStateOf(layers.filterIsInstance<Layer.Polygon>())
-    }
-    val lines by remember(layers) {
-        mutableStateOf(layers.filterIsInstance<Layer.Line>())
-    }
-    val radius by remember(layers) {
-        mutableStateOf(layers.filterIsInstance<Layer.Radius>())
-    }
     AnimatedVisibility(
         visible = isOpen,
         enter = expandVertically() + fadeIn(),
@@ -68,31 +59,11 @@ fun LayersExpandable(
     ) {
         Column {
             ExpandableItem(
-                items = lines,
-                onChange = { line ->
+                items = layers,
+                onChange = { layer ->
                     updateLayer(
-                        (line as Layer.Line).copy(
-                            selected = !line.selected
-                        )
-                    )
-                }
-            )
-            ExpandableItem(
-                items = polygons,
-                onChange = { polygon ->
-                    updateLayer(
-                        (polygon as Layer.Polygon).copy(
-                            selected = !polygon.selected
-                        )
-                    )
-                }
-            )
-            ExpandableItem(
-                items = radius,
-                onChange = { radius ->
-                    updateLayer(
-                        (radius as Layer.Radius).copy(
-                            selected = !radius.selected
+                        (layer as Layer).copy(
+                            selected = !layer.selected
                         )
                     )
                 }
