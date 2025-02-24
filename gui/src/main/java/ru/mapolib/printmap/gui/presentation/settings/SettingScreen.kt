@@ -41,15 +41,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import ru.maplyb.printmap.R
 import ru.maplyb.printmap.api.model.BoundingBox
-import ru.maplyb.printmap.api.model.Line
+import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.MapItem
-import ru.maplyb.printmap.api.model.MapObjectStyle
-import ru.maplyb.printmap.api.model.MapType
+import ru.mapolib.printmap.gui.presentation.settings.expand.LayersExpandable
+import ru.mapolib.printmap.gui.presentation.settings.expand.MapsExpandable
 import ru.mapolib.printmap.gui.utils.formatSize
 import kotlin.math.roundToInt
 
@@ -58,13 +57,13 @@ internal fun DownloadMapSettingsScreen(
     boundingBox: BoundingBox,
     maps: List<MapItem>,
     zoom: Int,
-    objects: List<Line>,
+    objects: List<Layer>,
     startFormingAMap: (
         maps: List<MapItem>,
         boundingBox: BoundingBox,
         zoom: Int,
         quality: Int,
-        objects: List<Line>,
+        objects: List<Layer>,
     ) -> Unit
 ) {
     val settingsViewModelStore = remember { ViewModelStore() }
@@ -106,9 +105,7 @@ internal fun DownloadMapSettingsScreen(
         }
             .launchIn(this)
     }
-    var isOpen by remember {
-        mutableStateOf(false)
-    }
+
     Column(
         modifier = Modifier
             .padding(16.dp)
@@ -206,63 +203,18 @@ internal fun DownloadMapSettingsScreen(
                 }
             )
         }
-        Row(
-            modifier = Modifier
-                .clickable {
-                    isOpen = !isOpen
-                }
-                .padding(vertical = 16.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.selected_maps)
-            )
-            Spacer(Modifier.weight(1f))
-            Icon(
-                imageVector = if (isOpen) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = null
-            )
-        }
-        Spacer(Modifier.height(16.dp))
-        val offlineMaps by remember(state.maps) {
-            mutableStateOf(state.maps.filter { it.type is MapType.Offline })
-        }
-        val onlineMaps by remember(state.maps) {
-            mutableStateOf(state.maps.filter { it.type is MapType.Online })
-        }
-        AnimatedVisibility(
-            visible = isOpen,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut()
-        ) {
-            Column {
-                MapTypesItem(
-                    header = stringResource(ru.mapolib.printmap.gui.R.string.offline),
-                    maps = offlineMaps,
-                    onChange = { map ->
-                        viewModel.sendEvent(
-                            SettingEvent.UpdateMap(
-                                map.copy(
-                                    selected = !map.selected
-                                )
-                            )
-                        )
-                    }
-                )
-                MapTypesItem(
-                    header = stringResource(ru.mapolib.printmap.gui.R.string.online),
-                    maps = onlineMaps,
-                    onChange = { map ->
-                        viewModel.sendEvent(
-                            SettingEvent.UpdateMap(
-                                map.copy(
-                                    selected = !map.selected
-                                )
-                            )
-                        )
-                    }
-                )
+        MapsExpandable(
+            maps = state.maps,
+            updateMap = {
+                viewModel.sendEvent(SettingEvent.UpdateMap(it))
             }
-        }
+        )
+        LayersExpandable(
+            layers = state.objects,
+            updateLayer = {
+                viewModel.sendEvent(SettingEvent.UpdateLayer(it))
+            }
+        )
         Spacer(Modifier.height(16.dp))
         Button(
             modifier = Modifier.fillMaxWidth(),
@@ -276,41 +228,28 @@ internal fun DownloadMapSettingsScreen(
         )
     }
 }
+//var isLayersOpen by remember {
+//            mutableStateOf(false)
+//        }
+//        Row(
+//            modifier = Modifier
+//                .clickable {
+//                    isLayersOpen = !isLayersOpen
+//                }
+//                .padding(vertical = 16.dp)
+//        ) {
+//            Text(
+//                text = stringResource(R.string.selected_layers)
+//            )
+//            Spacer(Modifier.weight(1f))
+//            Icon(
+//                imageVector = if (isLayersOpen) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+//                contentDescription = null
+//            )
+//        }
 
-@Composable
-private fun MapTypesItem(
-    header: String,
-    maps: List<MapItem>,
-    onChange: (MapItem) -> Unit
-) {
-    if (maps.isNotEmpty()) {
-        Text(
-            modifier = Modifier.padding(
-                start = 8.dp,
-                bottom = 16.dp
-            ),
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            text = header,
-        )
-    }
-    maps.forEach { map ->
-        Row {
-            Text(
-                modifier = Modifier
-                    .padding(8.dp),
-                text = map.name
-            )
-            Spacer(Modifier.weight(1f))
-            Checkbox(
-                checked = map.selected,
-                onCheckedChange = {
-                    onChange(map)
-                }
-            )
-        }
-    }
-}
+
+
 
 @Preview
 @Composable

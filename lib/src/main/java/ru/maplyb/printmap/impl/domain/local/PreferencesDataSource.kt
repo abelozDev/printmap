@@ -10,7 +10,7 @@ interface PreferencesDataSource {
 
     suspend fun updateDownloadStatus(context: Context, status: DownloadStatus)
     suspend fun setDownloaded(context: Context, path: String)
-    suspend fun setProgress(context: Context, progress: Int)
+    suspend fun setProgress(context: Context, progress: Int, message: String)
     suspend fun setError(context: Context, message: String)
     suspend fun remove(context: Context, path: String)
     suspend fun clear(context: Context)

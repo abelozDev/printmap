@@ -11,7 +11,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.domain.MapPrint
 import ru.maplyb.printmap.api.model.BoundingBox
-import ru.maplyb.printmap.api.model.Line
+import ru.maplyb.printmap.api.model.FormingMapArgs
+import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
@@ -68,8 +69,9 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
 
                         downloadStatus.progress != null -> {
                             DownloadMapState.Downloading(
-                                downloadStatus.progress!!,
-                                isOpen = _state.value.isOpen
+                                progress = downloadStatus.progress!!,
+                                message = downloadStatus.progressMessage ?: "",
+                                isOpen = _state.value.isOpen,
                             )
                         }
 
@@ -92,7 +94,11 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
     }
 
     override fun hide() {
-        _state.value = _state.value.hide()
+        if (_state.value is DownloadMapState.PrepareDownloading) {
+            _state.value = DownloadMapState.Idle.hide()
+        } else {
+            _state.value = _state.value.hide()
+        }
     }
 
     override fun open() {
@@ -100,19 +106,16 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
     }
 
     suspend fun startFormingAMap(
-        maps: List<MapItem>,
-        boundingBox: BoundingBox,
-        zoom: Int,
-        objects: List<Line>,
-        quality: Int
+        args: FormingMapArgs,
     ) {
-        mapPrint?.startFormingAMap(maps, boundingBox, objects, zoom, quality)
+        mapPrint?.startFormingAMap(args)
     }
 
     override fun prepareDownloading(
+        author: String,
         boundingBox: BoundingBox,
         maps: List<MapItem>,
-        objects: List<Line>,
+        objects: List<Layer>,
         zoom: Int
     ) {
         val modifiedMaps = maps
@@ -122,7 +125,7 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
                     alpha = (clampedValue * 255)
                 )
             }
-        _state.value = DownloadMapState.PrepareDownloading(boundingBox, modifiedMaps, zoom, objects, isOpen = true)
+        _state.value = DownloadMapState.PrepareDownloading(boundingBox, modifiedMaps, zoom, objects, author, isOpen = true)
     }
 }
 
@@ -134,7 +137,8 @@ sealed interface DownloadMapState {
         val boundingBox: BoundingBox,
         val maps: List<MapItem>,
         val zoom: Int,
-        val objects: List<Line>,
+        val objects: List<Layer>,
+        val author: String,
         override val isOpen: Boolean = false
     ) : DownloadMapState {
         override fun hide(): DownloadMapState {
@@ -161,6 +165,7 @@ sealed interface DownloadMapState {
 
     data class Downloading(
         val progress: Int,
+        val message: String,
         override val isOpen: Boolean = false
     ) : DownloadMapState {
         override fun hide(): DownloadMapState {

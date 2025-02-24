@@ -1,0 +1,47 @@
+package ru.mapolib.printmap.gui.presentation.settings.expand
+
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import ru.maplyb.printmap.api.model.Expandable
+
+@Composable
+fun ExpandableItem(
+    items: List<Expandable>,
+    onChange: (Expandable) -> Unit
+) {
+    if (items.isNotEmpty()) {
+        Text(
+            modifier = Modifier.padding(
+                start = 8.dp,
+                bottom = 16.dp
+            ),
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            text = items.first().header,
+        )
+    }
+    items.forEach { map ->
+        Row {
+            Text(
+                modifier = Modifier
+                    .padding(8.dp),
+                text = map.name
+            )
+            Spacer(Modifier.weight(1f))
+            Checkbox(
+                checked = map.selected,
+                onCheckedChange = {
+                    onChange(map)
+                }
+            )
+        }
+    }
+}

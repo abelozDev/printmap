@@ -3,7 +3,7 @@ package ru.mapolib.printmap.gui.api
 import android.app.Activity
 import kotlinx.coroutines.flow.StateFlow
 import ru.maplyb.printmap.api.model.BoundingBox
-import ru.maplyb.printmap.api.model.Line
+import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapObjectStyle
 
@@ -13,9 +13,10 @@ interface DownloadMapManager {
 
     suspend fun deleteMap(path: String)
     fun prepareDownloading(
+        author: String,
         boundingBox: BoundingBox,
         maps: List<MapItem>,
-        objects: List<Line>,
+        objects: List<Layer>,
         zoom: Int
     )
     fun hide()

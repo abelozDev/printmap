@@ -18,6 +18,7 @@ import ru.mapolib.printmap.gui.R
 @Composable
 fun ProgressScreen(
     progress: Int,
+    progressMessage: String,
     cancelDownloading: () -> Unit
 ) {
     Column(
@@ -29,6 +30,13 @@ fun ProgressScreen(
         Text(
             text = stringResource(ru.maplyb.printmap.R.string.progress, progress.toString())
         )
+        if (progressMessage.isNotBlank()) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = progressMessage
+            )
+        }
+
         CircularProgressIndicator(
             modifier = Modifier.padding(vertical = 8.dp)
         )

@@ -3,6 +3,7 @@ package ru.maplyb.printmap.impl.util
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
@@ -24,6 +25,7 @@ internal class MergeTiles {
     }
 
     suspend fun mergeTilesSortedByCoordinates(
+        author: String,
         tilesPaths: Map<MapItem, List<String?>>,
         minX: Int,
         maxX: Int,
@@ -85,10 +87,34 @@ internal class MergeTiles {
                         }
                     }
                 }
-                resultBitmap
+                addWatermark(resultBitmap, author)
             }
         }
     }
 
+    private fun addWatermark(
+        bitmap: Bitmap,
+        author: String
+    ): Bitmap {
+        val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(mutableBitmap)
+
+        val paint = Paint().apply {
+            color = Color.BLACK // Цвет текста
+            textSize = 24f // Размер текста
+            isAntiAlias = true // Сглаживание
+            alpha = (255/1.25).toInt()
+            setShadowLayer(15f, 10f, 10f, Color.WHITE) // Тень для текста
+        }
+
+        val textHeight = paint.descent() - paint.ascent()
+
+        val x = 10f
+        val y = mutableBitmap.height - textHeight/2
+
+        canvas.drawText(author, x, y, paint)
+
+        return mutableBitmap
+    }
 
 }

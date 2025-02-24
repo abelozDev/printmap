@@ -4,7 +4,7 @@ import ru.maplyb.printmap.impl.domain.model.TileSchema
 import java.io.Serializable
 
 data class MapItem(
-    val name: String,
+    override val name: String,
     val type: MapType,
     val isVisible: Boolean,
     val alpha: Float,
@@ -12,9 +12,9 @@ data class MapItem(
     val zoomMin: Int,
     val zoomMax: Int,
     val mapType: TileSchema = TileSchema.GOOGLE,
-    val selected: Boolean = false,
-
-): Serializable
+    override val header: String = if (type is MapType.Offline) "Оффлайн" else "Онлайн",
+    override val selected: Boolean = false,
+): Serializable, Expandable
 
 sealed class MapType: Serializable {
     abstract val path: String

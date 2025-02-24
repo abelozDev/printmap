@@ -18,6 +18,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import ru.maplyb.printmap.api.model.FormingMapArgs
 import ru.mapolib.printmap.gui.api.DownloadMapManagerImpl
 import ru.mapolib.printmap.gui.api.DownloadMapState
 import ru.mapolib.printmap.gui.presentation.downloaded.MapDownloadedScreen
@@ -53,6 +54,7 @@ fun MainScreen() {
                     is DownloadMapState.Downloading -> {
                         ProgressScreen(
                             progress = (state as DownloadMapState.Downloading).progress,
+                            progressMessage = (state as DownloadMapState.Downloading).message,
                             cancelDownloading = {
                                 downloadManager.cancelDownloading()
                             }
@@ -90,11 +92,14 @@ fun MainScreen() {
                             startFormingAMap = { maps, boundingBox, zoom, quality, objects ->
                                 scope.launch {
                                     downloadManager.startFormingAMap(
-                                        maps = maps,
-                                        boundingBox = boundingBox,
-                                        zoom = zoom,
-                                        objects = objects,
-                                        quality = quality
+                                        args = FormingMapArgs(
+                                            mapList = maps,
+                                            bound = boundingBox,
+                                            objects = objects,
+                                            zoom = zoom,
+                                            quality = quality,
+                                            author = (state as DownloadMapState.PrepareDownloading).author
+                                        )
                                     )
                                 }
                             }

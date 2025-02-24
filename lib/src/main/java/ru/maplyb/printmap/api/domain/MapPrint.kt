@@ -5,7 +5,7 @@ import android.content.Context
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.maplyb.printmap.api.model.Errors
-import ru.maplyb.printmap.api.model.Line
+import ru.maplyb.printmap.api.model.FormingMapArgs
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.MapPrintImpl
@@ -18,7 +18,6 @@ interface MapPrint {
     fun onMapReady(result: (MapPath?) -> Unit)
 
     fun cancelDownloading()
-    /*fun ShowMapPrintDialog(mapList: List<MapItem>, bound: BoundingBox, zoom: Int)*/
     suspend fun deleteExistedMap(path: String)
     suspend fun getTilesCount(
         bound: BoundingBox,
@@ -26,12 +25,7 @@ interface MapPrint {
     ): OperationResult<List<TileParams>>
 
     suspend fun startFormingAMap(
-        mapList: List<MapItem>,
-        bound: BoundingBox,
-        objects: List<Line>,
-        zoom: Int,
-        quality: Int
-        /*onResult: (List<DownloadedImage>) -> Unit*/
+        args: FormingMapArgs,
     )
     suspend fun getPreviewSize(
         mapList: List<MapItem>,

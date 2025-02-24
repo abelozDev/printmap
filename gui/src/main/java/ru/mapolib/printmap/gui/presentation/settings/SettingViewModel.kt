@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.BoundingBox
-import ru.maplyb.printmap.api.model.Line
+import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.use_case.GetTilesCountAndFileSizeUseCase
@@ -22,7 +22,7 @@ internal class SettingViewModel(
     zoom: Int,
     boundingBox: BoundingBox,
     maps: List<MapItem>,
-    objects: List<Line>,
+    objects: List<Layer>,
 ) : PrintMapViewModel<SettingEvent, SettingEffect>() {
 
     private val _state = MutableStateFlow(
@@ -75,7 +75,15 @@ internal class SettingViewModel(
             SettingEvent.GetTilesCount -> {
                 getTilesCount()
             }
-
+            is SettingEvent.UpdateLayer -> {
+                _state.update {
+                    it.copy(
+                        objects = it.objects.map { layer ->
+                            if (layer.name == action.layer.name) action.layer else layer
+                        },
+                    )
+                }
+            }
             is SettingEvent.UpdateMap -> {
                 _state.update {
                     it.copy(
@@ -105,11 +113,11 @@ internal class SettingViewModel(
             val showPolyline = if (_state.value.showPolyline) _state.value.objects else emptyList()
             onEffect(
                 SettingEffect.StartFormingAMap(
-                    maps = _state.value.maps,
+                    maps = _state.value.maps.filter { it.selected && it.isVisible },
                     boundingBox = _state.value.boundingBox,
                     zoom = _state.value.zoom,
                     quality = _state.value.quality,
-                    objects = showPolyline
+                    objects = showPolyline.filter { it.selected }
                 )
             )
         }
@@ -152,7 +160,7 @@ internal class SettingViewModel(
             zoom: Int,
             boundingBox: BoundingBox,
             maps: List<MapItem>,
-            objects: List<Line>,
+            objects: List<Layer>,
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 if (modelClass.isAssignableFrom(SettingViewModel::class.java)) {

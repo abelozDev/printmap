@@ -20,10 +20,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
-import ru.maplyb.printmap.api.model.BoundingBox
-import ru.maplyb.printmap.api.model.GeoPoint
-import ru.maplyb.printmap.api.model.Line
-import ru.maplyb.printmap.api.model.MapItem
+import ru.maplyb.printmap.api.model.FormingMapArgs
+import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
@@ -68,17 +66,13 @@ internal class DownloadMapService : Service() {
     }
 
     private fun downloadMap(
-        mapList: List<MapItem>,
-        bound: BoundingBox,
-        zoom: Int,
-        objects: List<Line>,
-        quality: Int
+        args: FormingMapArgs
     ) {
         coroutineScope.launch {
-            val tiles = GeoCalculator().calculateTotalTilesCount(bound, zoom).successDataOrNull()
-                ?: return@launch
-            val visibleMaps = mapList.filter { it.isVisible }
-            val fullSize = visibleMaps.size * tiles.size
+            val tiles =
+                GeoCalculator().calculateTotalTilesCount(args.bound, args.zoom).successDataOrNull()
+                    ?: return@launch
+            val fullSize = args.mapList.size * tiles.size
             startForeground(
                 DOWNLOAD_MAP_NOTIFICATION_ID,
                 createNotification(
@@ -89,127 +83,143 @@ internal class DownloadMapService : Service() {
             )
             val tileManager = DownloadTilesManager.create(this@DownloadMapService)
 
-            val downloadedTiles = tileManager.getTiles(visibleMaps, tiles, quality) {
+            val downloadedTiles = tileManager.getTiles(args.mapList, tiles, args.quality) {
                 updateNotification("Загрузка тайлов", fullSize, it)
                 prefs?.setProgress(
                     context = this@DownloadMapService,
-                    progress = (it.toFloat() / fullSize * 100).toInt()
+                    progress = (it.toFloat() / fullSize * 100).toInt(),
+                    message = "Скачивание карт"
                 )
             }
             when (downloadedTiles) {
                 is OperationResult.Error -> {
                     prefs?.setError(this@DownloadMapService, downloadedTiles.message)
                 }
+
                 is OperationResult.Success -> {
+                    prefs?.setProgress(
+                        context = this@DownloadMapService,
+                        progress = 100,
+                        message = "Формирование файла"
+                    )
                     MergeTiles()
                         .mergeTilesSortedByCoordinates(
+                            args.author,
                             downloadedTiles.data,
                             tiles.minOf { it.x },
                             tiles.maxOf { it.x },
                             tiles.minOf { it.y },
                             tiles.maxOf { it.y },
-                            zoom
-                        ).onSuccess {
-                            //50.38030022353232, 30.226485489123323
-                            //49.00163585767624, 34.47819411725312
-
-                            val currentBound = GeoCalculator().tilesToBoundingBox(tiles, zoom)
-                            val bitmapWithDraw = if (objects.isNotEmpty()) DrawInBitmap().draw(
-                                bitmap = it!!,
-                                currentBound,
-                                objects = objects,
-                            ) else it!!
-                            saveBitmapToExternalStorage(
+                            args.zoom
+                        ).onSuccess { bitmap ->
+                            val currentBound = GeoCalculator().tilesToBoundingBox(tiles, args.zoom)
+                            val bitmapWithDraw = if (args.objects.isNotEmpty()) {
+                                prefs?.setProgress(
+                                    context = this@DownloadMapService,
+                                    progress = 100,
+                                    message = "Отрисовка условных обозначений"
+                                )
+                                val drawLayers = DrawInBitmap()
+                                drawLayers.drawLayers(
+                                    bitmap = bitmap!!,
+                                    currentBound,
+                                    objects = args.objects,
+                                )
+                        } else bitmap!!
+                    prefs?.setProgress(
+                        context = this@DownloadMapService,
+                        progress = 100,
+                        message = "Сохранение файла"
+                    )
+                    saveBitmapToExternalStorage(
+                        context = this@DownloadMapService,
+                        bitmap = bitmapWithDraw,
+                        fileName = "${System.currentTimeMillis()}"
+                    )
+                        ?.let {
+                            prefs?.setDownloaded(
                                 context = this@DownloadMapService,
-                                bitmap = bitmapWithDraw,
-                                fileName = "${System.currentTimeMillis()}"
-                            )
-                                ?.let {
-                                    prefs?.setDownloaded(
-                                        context = this@DownloadMapService,
-                                        path = it
-                                    )
-                                }
-                        }
-                        .onFailure {
-                            prefs?.setError(
-                                this@DownloadMapService,
-                                "Ошибка при формировании конечного файла: ${it.message}"
+                                path = it
                             )
                         }
-                    tileManager.deleteTiles(downloadedTiles.data.values.flatten())
                 }
-            }
-            stopForeground(true)
-            stopSelf()
-        }
-    }
 
-    private fun updateNotification(message: String, maxProgress: Int, progress: Int) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ActivityCompat.checkSelfPermission(
-                    this@DownloadMapService,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                notifyNewNotification(message, maxProgress, progress)
+                    .onFailure {
+                    prefs?.setError(
+                        this@DownloadMapService,
+                        "Ошибка при формировании конечного файла: ${it.message}"
+                    )
+                }
+
+                tileManager.deleteTiles(downloadedTiles.data.values.flatten())
             }
-        } else {
+        }
+        stopForeground(true)
+        stopSelf()
+    }
+}
+
+private fun updateNotification(message: String, maxProgress: Int, progress: Int) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (ActivityCompat.checkSelfPermission(
+                this@DownloadMapService,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
             notifyNewNotification(message, maxProgress, progress)
         }
+    } else {
+        notifyNewNotification(message, maxProgress, progress)
     }
+}
 
-    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
-    private fun notifyNewNotification(message: String, maxProgress: Int, progress: Int) {
-        val updatedNotification = createNotification(
-            progressText = message,
-            maxProgress = maxProgress,
-            progress = progress
-        )
-        NotificationManagerCompat.from(this@DownloadMapService)
-            .notify(DOWNLOAD_MAP_NOTIFICATION_ID, updatedNotification)
-    }
+@RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+private fun notifyNewNotification(message: String, maxProgress: Int, progress: Int) {
+    val updatedNotification = createNotification(
+        progressText = message,
+        maxProgress = maxProgress,
+        progress = progress
+    )
+    NotificationManagerCompat.from(this@DownloadMapService)
+        .notify(DOWNLOAD_MAP_NOTIFICATION_ID, updatedNotification)
+}
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent != null) {
-            val quality = intent.getIntExtra(ZOOM_ARG, 0)
-            val mapList = intent.serializable(MAP_LIST_ARG) as? ArrayList<MapItem>
-                ?: throw TypeCastException("Fail cast to MapItem")
-            val objects = intent.serializable(OBJECTS_ARG) as? ArrayList<Line>
-                ?: throw TypeCastException("Fail cast to MapItem")
-            val bound = intent.serializable(BOUND_ARG) as? BoundingBox
-                ?: throw TypeCastException("fail cast to BoundingBox")
-            val zoom = intent.getIntExtra(ZOOM_ARG, 0)
-            downloadMap(mapList.toList(), bound, zoom, objects, quality)
-        }
-        return super.onStartCommand(intent, flags, startId)
+override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    if (intent != null) {
+        val args = intent.serializable(FORMING_MAP_ARGS) as? FormingMapArgs
+            ?: throw NullPointerException("Args is null")
+        downloadMap(args)
     }
+    return super.onStartCommand(intent, flags, startId)
+}
 
-    private fun createNotification(
-        maxProgress: Int,
-        progress: Int,
-        progressText: String
-    ): Notification {
-        return NotificationCompat.Builder(this, NotificationChannel.DOWNLOAD_CHANNEL_ID)
-            .setContentTitle("Загрузка карты")
-            .setContentText(progressText)
-            .setProgress(maxProgress, progress, false)
-            .setSmallIcon(android.R.drawable.stat_sys_download)
-            .setOnlyAlertOnce(true)
-            .setOngoing(true)
-            .build()
-    }
+private fun createNotification(
+    maxProgress: Int,
+    progress: Int,
+    progressText: String
+): Notification {
+    return NotificationCompat.Builder(this, NotificationChannel.DOWNLOAD_CHANNEL_ID)
+        .setContentTitle("Загрузка карты")
+        .setContentText(progressText)
+        .setProgress(maxProgress, progress, false)
+        .setSmallIcon(android.R.drawable.stat_sys_download)
+        .setOnlyAlertOnce(true)
+        .setOngoing(true)
+        .build()
+}
 
-    companion object {
-        const val MAP_LIST_ARG = "mapList"
-        const val BOUND_ARG = "bound"
-        const val ZOOM_ARG = "zoom"
-        const val OBJECTS_ARG = "objects"
-        const val DOWNLOAD_MAP_NOTIFICATION_ID = 788843
-    }
+companion object {
+    const val MAP_LIST_ARG = "mapList"
+    const val BOUND_ARG = "bound"
+    const val ZOOM_ARG = "zoom"
+    const val OBJECTS_ARG = "objects"
+    const val AUTHOR_ARG = "author"
+    const val FORMING_MAP_ARGS = "FORMING_MAP_ARGS"
+    const val DOWNLOAD_MAP_NOTIFICATION_ID = 788843
+}
 
-    override fun onDestroy() {
-        super.onDestroy()
-        coroutineScope.coroutineContext.cancelChildren()
-    }
+override fun onDestroy() {
+    super.onDestroy()
+    coroutineScope.coroutineContext.cancelChildren()
+}
 }

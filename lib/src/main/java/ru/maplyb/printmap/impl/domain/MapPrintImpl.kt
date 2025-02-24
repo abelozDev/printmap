@@ -9,7 +9,7 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import ru.maplyb.printmap.api.domain.MapPrint
 import ru.maplyb.printmap.api.model.BoundingBox
-import ru.maplyb.printmap.api.model.Line
+import ru.maplyb.printmap.api.model.FormingMapArgs
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.local.MapPath
@@ -86,19 +86,11 @@ internal class MapPrintImpl(
     }
 
     override suspend fun startFormingAMap(
-        mapList: List<MapItem>,
-        bound: BoundingBox,
-        objects: List<Line>,
-        zoom: Int,
-        quality: Int
-    ) {
-        val maps = mapList.filter { it.selected }
+        args: FormingMapArgs,
+        ) {
         NotificationChannel.create(activity)
         val intent = Intent(activity.applicationContext, DownloadMapService::class.java).run {
-            putExtra(DownloadMapService.MAP_LIST_ARG, ArrayList(maps))
-            putExtra(DownloadMapService.BOUND_ARG, bound)
-            putExtra(DownloadMapService.ZOOM_ARG, zoom)
-            putExtra(DownloadMapService.OBJECTS_ARG, ArrayList(objects))
+            putExtra(DownloadMapService.FORMING_MAP_ARGS, args)
         }
         activity.startService(intent)
         activity.bindService(intent, connection, Context.BIND_AUTO_CREATE)

@@ -1,6 +1,5 @@
 package ru.maplyb.printmap.sample
 
-import android.app.Activity
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
@@ -8,7 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.platform.ComposeView
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.GeoPoint
-import ru.maplyb.printmap.api.model.Line
+import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.api.model.MapType
@@ -21,10 +20,14 @@ import ru.mapolib.printmap.gui.presentation.MainScreen
 class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main) {
 
     private lateinit var btn: Button
+    private lateinit var addMapBtn: Button
+    private lateinit var deleteMapBtn: Button
     private lateinit var composeView: ComposeView
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         btn = findViewById(ru.maplyb.printmap.R.id.get_map)
+        addMapBtn = findViewById(ru.maplyb.printmap.R.id.add_map)
+        deleteMapBtn = findViewById(ru.maplyb.printmap.R.id.delete_map)
         composeView = findViewById(ru.maplyb.printmap.R.id.compose_view)
         getStoragePermission(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -1121,17 +1124,44 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             GeoPoint(49.70650921959129, 37.90092247913631),
             GeoPoint(49.69385604051197, 37.90368103270846),
         )
+        val polygonLines = listOf(
+            GeoPoint(49.83923201414832, 24.066391599459905),
+            GeoPoint(49.549615195415925, 25.603866647224624),
+            GeoPoint(48.909705689879495, 24.691518816682922),
+            GeoPoint(49.25965321366459, 23.85797202028449),
+        )
+
         val objects = listOf(
-            Line(
-                MapObjectStyle(
+            Layer.Line(
+                style = MapObjectStyle(
                     color = android.graphics.Color.RED,
                     width = 5f,
                     name = "qwe"
                 ),
-                lines
+                objects = lines,
+                name = "LBS"
+            ),
+            Layer.Polygon(
+                style = MapObjectStyle(
+                    color = android.graphics.Color.BLUE,
+                    width = 5f,
+                    name = "polygon"
+                ),
+                objects = polygonLines,
+                name = "polygon"
             )
         )
-        val list = listOf(item, local)
+        val itemToADD = MapItem(
+            name = "added map",
+            type = MapType.Online("https://mt0.google.com//vt/lyrs=s"),
+            isVisible = true,
+            alpha = 1f,
+            position = 1,
+            zoomMin = 0,
+            zoomMax = 13
+
+        )
+        var list = listOf(item, local)
         btn.setOnClickListener {
             when (downloadManager.state.value) {
                 DownloadMapState.Idle -> {
@@ -1144,14 +1174,20 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                         ),
                         maps = list,
                         zoom = 10,
-                        objects = objects
+                        objects = objects,
+                        author = "Гроза"
                     )
                 }
 
                 else -> downloadManager.open()
             }
         }
-
+        addMapBtn.setOnClickListener {
+            list = list + itemToADD
+        }
+        deleteMapBtn.setOnClickListener {
+            list = list.filter { it != itemToADD }
+        }
         val map = listOf(
             MapItem(
                 name = "OpenStreetMap",
@@ -1186,12 +1222,5 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
         composeView.setContent {
             MainScreen()
         }
-    }
-}
-
-fun openPrintMapDialog(activity: Activity, view: ComposeView, downloadManager: DownloadMapManager) {
-
-    view.setContent {
-
     }
 }
