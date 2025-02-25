@@ -3,6 +3,7 @@ package ru.maplyb.printmap.api.model
 import ru.maplyb.printmap.impl.domain.model.TileSchema
 import java.io.Serializable
 
+@kotlinx.serialization.Serializable
 data class MapItem(
     override val name: String,
     val type: MapType,
@@ -16,6 +17,7 @@ data class MapItem(
     override val selected: Boolean = false,
 ): Serializable, Expandable
 
+@kotlinx.serialization.Serializable
 sealed class MapType: Serializable {
     abstract val path: String
     data class Offline(override val path: String): MapType()

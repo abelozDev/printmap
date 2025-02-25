@@ -74,6 +74,8 @@ fun MainScreen() {
                         println("image path: ${(state as DownloadMapState.Finished).path}")
                         MapDownloadedScreen(
                             path = (state as DownloadMapState.Finished).path,
+                            layers = (state as DownloadMapState.Finished).layers,
+                            boundingBox = (state as DownloadMapState.Finished).boundingBox,
                             onDeleteMap = {
                                 scope.launch {
                                     downloadManager.deleteMap(it)

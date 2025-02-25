@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.Json
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
 
@@ -28,14 +29,14 @@ internal object DataStoreSource: PreferencesDataSource {
             DownloadStatus(
                 progress = prefs[PROGRESS_KEY],
                 progressMessage = prefs[PROGRESS_MESSAGE_KEY],
-                filePath = prefs[FILE_PATH_KEY],
+                filePath = prefs[FILE_PATH_KEY]?.let { Json.decodeFromString(it) },
                 isFinished = prefs[IS_FINISHED_KEY] ?: false,
                 errorMessage = prefs[ERROR_KEY]
             )
         }
     }
 
-    override suspend fun updateDownloadStatus(context: Context, status: DownloadStatus) {
+    private suspend fun updateDownloadStatus(context: Context, status: DownloadStatus) {
         context.dataStore.edit { prefs ->
             if (status.progress == null) {
                 prefs.remove(PROGRESS_KEY)
@@ -47,7 +48,7 @@ internal object DataStoreSource: PreferencesDataSource {
             if (status.filePath == null) {
                 prefs.remove(FILE_PATH_KEY)
             } else {
-                prefs[FILE_PATH_KEY] = status.filePath
+                prefs[FILE_PATH_KEY] = Json.encodeToString(status.filePath)
             }
             prefs[IS_FINISHED_KEY] = status.isFinished
             if (status.errorMessage == null) {
@@ -58,7 +59,7 @@ internal object DataStoreSource: PreferencesDataSource {
         }
     }
 
-    override suspend fun setDownloaded(context: Context, path: String) {
+    override suspend fun setDownloaded(context: Context, path: DownloadedState) {
         updateDownloadStatus(
             context = context,
             status = DownloadStatus(

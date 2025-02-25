@@ -1176,6 +1176,22 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                 ),
                 selected = true,
                 name = "text"
+            ),
+            Layer(
+                objects = listOf(
+                    LayerObject.Object(
+                        style = MapObjectStyle(
+                            color = android.graphics.Color.BLUE,
+                            width = 5f,
+                            name = "object"
+                        ),
+                        coords = GeoPoint(50.40243799500318, 30.07808115663772),
+                        angle = 0f,
+                        res = R.drawable.ic_mkb
+                    )
+                ),
+                selected = true,
+                name = "object"
             )
         )
         val itemToADD = MapItem(

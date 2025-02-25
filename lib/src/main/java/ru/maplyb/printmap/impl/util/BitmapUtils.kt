@@ -83,5 +83,4 @@ fun saveBitmapToExternalStorage(context: Context, bitmap: Bitmap, fileName: Stri
         e.printStackTrace()
         null
     }
-
 }

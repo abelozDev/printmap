@@ -22,6 +22,7 @@ import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.FormingMapArgs
 import ru.maplyb.printmap.api.model.OperationResult
+import ru.maplyb.printmap.impl.data.local.DownloadedState
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
 import ru.maplyb.printmap.impl.util.DrawInBitmap
@@ -111,7 +112,7 @@ internal class DownloadMapService : Service() {
                             tiles.maxOf { it.y },
                             args.zoom
                         ).onSuccess { bitmap ->
-                            val currentBound = GeoCalculator().tilesToBoundingBox(tiles, args.zoom)
+                            /*val currentBound = GeoCalculator().tilesToBoundingBox(tiles, args.zoom)
                             val bitmapWithDraw = if (args.layers.isNotEmpty()) {
                                 prefs?.setProgress(
                                     context = this@DownloadMapService,
@@ -124,7 +125,7 @@ internal class DownloadMapService : Service() {
                                     currentBound,
                                     layers = args.layers,
                                 )
-                        } else bitmap!!
+                        } else bitmap!!*/
                     prefs?.setProgress(
                         context = this@DownloadMapService,
                         progress = 100,
@@ -132,13 +133,18 @@ internal class DownloadMapService : Service() {
                     )
                     saveBitmapToExternalStorage(
                         context = this@DownloadMapService,
-                        bitmap = bitmapWithDraw,
+                        bitmap = bitmap!!,
                         fileName = "${System.currentTimeMillis()}"
                     )
                         ?.let {
                             prefs?.setDownloaded(
                                 context = this@DownloadMapService,
-                                path = it
+                                path = DownloadedState(
+                                    path = it,
+                                    zoom = args.zoom,
+                                    layers = args.layers,
+                                    tiles = tiles
+                                )
                             )
                         }
                 }

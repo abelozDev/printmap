@@ -4,12 +4,12 @@ import android.content.Context
 import kotlinx.coroutines.flow.Flow
 import ru.maplyb.printmap.impl.data.local.DataStoreSource
 import ru.maplyb.printmap.impl.data.local.DownloadStatus
+import ru.maplyb.printmap.impl.data.local.DownloadedState
 
 internal typealias MapPath =  String
 interface PreferencesDataSource {
 
-    suspend fun updateDownloadStatus(context: Context, status: DownloadStatus)
-    suspend fun setDownloaded(context: Context, path: String)
+    suspend fun setDownloaded(context: Context, path: DownloadedState)
     suspend fun setProgress(context: Context, progress: Int, message: String)
     suspend fun setError(context: Context, message: String)
     suspend fun remove(context: Context, path: String)

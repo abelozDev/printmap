@@ -14,9 +14,9 @@ import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.FormingMapArgs
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.MapItem
-import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.util.DestroyLifecycleCallback
+import ru.maplyb.printmap.impl.util.GeoCalculator
 
 internal object DownloadMapManagerImpl : DownloadMapManager {
     private val _state = MutableStateFlow<DownloadMapState>(DownloadMapState.Idle)
@@ -54,8 +54,13 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
                 ?.collect { downloadStatus ->
                     _state.value = when {
                         downloadStatus.isFinished && downloadStatus.filePath != null -> {
+                            val args = downloadStatus.filePath!!
+                            val boundingBox =
+                                GeoCalculator().tilesToBoundingBox(args.tiles, args.zoom)
                             DownloadMapState.Finished(
-                                downloadStatus.filePath!!,
+                                path = args.path,
+                                boundingBox = boundingBox,
+                                layers = args.layers,
                                 isOpen = _state.value.isOpen
                             )
                         }
@@ -104,7 +109,6 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
     override fun open() {
         _state.value = _state.value.open()
     }
-
     suspend fun startFormingAMap(
         args: FormingMapArgs,
     ) {
@@ -152,6 +156,8 @@ sealed interface DownloadMapState {
 
     data class Finished(
         val path: String,
+        val boundingBox: BoundingBox,
+        val layers: List<Layer>,
         override val isOpen: Boolean = false
     ) : DownloadMapState {
         override fun hide(): DownloadMapState {

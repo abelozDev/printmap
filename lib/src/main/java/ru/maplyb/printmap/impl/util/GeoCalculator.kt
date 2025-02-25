@@ -27,7 +27,7 @@ import kotlin.math.tan
 /**
  * Расчеты связанные с картой
  * */
-internal class GeoCalculator {
+class GeoCalculator {
 
     /**Количество тайлов, размер файла*/
     suspend fun calculateTotalTilesCount(

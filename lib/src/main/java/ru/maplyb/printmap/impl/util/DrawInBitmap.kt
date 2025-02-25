@@ -1,8 +1,11 @@
 package ru.maplyb.printmap.impl.util
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.drawable.BitmapDrawable
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ru.maplyb.printmap.api.model.BoundingBox
@@ -13,6 +16,7 @@ import ru.maplyb.printmap.api.model.LayerObject
 class DrawInBitmap {
 
     suspend fun drawLayers(
+        context: Context,
         bitmap: Bitmap,
         boundingBox: BoundingBox,
         layers: List<Layer>,
@@ -21,18 +25,20 @@ class DrawInBitmap {
         layers
             .flatMap { it.objects }
             .forEach { objects ->
-                when(objects) {
+                when (objects) {
                     is LayerObject.Line -> drawLine(
                         canvas = canvas,
                         bitmap = bitmap,
                         boundingBox = boundingBox,
                         objects = objects
                     )
+
                     is LayerObject.Polygon -> drawPolygon(
                         bitmap = bitmap,
                         boundingBox = boundingBox,
                         objects = objects
                     )
+
                     is LayerObject.Radius -> TODO()
                     is LayerObject.Text -> drawTextOnBitmap(
                         canvas = canvas,
@@ -40,9 +46,66 @@ class DrawInBitmap {
                         boundingBox = boundingBox,
                         text = objects
                     )
+
+                    is LayerObject.Object -> drawObjects(
+                        bitmap = bitmap,
+                        canvas = canvas,
+                        boundingBox = boundingBox,
+                        context = context,
+                        objects = objects
+                    )
                 }
             }
         return bitmap
+    }
+
+    private fun drawObjects(
+        bitmap: Bitmap,
+        canvas: Canvas,
+        boundingBox: BoundingBox,
+        context: Context,
+        objects: LayerObject.Object,
+    ) {
+        val linesInPixels = convertGeoToPixel(
+            objects.coords,
+            boundingBox,
+            bitmapWidth = bitmap.width,
+            bitmapHeight = bitmap.height
+        )
+        val drawable = ContextCompat.getDrawable(context, objects.res) ?: return
+        val bitmapDrawable = drawable as? BitmapDrawable
+        val realWidth = bitmapDrawable?.bitmap?.width ?: drawable.intrinsicWidth
+        val realHeight = bitmapDrawable?.bitmap?.height ?: drawable.intrinsicHeight
+        drawable.setBounds(
+            (linesInPixels.first - realWidth / 2).toInt(),  // Левый край (x - половина ширины)
+            (linesInPixels.second - realHeight / 2).toInt(), // Верхний край (y - половина высоты)
+            (linesInPixels.first + realWidth / 2).toInt(),  // Правый край (x + половина ширины)
+            (linesInPixels.second + realHeight / 2).toInt()  // Нижний край (y + половина высоты)
+        )
+        drawable.draw(canvas)
+    }
+
+    fun convertGeoToPixel(
+        objects: GeoPoint,
+        boundingBox: BoundingBox,
+        bitmapWidth: Int,
+        bitmapHeight: Int
+    ): Pair<Float, Float> {
+        val leftTopPoint =
+            GeoCalculator().degreeToMercator(GeoPoint(boundingBox.latNorth, boundingBox.lonEast))
+        val rightBottomPoint =
+            GeoCalculator().degreeToMercator(GeoPoint(boundingBox.latSouth, boundingBox.lonWest))
+        val lengthX =
+            maxOf(rightBottomPoint.x - leftTopPoint.x, leftTopPoint.x - rightBottomPoint.x)
+        val lengthY =
+            maxOf(leftTopPoint.y - rightBottomPoint.y, rightBottomPoint.y - leftTopPoint.y)
+        val pixelSizeX = lengthX / bitmapWidth
+        val pixelSizeY = lengthY / bitmapHeight
+        val maxX = minOf(leftTopPoint.x, rightBottomPoint.x)
+        val pointsMercator = GeoCalculator().degreeToMercator(objects)
+        val pointPixelX = ((pointsMercator.x - maxX) / pixelSizeX).toFloat()
+        val pointPixelY = ((leftTopPoint.y - pointsMercator.y) / pixelSizeY).toFloat()
+        return pointPixelX to pointPixelY
     }
 
     fun convertGeoToPixel(
@@ -72,7 +135,7 @@ class DrawInBitmap {
         return result
     }
 
-    suspend fun drawPolygon(
+    private suspend fun drawPolygon(
         bitmap: Bitmap,
         boundingBox: BoundingBox,
         objects: LayerObject.Polygon,
@@ -108,7 +171,7 @@ class DrawInBitmap {
         }
     }
 
-    suspend fun drawLine(
+    private suspend fun drawLine(
         canvas: Canvas,
         bitmap: Bitmap,
         boundingBox: BoundingBox,
@@ -141,7 +204,7 @@ class DrawInBitmap {
         }
     }
 
-    fun drawTextOnBitmap(
+    private fun drawTextOnBitmap(
         canvas: Canvas,
         bitmap: Bitmap,
         boundingBox: BoundingBox,

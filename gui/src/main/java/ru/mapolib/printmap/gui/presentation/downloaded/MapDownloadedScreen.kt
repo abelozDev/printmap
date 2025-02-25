@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -48,8 +49,10 @@ import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import ru.maplyb.printmap.api.domain.MapPrint
+import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.DownloadedImage
-import ru.mapolib.printmap.gui.halpers.share.sendImageAsFile
+import ru.maplyb.printmap.api.model.Layer
+import ru.maplyb.printmap.impl.domain.model.TileParams
 import ru.mapolib.printmap.gui.presentation.settings.SettingViewModel
 
 import ru.mapolib.printmap.gui.utils.createBitmaps
@@ -58,6 +61,8 @@ import ru.mapolib.printmap.gui.utils.formatSize
 @Composable
 internal fun MapDownloadedScreen(
     path: String,
+    boundingBox: BoundingBox,
+    layers: List<Layer>,
     onDeleteMap: (String) -> Unit
 ) {
     val context = LocalContext.current
@@ -70,7 +75,7 @@ internal fun MapDownloadedScreen(
     }
     val viewModel = ViewModelProvider(
         owner = downloadedViewModelStoreOwner,
-        factory = MapDownloadedViewModel.create(path)
+        factory = MapDownloadedViewModel.create(path, boundingBox, layers, context)
     )[MapDownloadedViewModel::class.java]
 
     DisposableEffect(Unit) {
@@ -96,10 +101,14 @@ internal fun MapDownloadedScreen(
     ) {
         Spacer(Modifier.height(16.dp))
         ImageItem(
-            image = path,
+            progress = state.progress,
+            image = state.bitmap,
             context = context,
             delete = {
                 viewModel.onEffect(MapDownloadedEffect.DeleteMap(path))
+            },
+            share = {
+                viewModel.sendEvent(MapDownloadedEvent.Share)
             }
         )
     }
@@ -107,19 +116,15 @@ internal fun MapDownloadedScreen(
 
 @Composable
 private fun ImageItem(
-    image: String,
+    progress: Boolean,
+    image: Bitmap,
     context: Context,
-    delete: () -> Unit
+    delete: () -> Unit,
+    share: () -> Unit
 ) {
-    LaunchedEffect(image) {
-        println("imageBitmapPath = $image")
-    }
-    val imageBitmap by remember(image) {
-        mutableStateOf<Bitmap>(BitmapFactory.decodeFile(image))
-    }
-    val images = remember {
+    val images = remember(image) {
         createBitmaps(
-            resultBitmap = imageBitmap,
+            resultBitmap = image,
             context = context
         ).toList()
     }
@@ -157,20 +162,28 @@ private fun ImageItem(
             )
         }
         Text(
-            text = "Размер файла: ${formatSize(imageBitmap.byteCount.toLong())}"
+            text = "Размер файла: ${formatSize(image.byteCount.toLong())}"
         )
         Spacer(Modifier.height(16.dp))
-        AsyncImage(
-            model = images[selectedImage].bitmap,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 400.dp)
-                .height(maxHeight.dp)
-                .onGloballyPositioned { layoutCoordinates ->
-                    println("onGloballyPositioned ${layoutCoordinates.size}")
-                },
-            contentDescription = null
-        )
+        Box(
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                model = images[selectedImage].bitmap,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp)
+                    .height(maxHeight.dp)
+                    .onGloballyPositioned { layoutCoordinates ->
+                        println("onGloballyPositioned ${layoutCoordinates.size}")
+                    },
+                contentDescription = null
+            )
+            if (progress) {
+                CircularProgressIndicator()
+            }
+        }
+
         Spacer(Modifier.height(16.dp))
         Row {
             Image(
@@ -183,7 +196,7 @@ private fun ImageItem(
             Spacer(Modifier.width(16.dp))
             Image(
                 modifier = Modifier.clickable {
-                    sendImageAsFile(context, image)
+                    share()
                 },
                 imageVector = Icons.Default.Share,
                 contentDescription = null
