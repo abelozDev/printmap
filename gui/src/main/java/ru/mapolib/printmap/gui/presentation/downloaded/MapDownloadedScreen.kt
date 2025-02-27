@@ -2,11 +2,11 @@ package ru.mapolib.printmap.gui.presentation.downloaded
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,10 +18,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,22 +41,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import ru.maplyb.printmap.api.domain.MapPrint
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.maplyb.printmap.api.model.Layer
-import ru.maplyb.printmap.impl.domain.model.TileParams
-import ru.mapolib.printmap.gui.presentation.settings.SettingViewModel
+import ru.mapolib.printmap.gui.presentation.downloaded.expandable.LayersExpandable
+import ru.mapolib.printmap.gui.presentation.downloaded.expandable.MapObjectsSettingExpandable
 
 import ru.mapolib.printmap.gui.utils.createBitmaps
 import ru.mapolib.printmap.gui.utils.formatSize
@@ -96,19 +98,65 @@ internal fun MapDownloadedScreen(
     }
     Column(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(Modifier.height(16.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.End
+        ) {
+            Image(
+                modifier = Modifier.clickable {
+                    viewModel.onEffect(MapDownloadedEffect.DeleteMap(path))
+                },
+                imageVector = Icons.Default.Delete,
+                contentDescription = null
+            )
+            Spacer(Modifier.width(16.dp))
+            Image(
+                modifier = Modifier.clickable {
+                    viewModel.sendEvent(MapDownloadedEvent.Share)
+                },
+                imageVector = Icons.Default.Share,
+                contentDescription = null
+            )
+        }
         ImageItem(
             progress = state.progress,
             image = state.bitmap,
             context = context,
-            delete = {
-                viewModel.onEffect(MapDownloadedEffect.DeleteMap(path))
+        )
+        Row {
+            Text(
+                modifier = Modifier
+                    .padding(8.dp),
+                text = stringResource(ru.mapolib.printmap.gui.R.string.show_polyline)
+            )
+            Spacer(Modifier.weight(1f))
+            Checkbox(
+                checked = state.showLayers,
+                onCheckedChange = {
+                    viewModel.sendEvent(MapDownloadedEvent.ShowPolylineChanged)
+                }
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        LayersExpandable(
+            layers = state.layers,
+            updateLayer = {
+                viewModel.sendEvent(MapDownloadedEvent.UpdateLayer(it))
+            }
+        )
+        MapObjectsSettingExpandable(
+            layersObjects = state.layers.flatMap { it.objects },
+            changeObjectStyle = {
+                viewModel.sendEvent(MapDownloadedEvent.UpdateMapObjectStyle(it))
             },
-            share = {
-                viewModel.sendEvent(MapDownloadedEvent.Share)
+            changeStyleFinished = {
+                viewModel.sendEvent(MapDownloadedEvent.UpdateLayers)
             }
         )
     }
@@ -119,8 +167,6 @@ private fun ImageItem(
     progress: Boolean,
     image: Bitmap,
     context: Context,
-    delete: () -> Unit,
-    share: () -> Unit
 ) {
     val images = remember(image) {
         createBitmaps(
@@ -183,25 +229,7 @@ private fun ImageItem(
                 CircularProgressIndicator()
             }
         }
-
-        Spacer(Modifier.height(16.dp))
-        Row {
-            Image(
-                modifier = Modifier.clickable {
-                    delete()
-                },
-                imageVector = Icons.Default.Delete,
-                contentDescription = null
-            )
-            Spacer(Modifier.width(16.dp))
-            Image(
-                modifier = Modifier.clickable {
-                    share()
-                },
-                imageVector = Icons.Default.Share,
-                contentDescription = null
-            )
-        }
+        Spacer(Modifier.height(8.dp))
     }
 }
 

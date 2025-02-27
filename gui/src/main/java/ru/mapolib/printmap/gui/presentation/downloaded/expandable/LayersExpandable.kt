@@ -1,4 +1,4 @@
-package ru.mapolib.printmap.gui.presentation.settings.expand
+package ru.mapolib.printmap.gui.presentation.downloaded.expandable
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -26,6 +26,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ru.maplyb.printmap.R
 import ru.maplyb.printmap.api.model.Layer
+import ru.mapolib.printmap.gui.presentation.settings.expand.ExpandableItem
+import kotlin.math.roundToInt
 
 @Composable
 fun LayersExpandable(
@@ -40,7 +42,7 @@ fun LayersExpandable(
             .clickable {
                 isOpen = !isOpen
             }
-            .padding(vertical = 8.dp)
+            .padding(8.dp)
     ) {
         Text(
             text = stringResource(R.string.selected_layers)

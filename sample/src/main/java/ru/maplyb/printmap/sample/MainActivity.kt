@@ -1166,7 +1166,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                     LayerObject.Text(
                         style = MapObjectStyle(
                             color = android.graphics.Color.BLUE,
-                            width = 100f,
+                            width = 14f,
                             name = "text"
                         ),
                         text = "text",
@@ -1182,7 +1182,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                     LayerObject.Object(
                         style = MapObjectStyle(
                             color = android.graphics.Color.BLUE,
-                            width = 5f,
+                            width = 25f,
                             name = "object"
                         ),
                         coords = GeoPoint(50.40243799500318, 30.07808115663772),

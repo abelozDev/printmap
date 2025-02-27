@@ -1,11 +1,5 @@
 package ru.mapolib.printmap.gui.presentation.settings
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,29 +8,21 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -47,7 +33,6 @@ import ru.maplyb.printmap.R
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.MapItem
-import ru.mapolib.printmap.gui.presentation.settings.expand.LayersExpandable
 import ru.mapolib.printmap.gui.presentation.settings.expand.MapsExpandable
 import ru.mapolib.printmap.gui.utils.formatSize
 import kotlin.math.roundToInt
@@ -189,32 +174,14 @@ internal fun DownloadMapSettingsScreen(
                 //todo
             }
         )
-        Row {
-            Text(
-                modifier = Modifier
-                    .padding(8.dp),
-                text = stringResource(ru.mapolib.printmap.gui.R.string.show_polyline)
-            )
-            Spacer(Modifier.weight(1f))
-            Checkbox(
-                checked = state.showPolyline,
-                onCheckedChange = {
-                    viewModel.sendEvent(SettingEvent.ShowPolylineChanged)
-                }
-            )
-        }
+
         MapsExpandable(
             maps = state.maps,
             updateMap = {
                 viewModel.sendEvent(SettingEvent.UpdateMap(it))
             }
         )
-        LayersExpandable(
-            layers = state.objects,
-            updateLayer = {
-                viewModel.sendEvent(SettingEvent.UpdateLayer(it))
-            }
-        )
+
         Spacer(Modifier.height(16.dp))
         Button(
             modifier = Modifier.fillMaxWidth(),

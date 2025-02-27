@@ -112,20 +112,6 @@ internal class DownloadMapService : Service() {
                             tiles.maxOf { it.y },
                             args.zoom
                         ).onSuccess { bitmap ->
-                            /*val currentBound = GeoCalculator().tilesToBoundingBox(tiles, args.zoom)
-                            val bitmapWithDraw = if (args.layers.isNotEmpty()) {
-                                prefs?.setProgress(
-                                    context = this@DownloadMapService,
-                                    progress = 100,
-                                    message = "Отрисовка условных обозначений"
-                                )
-                                val drawLayers = DrawInBitmap()
-                                drawLayers.drawLayers(
-                                    bitmap = bitmap!!,
-                                    currentBound,
-                                    layers = args.layers,
-                                )
-                        } else bitmap!!*/
                     prefs?.setProgress(
                         context = this@DownloadMapService,
                         progress = 100,

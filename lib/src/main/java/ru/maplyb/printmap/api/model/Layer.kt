@@ -15,34 +15,56 @@ data class Layer(
 @kotlinx.serialization.Serializable
 sealed interface LayerObject: Serializable {
     val style: MapObjectStyle
+    fun updateStyle(newStyle: MapObjectStyle): LayerObject
     @kotlinx.serialization.Serializable
     data class Line(
         override val style: MapObjectStyle,
         val objects: List<GeoPoint>,
-    ): LayerObject
+    ): LayerObject {
+        override fun updateStyle(newStyle: MapObjectStyle): LayerObject {
+            return copy(style = newStyle)
+        }
+    }
 
     @kotlinx.serialization.Serializable
     data class Polygon(
         override val style: MapObjectStyle,
         val objects: List<GeoPoint>,
-    ): LayerObject
+    ): LayerObject {
+        override fun updateStyle(newStyle: MapObjectStyle): LayerObject {
+            return copy(style = newStyle)
+        }
+    }
     @kotlinx.serialization.Serializable
     data class Radius(
         override val style: MapObjectStyle,
         val objects: List<GeoPoint>,
-    ): LayerObject
+    ): LayerObject {
+        override fun updateStyle(newStyle: MapObjectStyle): LayerObject {
+            return copy(style = newStyle)
+        }
+    }
     @kotlinx.serialization.Serializable
     data class Text(
         val coords: GeoPoint,
         val text: String,
         val angle: Float,
         override val style: MapObjectStyle
-    ): LayerObject
+    ): LayerObject {
+        override fun updateStyle(newStyle: MapObjectStyle): LayerObject {
+            return copy(style = newStyle)
+        }
+    }
     @kotlinx.serialization.Serializable
     data class Object(
         val coords: GeoPoint,
         @DrawableRes val res: Int,
         val angle: Float,
         override val style: MapObjectStyle
-    ): LayerObject
+    ): LayerObject {
+        override fun updateStyle(newStyle: MapObjectStyle): LayerObject {
+            return copy(style = newStyle)
+        }
+    }
 }
+

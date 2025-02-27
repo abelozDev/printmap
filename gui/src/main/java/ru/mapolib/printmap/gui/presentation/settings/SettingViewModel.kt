@@ -75,15 +75,7 @@ internal class SettingViewModel(
             SettingEvent.GetTilesCount -> {
                 getTilesCount()
             }
-            is SettingEvent.UpdateLayer -> {
-                _state.update {
-                    it.copy(
-                        objects = it.objects.map { layer ->
-                            if (layer.name == action.layer.name) action.layer else layer
-                        },
-                    )
-                }
-            }
+
             is SettingEvent.UpdateMap -> {
                 _state.update {
                     it.copy(
@@ -110,14 +102,13 @@ internal class SettingViewModel(
 
     private fun startDownloadingMap() {
         viewModelScope.launch {
-            val showPolyline = if (_state.value.showPolyline) _state.value.objects else emptyList()
             onEffect(
                 SettingEffect.StartFormingAMap(
                     maps = _state.value.maps.filter { it.selected && it.isVisible },
                     boundingBox = _state.value.boundingBox,
                     zoom = _state.value.zoom,
                     quality = _state.value.quality,
-                    objects = showPolyline.filter { it.selected }
+                    objects = _state.value.objects
                 )
             )
         }

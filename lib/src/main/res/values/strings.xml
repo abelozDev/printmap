@@ -3,6 +3,7 @@
     <string name="file_size">Размер файла: %1$s</string>
     <string name="selected_maps">Выбранные карты</string>
     <string name="selected_layers">Выбранные слои</string>
+    <string name="map_objects_settings">Настройки объектов на карте</string>
     <string name="settings_header">Настройки карты</string>
     <string name="download">Загрузить</string>
     <string name="progress">%1$s %%</string>

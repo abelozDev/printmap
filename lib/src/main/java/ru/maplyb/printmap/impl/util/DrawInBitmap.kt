@@ -76,11 +76,14 @@ class DrawInBitmap {
         val bitmapDrawable = drawable as? BitmapDrawable
         val realWidth = bitmapDrawable?.bitmap?.width ?: drawable.intrinsicWidth
         val realHeight = bitmapDrawable?.bitmap?.height ?: drawable.intrinsicHeight
+        val scaleFactor = objects.style.width / 25f
+        val scaledWidth = (realWidth * scaleFactor).toInt()
+        val scaledHeight = (realHeight * scaleFactor).toInt()
         drawable.setBounds(
-            (linesInPixels.first - realWidth / 2).toInt(),  // Левый край (x - половина ширины)
-            (linesInPixels.second - realHeight / 2).toInt(), // Верхний край (y - половина высоты)
-            (linesInPixels.first + realWidth / 2).toInt(),  // Правый край (x + половина ширины)
-            (linesInPixels.second + realHeight / 2).toInt()  // Нижний край (y + половина высоты)
+            (linesInPixels.first - scaledWidth / 2).toInt(),
+            (linesInPixels.second - scaledHeight / 2).toInt(),
+            (linesInPixels.first + scaledWidth / 2).toInt(),
+            (linesInPixels.second + scaledHeight / 2).toInt()
         )
         drawable.draw(canvas)
     }

@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -17,7 +20,12 @@ fun ExpandableItem(
     items: List<Expandable>,
     onChange: (Expandable) -> Unit
 ) {
-    if (items.isNotEmpty() && items.first().header != null) {
+    val showHeader by remember(items) {
+        derivedStateOf {
+            items.isNotEmpty() && items.first().header != null
+        }
+    }
+    if (showHeader) {
         Text(
             modifier = Modifier.padding(
                 start = 8.dp,

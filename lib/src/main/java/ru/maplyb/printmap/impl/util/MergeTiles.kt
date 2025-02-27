@@ -99,17 +99,18 @@ internal class MergeTiles {
         val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(mutableBitmap)
 
+        val textSize = mutableBitmap.width * 0.025f
+
         val paint = Paint().apply {
-            color = Color.BLACK // Цвет текста
-            textSize = 24f // Размер текста
-            isAntiAlias = true // Сглаживание
-            alpha = (255/1.25).toInt()
-            setShadowLayer(15f, 10f, 10f, Color.WHITE) // Тень для текста
+            color = Color.BLACK
+            this.textSize = textSize
+            isAntiAlias = true
+            alpha = (255/1.75).toInt()
+            setShadowLayer(textSize * 0.6f, textSize * 0.4f, textSize * 0.4f, Color.WHITE)
         }
 
         val textHeight = paint.descent() - paint.ascent()
-
-        val x = 10f
+        val x = mutableBitmap.width * 0.02f
         val y = mutableBitmap.height - textHeight/2
 
         canvas.drawText(author, x, y, paint)

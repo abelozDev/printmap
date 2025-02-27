@@ -5,6 +5,6 @@ import androidx.annotation.ColorInt
 @kotlinx.serialization.Serializable
 data class MapObjectStyle(
     val name: String,
-    @ColorInt val color: Int,
+    @ColorInt val color: Int, // red
     val width: Float
 ): java.io.Serializable
