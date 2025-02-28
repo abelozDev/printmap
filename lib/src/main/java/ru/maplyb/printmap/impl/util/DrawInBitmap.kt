@@ -2,9 +2,11 @@ package ru.maplyb.printmap.impl.util
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -12,6 +14,7 @@ import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.LayerObject
+import ru.maplyb.printmap.api.model.ObjectRes
 
 class DrawInBitmap {
 
@@ -72,7 +75,11 @@ class DrawInBitmap {
             bitmapWidth = bitmap.width,
             bitmapHeight = bitmap.height
         )
-        val drawable = ContextCompat.getDrawable(context, objects.res) ?: return
+        val drawable = when(objects.res) {
+            is ObjectRes.Local -> ContextCompat.getDrawable(context, objects.res.res)
+            is ObjectRes.Storage -> Drawable.createFromPath(objects.res.res)
+        } ?:return
+
         val bitmapDrawable = drawable as? BitmapDrawable
         val realWidth = bitmapDrawable?.bitmap?.width ?: drawable.intrinsicWidth
         val realHeight = bitmapDrawable?.bitmap?.height ?: drawable.intrinsicHeight
@@ -181,7 +188,6 @@ class DrawInBitmap {
         objects: LayerObject.Line,
     ) {
         withContext(Dispatchers.Default) {
-            val startTime = System.currentTimeMillis()
             val paint = Paint().apply {
                 color = objects.style.color    // Цвет линии
                 strokeWidth = objects.style.width     // Толщина линии

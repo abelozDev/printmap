@@ -12,6 +12,7 @@ import ru.maplyb.printmap.api.model.LayerObject
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.api.model.MapType
+import ru.maplyb.printmap.api.model.ObjectRes
 import ru.mapolib.printmap.gui.api.DownloadMapManager
 import ru.mapolib.printmap.gui.api.DownloadMapState
 import ru.mapolib.printmap.gui.halpers.permission.getStoragePermission
@@ -1187,7 +1188,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                         ),
                         coords = GeoPoint(50.40243799500318, 30.07808115663772),
                         angle = 0f,
-                        res = R.drawable.ic_mkb
+                        res = /*ObjectRes.Local(R.drawable.ic_mkb)*/ObjectRes.Storage("/storage/emulated/0/Download/rls.png")
                     )
                 ),
                 selected = true,

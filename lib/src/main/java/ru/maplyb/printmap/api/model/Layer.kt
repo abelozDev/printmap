@@ -88,7 +88,7 @@ sealed interface LayerObject: Serializable {
     @kotlinx.serialization.Serializable
     data class Object(
         val coords: GeoPoint,
-        @DrawableRes val res: Int,
+        val res: ObjectRes,
         val angle: Float,
         override val style: MapObjectStyle
     ): LayerObject {
@@ -103,5 +103,13 @@ sealed interface LayerObject: Serializable {
             )
         }
     }
+}
+
+@kotlinx.serialization.Serializable
+sealed interface ObjectRes: Serializable {
+    @kotlinx.serialization.Serializable
+    data class Storage(val res: String): ObjectRes
+    @kotlinx.serialization.Serializable
+    data class Local(@DrawableRes val res: Int): ObjectRes
 }
 
