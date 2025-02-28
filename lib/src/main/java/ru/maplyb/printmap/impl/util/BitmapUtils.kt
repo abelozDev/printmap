@@ -74,13 +74,3 @@ suspend fun ByteArray?.getTileSize(alpha: Int): Long {
         } else 0L
     }
 }
-fun saveBitmapToExternalStorage(context: Context, bitmap: Bitmap, fileName: String): String? {
-    val file = File(context.getExternalFilesDir(null), "$fileName.png")
-    return try {
-        FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        file.absolutePath
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}

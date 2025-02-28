@@ -37,7 +37,12 @@ abstract class PrintMapViewModel<Event : PrintMapEvent, Effect : PrintMapEffect>
         _activeRequestCount.value =
             if (isLaunch) _activeRequestCount.value.inc() else _activeRequestCount.value.dec()
     }
-    suspend fun <P> doWork(doOnAsyncBlock: suspend () -> P) {
+    protected suspend fun <P> doWork(onProgress: (Boolean) -> Unit, doOnAsyncBlock: suspend () -> P) {
+        onProgress(true)
+        doCoroutineWork(doOnAsyncBlock)
+        onProgress(false)
+    }
+    protected suspend fun <P> doWork(doOnAsyncBlock: suspend () -> P) {
         doCoroutineWork(doOnAsyncBlock)
     }
     private suspend inline fun <P> doCoroutineWork(crossinline doOnAsyncBlock: suspend () -> P) {

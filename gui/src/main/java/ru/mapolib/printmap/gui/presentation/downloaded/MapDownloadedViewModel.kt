@@ -18,7 +18,7 @@ import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.LayerObject
 import ru.maplyb.printmap.impl.util.DrawInBitmap
-import ru.maplyb.printmap.impl.util.FileUtil
+import ru.maplyb.printmap.impl.files.FileUtil
 import ru.mapolib.printmap.gui.presentation.util.PrintMapViewModel
 
 class MapDownloadedViewModel(
@@ -48,7 +48,7 @@ class MapDownloadedViewModel(
             .onEach { progress ->
                 _state.update {
                     it.copy(
-                        progress = progress
+                        updateMapProgress = progress
                     )
                 }
             }
@@ -109,14 +109,17 @@ class MapDownloadedViewModel(
                 }
                 drawLayers()
             }
+
             is MapDownloadedEvent.UpdateMapObjectStyle -> {
                 updateMapObjectsStyle(action.layerObject)
             }
+
             MapDownloadedEvent.UpdateLayers -> {
                 drawLayers()
             }
         }
     }
+
     private fun updateMapObjectsStyle(layerObject: LayerObject) {
         val type = layerObject.javaClass
         _state.update {
@@ -135,17 +138,30 @@ class MapDownloadedViewModel(
     }
 
     private fun shareImage() {
-        fileUtil.saveBitmapToExternalStorage(
-            bitmap = _state.value.bitmap,
-            fileName = "${System.currentTimeMillis()}"
-        )?.let {
-            fileUtil.sendImageAsFile(it)
+        viewModelScope.launch(Dispatchers.Default) {
+            doWork(
+                onProgress = { progress ->
+                    _state.update {
+                        it.copy(
+                            state = if (progress) MapDownloadedState.Progress else MapDownloadedState.Initial
+                        )
+                    }
+                },
+                doOnAsyncBlock = {
+                    fileUtil.saveBitmapToExternalStorage(
+                        bitmap = _state.value.bitmap,
+                        fileName = "${System.currentTimeMillis()}"
+                    )?.let {
+                        fileUtil.sendImageAsFile(it)
+                    }
+                }
+            )
         }
     }
 
     private fun deleteExistedMap() {
+        fileUtil.clearDownloadMapStorage()
         onEffect(MapDownloadedEffect.DeleteMap(_state.value.image ?: error("Image path is null")))
-
     }
 
     companion object {

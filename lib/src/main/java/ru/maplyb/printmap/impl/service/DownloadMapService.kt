@@ -25,10 +25,10 @@ import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.data.local.DownloadedState
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
+import ru.maplyb.printmap.impl.files.FileUtil
 import ru.maplyb.printmap.impl.util.DrawInBitmap
 import ru.maplyb.printmap.impl.util.GeoCalculator
 import ru.maplyb.printmap.impl.util.MergeTiles
-import ru.maplyb.printmap.impl.util.saveBitmapToExternalStorage
 import ru.maplyb.printmap.impl.util.serializable
 
 internal class DownloadMapService : Service() {
@@ -117,8 +117,7 @@ internal class DownloadMapService : Service() {
                         progress = 100,
                         message = "Сохранение файла"
                     )
-                    saveBitmapToExternalStorage(
-                        context = this@DownloadMapService,
+                    FileUtil(this@DownloadMapService).saveBitmapToExternalStorage(
                         bitmap = bitmap!!,
                         fileName = "${System.currentTimeMillis()}"
                     )

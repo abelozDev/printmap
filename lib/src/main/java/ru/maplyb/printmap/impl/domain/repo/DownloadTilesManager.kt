@@ -5,7 +5,7 @@ import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.data.tile_manager.DownloadTilesManagerImpl
 import ru.maplyb.printmap.impl.domain.model.TileParams
-import ru.maplyb.printmap.impl.util.FileSaveUtil
+import ru.maplyb.printmap.impl.files.FileUtil
 
 internal interface DownloadTilesManager {
 
@@ -26,7 +26,7 @@ internal interface DownloadTilesManager {
         fun create(context: Context): DownloadTilesManager {
             val local = DataSource.createLocal()
             val remote = DataSource.createRemote()
-            val fileSaveUtil = FileSaveUtil(context)
+            val fileSaveUtil = FileUtil(context)
             return DownloadTilesManagerImpl(fileSaveUtil, local, remote)
         }
     }

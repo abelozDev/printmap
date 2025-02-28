@@ -9,13 +9,14 @@ import ru.mapolib.printmap.gui.presentation.util.PrintMapEvent
 
 sealed interface MapDownloadedState {
     data object Initial: MapDownloadedState
+    data object Progress: MapDownloadedState
 }
 
 data class MapDownloadedUiState(
     val state: MapDownloadedState = MapDownloadedState.Initial,
     val image: String? = null,
     val bitmap: Bitmap,
-    val progress: Boolean = false,
+    val updateMapProgress: Boolean = false,
     val showLayers: Boolean = true,
     val boundingBox: BoundingBox,
     val layers: List<Layer>

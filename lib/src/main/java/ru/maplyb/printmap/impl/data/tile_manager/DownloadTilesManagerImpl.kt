@@ -15,11 +15,11 @@ import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.model.TileParams
 import ru.maplyb.printmap.impl.domain.repo.DataSource
 import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
-import ru.maplyb.printmap.impl.util.FileSaveUtil
+import ru.maplyb.printmap.impl.files.FileUtil
 import java.util.concurrent.atomic.AtomicInteger
 
 internal class DownloadTilesManagerImpl(
-    private val fileSaveUtil: FileSaveUtil,
+    private val fileSaveUtil: FileUtil,
     private val localDataSource: DataSource,
     private val remoteDataSource: DataSource
 ) : DownloadTilesManager {

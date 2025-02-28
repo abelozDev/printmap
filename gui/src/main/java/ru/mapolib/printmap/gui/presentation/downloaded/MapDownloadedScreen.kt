@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -44,6 +45,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -110,7 +113,7 @@ internal fun MapDownloadedScreen(
         ) {
             Image(
                 modifier = Modifier.clickable {
-                    viewModel.onEffect(MapDownloadedEffect.DeleteMap(path))
+                    viewModel.sendEvent(MapDownloadedEvent.DeleteImage)
                 },
                 imageVector = Icons.Default.Delete,
                 contentDescription = null
@@ -125,7 +128,7 @@ internal fun MapDownloadedScreen(
             )
         }
         ImageItem(
-            progress = state.progress,
+            progress = state.updateMapProgress,
             image = state.bitmap,
             context = context,
         )
@@ -159,6 +162,23 @@ internal fun MapDownloadedScreen(
                 viewModel.sendEvent(MapDownloadedEvent.UpdateLayers)
             }
         )
+    }
+    if (state.state is MapDownloadedState.Progress) {
+        Dialog(
+            onDismissRequest = {
+            },
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
+            )
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
     }
 }
 
