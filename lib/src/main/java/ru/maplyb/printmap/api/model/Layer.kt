@@ -16,6 +16,7 @@ data class Layer(
 sealed interface LayerObject: Serializable {
     val style: MapObjectStyle
     fun updateStyle(newStyle: MapObjectStyle): LayerObject
+    fun updateStyleWidth(width: Float): LayerObject
     @kotlinx.serialization.Serializable
     data class Line(
         override val style: MapObjectStyle,
@@ -23,6 +24,14 @@ sealed interface LayerObject: Serializable {
     ): LayerObject {
         override fun updateStyle(newStyle: MapObjectStyle): LayerObject {
             return copy(style = newStyle)
+        }
+
+        override fun updateStyleWidth(width: Float): LayerObject {
+            return this.copy(
+                style = this.style.copy(
+                    width = width
+                )
+            )
         }
     }
 
@@ -34,6 +43,13 @@ sealed interface LayerObject: Serializable {
         override fun updateStyle(newStyle: MapObjectStyle): LayerObject {
             return copy(style = newStyle)
         }
+        override fun updateStyleWidth(width: Float): LayerObject {
+            return this.copy(
+                style = this.style.copy(
+                    width = width
+                )
+            )
+        }
     }
     @kotlinx.serialization.Serializable
     data class Radius(
@@ -42,6 +58,13 @@ sealed interface LayerObject: Serializable {
     ): LayerObject {
         override fun updateStyle(newStyle: MapObjectStyle): LayerObject {
             return copy(style = newStyle)
+        }
+        override fun updateStyleWidth(width: Float): LayerObject {
+            return this.copy(
+                style = this.style.copy(
+                    width = width
+                )
+            )
         }
     }
     @kotlinx.serialization.Serializable
@@ -54,6 +77,13 @@ sealed interface LayerObject: Serializable {
         override fun updateStyle(newStyle: MapObjectStyle): LayerObject {
             return copy(style = newStyle)
         }
+        override fun updateStyleWidth(width: Float): LayerObject {
+            return this.copy(
+                style = this.style.copy(
+                    width = width
+                )
+            )
+        }
     }
     @kotlinx.serialization.Serializable
     data class Object(
@@ -64,6 +94,13 @@ sealed interface LayerObject: Serializable {
     ): LayerObject {
         override fun updateStyle(newStyle: MapObjectStyle): LayerObject {
             return copy(style = newStyle)
+        }
+        override fun updateStyleWidth(width: Float): LayerObject {
+            return this.copy(
+                style = this.style.copy(
+                    width = width
+                )
+            )
         }
     }
 }

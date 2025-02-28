@@ -100,11 +100,13 @@ class MapDownloadedViewModel(
             }
 
             is MapDownloadedEvent.UpdateLayer -> {
+                val newLayers = _state.value.layers.map { layer ->
+                    if (layer.name == action.layer.name) action.layer else layer
+                }
                 _state.update {
                     it.copy(
-                        layers = it.layers.map { layer ->
-                            if (layer.name == action.layer.name) action.layer else layer
-                        },
+                        layers = newLayers,
+                        showLayers = !newLayers.all { layer -> !layer.selected }
                     )
                 }
                 drawLayers()
@@ -128,7 +130,9 @@ class MapDownloadedViewModel(
                     layer.copy(
                         objects = layer.objects.map {
                             if (it.javaClass == type) {
-                                it.updateStyle(layerObject.style)
+                                it.updateStyleWidth(
+                                    layerObject.style.width
+                                )
                             } else it
                         }
                     )

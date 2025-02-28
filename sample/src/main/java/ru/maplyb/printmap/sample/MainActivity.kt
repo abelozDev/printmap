@@ -1149,7 +1149,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             ),
             Layer(
                 objects = listOf(
-                    LayerObject.Polygon(
+                    LayerObject.Line(
                         style = MapObjectStyle(
                             color = android.graphics.Color.BLUE,
                             width = 5f,
