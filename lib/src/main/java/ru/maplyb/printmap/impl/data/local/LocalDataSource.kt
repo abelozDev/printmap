@@ -21,7 +21,7 @@ internal class LocalDataSource : DataSource {
         schema: TileSchema
     ): Long {
         val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
-        val geoCalculator = GeoCalculator()
+        val geoCalculator = GeoCalculator
 
         val formattedList = if (schema == TileSchema.TMS) {
             tiles.map { (x, y, z) ->
@@ -79,7 +79,7 @@ internal class LocalDataSource : DataSource {
         return withContext(Dispatchers.IO) {
             var tileData: ByteArray? = null
             val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
-            val (newX, newY) = if (schema == TileSchema.TMS) GeoCalculator().googleXyzToTms(
+            val (newX, newY) = if (schema == TileSchema.TMS) GeoCalculator.googleXyzToTms(
                 x,
                 y,
                 z

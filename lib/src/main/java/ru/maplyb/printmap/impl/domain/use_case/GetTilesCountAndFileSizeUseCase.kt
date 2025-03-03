@@ -8,7 +8,7 @@ import ru.maplyb.printmap.impl.util.GeoCalculator
 
 class GetTilesCountAndFileSizeUseCase {
     suspend operator fun invoke(boundingBox: BoundingBox, zoom: Int): OperationResult<Pair<List<TileParams>, Long>> {
-        val count = GeoCalculator().calculateTotalTilesCount(
+        val count = GeoCalculator.calculateTotalTilesCount(
             boundingBox, zoom
         )
         return when(count) {

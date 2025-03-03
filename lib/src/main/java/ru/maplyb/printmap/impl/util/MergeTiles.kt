@@ -9,7 +9,10 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import ru.maplyb.printmap.api.model.BoundingBox
+import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.MapItem
+import ru.maplyb.printmap.impl.domain.model.TileParams
 import ru.maplyb.printmap.impl.domain.model.TileSchema
 
 internal class MergeTiles {
@@ -26,14 +29,16 @@ internal class MergeTiles {
 
     suspend fun mergeTilesSortedByCoordinates(
         author: String,
+        boundingBox: BoundingBox,
+        tiles: List<TileParams>,
         tilesPaths: Map<MapItem, List<String?>>,
-        minX: Int,
-        maxX: Int,
-        minY: Int,
-        maxY: Int,
         zoom: Int
     ): Result<Bitmap?> {
         return runCatching {
+            val minX: Int = tiles.minOf { it.x }
+            val maxX: Int = tiles.maxOf { it.x }
+            val minY: Int = tiles.minOf { it.y }
+            val maxY: Int = tiles.maxOf { it.y }
             val horizontalSize = (maxX + 1 - minX).coerceAtLeast(1)
             val verticalSize = (maxY + 1 - minY).coerceAtLeast(1)
 
@@ -48,8 +53,8 @@ internal class MergeTiles {
                     val paths = tilesPaths[mapItem]
                     val (newMinY, newMaxY) = if (mapItem.mapType == TileSchema.TMS) {
                         Pair(
-                            GeoCalculator().googleXyzToTms(minX, minY, zoom).second,
-                            GeoCalculator().googleXyzToTms(maxX, maxY, zoom).second
+                            GeoCalculator.googleXyzToTms(minX, minY, zoom).second,
+                            GeoCalculator.googleXyzToTms(maxX, maxY, zoom).second
                         )
                     } else {
                         Pair(minY, maxY)
@@ -59,7 +64,7 @@ internal class MergeTiles {
                             val (x, y) = extractCoordinates(it)
                             val bitmap = BitmapFactory.decodeFile(it)
                             val correctedY = if (mapItem.mapType == TileSchema.TMS) {
-                                GeoCalculator().googleXyzToTms(x, y, zoom).second
+                                GeoCalculator.googleXyzToTms(x, y, zoom).second
                             } else {
                                 y
                             }
@@ -87,9 +92,48 @@ internal class MergeTiles {
                         }
                     }
                 }
-                addWatermark(resultBitmap, author)
+                val croppedBitmap = cropBitmapToCurrentBoundingBox(
+                    bitmap = resultBitmap,
+                    tiles = tiles,
+                    zoom = zoom,
+                    boundingBox = boundingBox
+                )
+                addWatermark(croppedBitmap, author)
             }
         }
+    }
+
+    private fun cropBitmapToCurrentBoundingBox(
+        bitmap: Bitmap,
+        tiles: List<TileParams>,
+        zoom: Int,
+        boundingBox: BoundingBox
+    ): Bitmap {
+        val currentBoundingBox =
+            GeoCalculator.tilesToBoundingBox(tiles, zoom)
+        val (xMin, yMin) = GeoCalculator.convertGeoToPixel(
+            objects = GeoPoint(
+                boundingBox.latNorth,
+                boundingBox.lonWest
+            ),
+            boundingBox = currentBoundingBox,
+            bitmapHeight = bitmap.height,
+            bitmapWidth = bitmap.width
+        )
+        val (xMax, yMax) = GeoCalculator.convertGeoToPixel(
+            objects = GeoPoint(
+                boundingBox.latSouth,
+                boundingBox.lonEast
+            ),
+            boundingBox = currentBoundingBox,
+            bitmapHeight = bitmap.height,
+            bitmapWidth = bitmap.width
+        )
+
+        val widthPx = (xMax - xMin).toInt()
+        val heightPx = (yMax - yMin).toInt()
+
+        return Bitmap.createBitmap(bitmap, xMin.toInt(), yMin.toInt(), widthPx, heightPx)
     }
 
     private fun addWatermark(
@@ -105,13 +149,13 @@ internal class MergeTiles {
             color = Color.BLACK
             this.textSize = textSize
             isAntiAlias = true
-            alpha = (255/1.75).toInt()
+            alpha = (255 / 1.75).toInt()
             setShadowLayer(textSize * 0.6f, textSize * 0.4f, textSize * 0.4f, Color.WHITE)
         }
 
         val textHeight = paint.descent() - paint.ascent()
         val x = mutableBitmap.width * 0.02f
-        val y = mutableBitmap.height - textHeight/2
+        val y = mutableBitmap.height - textHeight / 2
 
         canvas.drawText(author, x, y, paint)
 

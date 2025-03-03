@@ -27,7 +27,7 @@ import kotlin.math.tan
 /**
  * Расчеты связанные с картой
  * */
-class GeoCalculator {
+object GeoCalculator {
 
     /**Количество тайлов, размер файла*/
     suspend fun calculateTotalTilesCount(
@@ -109,40 +109,55 @@ class GeoCalculator {
         return x to yTms
     }
 
-    fun calculateTileY(latitude: Double, zoomLevel: Int): Int =
-        floor(
-            (1 - ln(
-                tan(Math.toRadians(latitude)) +
-                        1 / cos(Math.toRadians(latitude))
-            ) / Math.PI) / 2.0 * (1 shl zoomLevel)
-        ).toInt()
-
-    fun calculateTileX(longitude: Double, zoomLevel: Int): Int =
-        floor((longitude + 180.0) / 360.0 * (1 shl zoomLevel)).toInt()
-
-    /*надо получить tile_data (картинка в байтах)*/
-    suspend fun getMetadataMbtiles(path: String): String? {
-        return withContext(Dispatchers.IO) {
-            var bounds: String? = null
-            val db: SQLiteDatabase = SQLiteDatabase.openOrCreateDatabase(File(path), null)
-
-            val query = "SELECT name,value FROM metadata WHERE name = 'bounds';"
-            try {
-                val cur = db.rawQuery(query, null)
-                if (cur.moveToFirst()) {
-                    do {
-                        bounds = cur.getString(1)
-                    } while (cur.moveToNext())
-                }
-                cur.close()
-            } catch (e: android.database.sqlite.SQLiteException) {
-                bounds = null
-            }
-            db.close()
-            bounds
-        }
+    fun convertGeoToPixel(
+        objects: GeoPoint,
+        boundingBox: BoundingBox,
+        bitmapWidth: Int,
+        bitmapHeight: Int
+    ): Pair<Float, Float> {
+        val leftTopPoint =
+            degreeToMercator(GeoPoint(boundingBox.latNorth, boundingBox.lonEast))
+        val rightBottomPoint =
+            degreeToMercator(GeoPoint(boundingBox.latSouth, boundingBox.lonWest))
+        val lengthX =
+            maxOf(rightBottomPoint.x - leftTopPoint.x, leftTopPoint.x - rightBottomPoint.x)
+        val lengthY =
+            maxOf(leftTopPoint.y - rightBottomPoint.y, rightBottomPoint.y - leftTopPoint.y)
+        val pixelSizeX = lengthX / bitmapWidth
+        val pixelSizeY = lengthY / bitmapHeight
+        val maxX = minOf(leftTopPoint.x, rightBottomPoint.x)
+        val pointsMercator = degreeToMercator(objects)
+        val pointPixelX = ((pointsMercator.x - maxX) / pixelSizeX).toFloat()
+        val pointPixelY = ((leftTopPoint.y - pointsMercator.y) / pixelSizeY).toFloat()
+        return pointPixelX to pointPixelY
     }
 
+    fun convertGeoToPixel(
+        objects: List<GeoPoint>,
+        boundingBox: BoundingBox,
+        bitmapWidth: Int,
+        bitmapHeight: Int
+    ): List<Pair<Float, Float>> {
+        val leftTopPoint =
+            degreeToMercator(GeoPoint(boundingBox.latNorth, boundingBox.lonEast))
+        val rightBottomPoint =
+            degreeToMercator(GeoPoint(boundingBox.latSouth, boundingBox.lonWest))
+        val lengthX =
+            maxOf(rightBottomPoint.x - leftTopPoint.x, leftTopPoint.x - rightBottomPoint.x)
+        val lengthY =
+            maxOf(leftTopPoint.y - rightBottomPoint.y, rightBottomPoint.y - leftTopPoint.y)
+        val pixelSizeX = lengthX / bitmapWidth
+        val pixelSizeY = lengthY / bitmapHeight
+        val maxX = minOf(leftTopPoint.x, rightBottomPoint.x)
+        val pointsMercator = degreeToMercator(objects)
+        val result = mutableListOf<Pair<Float, Float>>()
+        pointsMercator.forEach {
+            val pointPixelX = ((it.x - maxX) / pixelSizeX).toFloat()
+            val pointPixelY = ((leftTopPoint.y - it.y) / pixelSizeY).toFloat()
+            result.add(pointPixelX to pointPixelY)
+        }
+        return result
+    }
     fun degreeToMercator(point: GeoPoint): GeoPointMercator {
         val crsFactory = CRSFactory()
         val crsDegree = crsFactory.createFromName("EPSG:4326") // WGS 84 (широта/долгота)
@@ -185,28 +200,5 @@ class GeoCalculator {
         }
         return result
     }
-
-    fun mercatorToDegree(point: GeoPointMercator): GeoPoint {
-        val crsFactory = CRSFactory()
-        val crsMercator = crsFactory.createFromName("EPSG:3857") // Web Mercator
-        val crsDegree = crsFactory.createFromName("EPSG:4326") // WGS 84 (широта/долгота)
-
-        val transformFactory = CoordinateTransformFactory()
-        val transform: CoordinateTransform = transformFactory.createTransform(crsMercator, crsDegree)
-
-        val sourceCoord = ProjCoordinate(point.x, point.y) // Координаты в меркаторе
-        val targetCoord = ProjCoordinate()
-
-        try {
-            transform.transform(sourceCoord, targetCoord)
-        } catch (e: Proj4jException) {
-            e.printStackTrace()
-            // Возвращаем значение по умолчанию или выбрасываем исключение
-            throw RuntimeException("Failed to transform coordinates: ${e.message}")
-        }
-
-        return GeoPoint(targetCoord.y, targetCoord.x) // Порядок: широта, долгота
-    }
-
 }
 

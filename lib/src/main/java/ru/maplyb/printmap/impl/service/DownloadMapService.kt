@@ -70,7 +70,7 @@ internal class DownloadMapService : Service() {
     ) {
         coroutineScope.launch {
             val tiles =
-                GeoCalculator().calculateTotalTilesCount(args.bound, args.zoom).successDataOrNull()
+                GeoCalculator.calculateTotalTilesCount(args.bound, args.zoom).successDataOrNull()
                     ?: return@launch
             val fullSize = args.mapList.size * tiles.size
             startForeground(
@@ -105,11 +105,9 @@ internal class DownloadMapService : Service() {
                     MergeTiles()
                         .mergeTilesSortedByCoordinates(
                             args.author,
+                            boundingBox = args.bound,
+                            tiles = tiles,
                             downloadedTiles.data,
-                            tiles.minOf { it.x },
-                            tiles.maxOf { it.x },
-                            tiles.minOf { it.y },
-                            tiles.maxOf { it.y },
                             args.zoom
                         ).onSuccess { bitmap ->
                     prefs?.setProgress(

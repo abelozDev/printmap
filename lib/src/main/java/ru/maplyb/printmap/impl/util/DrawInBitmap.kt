@@ -15,6 +15,7 @@ import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.LayerObject
 import ru.maplyb.printmap.api.model.ObjectRes
+import ru.maplyb.printmap.impl.util.GeoCalculator.convertGeoToPixel
 
 class DrawInBitmap {
 
@@ -69,7 +70,7 @@ class DrawInBitmap {
         context: Context,
         objects: LayerObject.Object,
     ) {
-        val linesInPixels = convertGeoToPixel(
+        val linesInPixels = GeoCalculator.convertGeoToPixel(
             objects.coords,
             boundingBox,
             bitmapWidth = bitmap.width,
@@ -102,55 +103,7 @@ class DrawInBitmap {
         canvas.restore()
     }
 
-    private fun convertGeoToPixel(
-        objects: GeoPoint,
-        boundingBox: BoundingBox,
-        bitmapWidth: Int,
-        bitmapHeight: Int
-    ): Pair<Float, Float> {
-        val leftTopPoint =
-            GeoCalculator().degreeToMercator(GeoPoint(boundingBox.latNorth, boundingBox.lonEast))
-        val rightBottomPoint =
-            GeoCalculator().degreeToMercator(GeoPoint(boundingBox.latSouth, boundingBox.lonWest))
-        val lengthX =
-            maxOf(rightBottomPoint.x - leftTopPoint.x, leftTopPoint.x - rightBottomPoint.x)
-        val lengthY =
-            maxOf(leftTopPoint.y - rightBottomPoint.y, rightBottomPoint.y - leftTopPoint.y)
-        val pixelSizeX = lengthX / bitmapWidth
-        val pixelSizeY = lengthY / bitmapHeight
-        val maxX = minOf(leftTopPoint.x, rightBottomPoint.x)
-        val pointsMercator = GeoCalculator().degreeToMercator(objects)
-        val pointPixelX = ((pointsMercator.x - maxX) / pixelSizeX).toFloat()
-        val pointPixelY = ((leftTopPoint.y - pointsMercator.y) / pixelSizeY).toFloat()
-        return pointPixelX to pointPixelY
-    }
 
-    private fun convertGeoToPixel(
-        objects: List<GeoPoint>,
-        boundingBox: BoundingBox,
-        bitmapWidth: Int,
-        bitmapHeight: Int
-    ): List<Pair<Float, Float>> {
-        val leftTopPoint =
-            GeoCalculator().degreeToMercator(GeoPoint(boundingBox.latNorth, boundingBox.lonEast))
-        val rightBottomPoint =
-            GeoCalculator().degreeToMercator(GeoPoint(boundingBox.latSouth, boundingBox.lonWest))
-        val lengthX =
-            maxOf(rightBottomPoint.x - leftTopPoint.x, leftTopPoint.x - rightBottomPoint.x)
-        val lengthY =
-            maxOf(leftTopPoint.y - rightBottomPoint.y, rightBottomPoint.y - leftTopPoint.y)
-        val pixelSizeX = lengthX / bitmapWidth
-        val pixelSizeY = lengthY / bitmapHeight
-        val maxX = minOf(leftTopPoint.x, rightBottomPoint.x)
-        val pointsMercator = GeoCalculator().degreeToMercator(objects)
-        val result = mutableListOf<Pair<Float, Float>>()
-        pointsMercator.forEach {
-            val pointPixelX = ((it.x - maxX) / pixelSizeX).toFloat()
-            val pointPixelY = ((leftTopPoint.y - it.y) / pixelSizeY).toFloat()
-            result.add(pointPixelX to pointPixelY)
-        }
-        return result
-    }
 
     private suspend fun drawPolygon(
         bitmap: Bitmap,
@@ -164,7 +117,7 @@ class DrawInBitmap {
                 strokeWidth = objects.style.width     // Толщина линии
                 isAntiAlias = true   // Убираем зазубрины на линиях
             }
-            val pointsInPixels = convertGeoToPixel(
+            val pointsInPixels = GeoCalculator.convertGeoToPixel(
                 objects.objects,
                 boundingBox,
                 bitmapWidth = bitmap.width,
