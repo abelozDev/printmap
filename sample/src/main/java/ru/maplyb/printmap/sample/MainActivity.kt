@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
         val type = MapType.Online("https://mt0.google.com//vt/lyrs=m&x={x}&y={y}&z={z}")
         val item = MapItem("google", type, true, 1f, 0, 1, 24)
         val local = MapItem(
-            name = "LocalTest",
+            name = "storage/emulated/0/Download/Relief_Ukraine.mbtiles",
             type = MapType.Offline("storage/emulated/0/Download/Relief_Ukraine.mbtiles"),
             isVisible = true,
             alpha = 1f,
@@ -1176,7 +1176,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                     )
                 ),
                 selected = true,
-                name = "text"
+                name = "textetxtetxtetxtetxtetxte"
             ),
             Layer(
                 objects = listOf(
