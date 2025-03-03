@@ -86,16 +86,23 @@ class DrawInBitmap {
         val scaleFactor = objects.style.width / 25f
         val scaledWidth = (realWidth * scaleFactor).toInt()
         val scaledHeight = (realHeight * scaleFactor).toInt()
+        val centerX = linesInPixels.first
+        val centerY = linesInPixels.second
+        canvas.save()
+        canvas.translate(centerX, centerY)
+
+        canvas.rotate(objects.angle)
         drawable.setBounds(
-            (linesInPixels.first - scaledWidth / 2).toInt(),
-            (linesInPixels.second - scaledHeight / 2).toInt(),
-            (linesInPixels.first + scaledWidth / 2).toInt(),
-            (linesInPixels.second + scaledHeight / 2).toInt()
+            -scaledWidth / 2,
+            -scaledHeight / 2,
+            scaledWidth / 2,
+            scaledHeight / 2
         )
         drawable.draw(canvas)
+        canvas.restore()
     }
 
-    fun convertGeoToPixel(
+    private fun convertGeoToPixel(
         objects: GeoPoint,
         boundingBox: BoundingBox,
         bitmapWidth: Int,
@@ -118,7 +125,7 @@ class DrawInBitmap {
         return pointPixelX to pointPixelY
     }
 
-    fun convertGeoToPixel(
+    private fun convertGeoToPixel(
         objects: List<GeoPoint>,
         boundingBox: BoundingBox,
         bitmapWidth: Int,
