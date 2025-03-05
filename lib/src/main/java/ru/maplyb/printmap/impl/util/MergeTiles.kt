@@ -14,6 +14,9 @@ import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.impl.domain.model.TileParams
 import ru.maplyb.printmap.impl.domain.model.TileSchema
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.roundToInt
 
 internal class MergeTiles {
 
@@ -81,10 +84,10 @@ internal class MergeTiles {
                             val tile =
                                 bitmapsWithCoords?.find { it.first == x && it.second == y }?.third
 
-                            val xOffset = (x - minX) * 255
+                            val xOffset = (x - minX) * 256
 
                             val yOffset =
-                                if (newMaxY > newMinY) (y - newMinY) * 255 else (newMinY - y) * 255
+                                if (newMaxY > newMinY) (y - newMinY) * 256 else (newMinY - y) * 256
 
                             if (tile != null) {
                                 canvas.drawBitmap(tile, xOffset.toFloat(), yOffset.toFloat(), paint)
@@ -98,11 +101,23 @@ internal class MergeTiles {
                     zoom = zoom,
                     boundingBox = boundingBox
                 )
-                addWatermark(croppedBitmap, author)
+                val scale = getMapScaleForPrint(zoom,boundingBox)
+                addWatermark(croppedBitmap, author, "1:$scale")
             }
         }
     }
 
+    private fun getMapScaleForPrint(zoom: Int, boundingBox: BoundingBox, dpi: Int = 300): Int {
+        val latitude = (boundingBox.latNorth + boundingBox.latSouth) / 2
+        val earthCircumference = 40_075_016.0 // Длина экватора в метрах
+        val tileSize = 256
+
+        val metersPerPixel = (earthCircumference / (tileSize * 2.0.pow(zoom))) / cos(Math.toRadians(latitude))
+        val scale = (metersPerPixel * dpi * 2.54) / 100
+        val roundScale = (scale / 1000).roundToInt() * 1000
+        // Учитываем DPI и переводим в картографический масштаб
+        return roundScale
+    }
     private fun cropBitmapToCurrentBoundingBox(
         bitmap: Bitmap,
         tiles: List<TileParams>,
@@ -138,7 +153,8 @@ internal class MergeTiles {
 
     private fun addWatermark(
         bitmap: Bitmap,
-        author: String
+        author: String,
+        scale: String
     ): Bitmap {
         val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(mutableBitmap)
@@ -149,16 +165,19 @@ internal class MergeTiles {
             color = Color.BLACK
             this.textSize = textSize
             isAntiAlias = true
-            alpha = (255 / 1.75).toInt()
+            alpha = (256 / 1.75).toInt()
             setShadowLayer(textSize * 0.6f, textSize * 0.4f, textSize * 0.4f, Color.WHITE)
         }
 
         val textHeight = paint.descent() - paint.ascent()
         val x = mutableBitmap.width * 0.02f
         val y = mutableBitmap.height - textHeight / 2
+        val scaleWidth = paint.measureText(scale)
 
+        val scaleX = mutableBitmap.width * 0.5f - (scaleWidth/2)
+        val scaleY = mutableBitmap.height - textHeight / 2
         canvas.drawText(author, x, y, paint)
-
+        canvas.drawText(scale, scaleX, scaleY, paint)
         return mutableBitmap
     }
 

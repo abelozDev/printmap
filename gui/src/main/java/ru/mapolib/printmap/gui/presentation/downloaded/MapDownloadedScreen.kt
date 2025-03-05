@@ -239,10 +239,7 @@ private fun ImageItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(max = 400.dp)
-                    .height(maxHeight.dp)
-                    .onGloballyPositioned { layoutCoordinates ->
-                        println("onGloballyPositioned ${layoutCoordinates.size}")
-                    },
+                    .height(maxHeight.dp),
                 contentDescription = null
             )
             if (progress) {

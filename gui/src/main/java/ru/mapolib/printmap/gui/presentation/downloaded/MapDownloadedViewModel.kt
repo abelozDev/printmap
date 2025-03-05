@@ -7,12 +7,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.Layer
@@ -54,9 +56,9 @@ class MapDownloadedViewModel(
             }
             .launchIn(viewModelScope)
     }
-
     private fun drawLayers() {
         viewModelScope.launch(Dispatchers.Default) {
+            println("start on: ${this.hashCode()}")
             doWork {
                 val bitmapWithDraw =
                     if (_state.value.layers.isNotEmpty()) {
@@ -73,12 +75,14 @@ class MapDownloadedViewModel(
                             bitmap
                         }
                     } else _state.value.bitmap
-
-                _state.update {
-                    it.copy(
-                        bitmap = bitmapWithDraw
-                    )
+                if (isActive) {
+                    _state.update {
+                        it.copy(
+                            bitmap = bitmapWithDraw
+                        )
+                    }
                 }
+                println("end on: ${this.hashCode()}, ${this.isActive}")
             }
         }
     }

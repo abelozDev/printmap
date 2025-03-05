@@ -32,6 +32,7 @@ import ru.maplyb.printmap.api.model.MapType
 fun MapsExpandable(
     maps: List<MapItem>,
     updateMap: (MapItem) -> Unit,
+    updateMaps: (List<MapItem>) -> Unit
 ) {
     var isOpen by remember {
         mutableStateOf(false)
@@ -68,11 +69,20 @@ fun MapsExpandable(
             ExpandableItem(
                 items = offlineMaps,
                 onChange = { map ->
-                        updateMap(
-                            (map as MapItem).copy(
-                                selected = !map.selected
-                            )
+                    updateMap(
+                        (map as MapItem).copy(
+                            selected = !map.selected
                         )
+                    )
+                },
+                onHeaderChange = { checked ->
+                    updateMaps(
+                        offlineMaps.map {
+                            it.copy(
+                                selected = checked
+                            )
+                        }
+                    )
                 }
             )
             ExpandableItem(
@@ -82,6 +92,15 @@ fun MapsExpandable(
                         (map as MapItem).copy(
                             selected = !map.selected
                         )
+                    )
+                },
+                onHeaderChange = { checked ->
+                    updateMaps(
+                        onlineMaps.map {
+                            it.copy(
+                                selected = checked
+                            )
+                        }
                     )
                 }
             )

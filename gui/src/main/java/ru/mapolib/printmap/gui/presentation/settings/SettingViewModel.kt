@@ -85,6 +85,19 @@ internal class SettingViewModel(
                     )
                 }
             }
+            is SettingEvent.UpdateMaps -> {
+                _state.update {
+                    it.copy(
+                        maps = it.maps.map { map ->
+                            if (action.maps.any { it.name == map.name }) {
+                                action.maps.first { it.name == map.name }
+                            } else {
+                                map
+                            }
+                        }
+                    )
+                }
+            }
 
             SettingEvent.StartDownloadingMap -> {
                 startDownloadingMap()

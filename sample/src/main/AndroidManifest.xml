@@ -27,7 +27,7 @@
         </activity>
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.example.dronevision.provider"
+            android:authorities="com.example.sampleapp.provider"
             android:grantUriPermissions="true"
             android:exported="false">
             <meta-data

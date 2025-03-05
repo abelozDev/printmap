@@ -179,6 +179,9 @@ internal fun DownloadMapSettingsScreen(
             maps = state.maps,
             updateMap = {
                 viewModel.sendEvent(SettingEvent.UpdateMap(it))
+            },
+            updateMaps = {
+                viewModel.sendEvent(SettingEvent.UpdateMaps(it))
             }
         )
 

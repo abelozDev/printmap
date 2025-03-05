@@ -34,6 +34,7 @@ sealed interface SettingEvent : PrintMapEvent {
     data object GetTilesCount : SettingEvent
     data class UpdateQuality(val newQuality: Int) : SettingEvent
     data class UpdateMap(val map: MapItem) : SettingEvent
+    data class UpdateMaps(val maps: List<MapItem>) : SettingEvent
     data object StartDownloadingMap : SettingEvent
     data object ShowPolylineChanged: SettingEvent
 }

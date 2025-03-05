@@ -1196,7 +1196,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             )
         )
         val itemToADD = MapItem(
-            name = "added map",
+            name = "added map ${System.currentTimeMillis()}",
             type = MapType.Online("https://mt0.google.com//vt/lyrs=s"),
             isVisible = true,
             alpha = 1f,
@@ -1227,7 +1227,16 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             }
         }
         addMapBtn.setOnClickListener {
-            list = list + itemToADD
+            list = list + MapItem(
+                name = "added map ${System.currentTimeMillis()}",
+                type = MapType.Online("https://mt0.google.com//vt/lyrs=s"),
+                isVisible = true,
+                alpha = 1f,
+                position = 1,
+                zoomMin = 0,
+                zoomMax = 13
+
+            )
         }
         deleteMapBtn.setOnClickListener {
             list = list.filter { it != itemToADD }

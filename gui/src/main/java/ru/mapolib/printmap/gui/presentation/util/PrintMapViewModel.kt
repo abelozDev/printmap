@@ -46,9 +46,13 @@ abstract class PrintMapViewModel<Event : PrintMapEvent, Effect : PrintMapEffect>
         doCoroutineWork(doOnAsyncBlock)
     }
     private suspend inline fun <P> doCoroutineWork(crossinline doOnAsyncBlock: suspend () -> P) {
-        updateActiveRequest(isLaunch = true)
-        doOnAsyncBlock()
-        updateActiveRequest(isLaunch = false)
+        try {
+            updateActiveRequest(isLaunch = true)
+            doOnAsyncBlock()
+        } finally {
+            updateActiveRequest(isLaunch = false)
+        }
+
     }
 
     protected abstract fun consumeEvent(action: Event)

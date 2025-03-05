@@ -2,7 +2,6 @@ package ru.maplyb.printmap.impl.util
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.drawable.BitmapDrawable
@@ -11,11 +10,11 @@ import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ru.maplyb.printmap.api.model.BoundingBox
-import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.LayerObject
 import ru.maplyb.printmap.api.model.ObjectRes
 import ru.maplyb.printmap.impl.util.GeoCalculator.convertGeoToPixel
+import kotlin.math.sqrt
 
 class DrawInBitmap {
 
@@ -26,6 +25,7 @@ class DrawInBitmap {
         layers: List<Layer>,
     ): Bitmap {
         val canvas = Canvas(bitmap)
+        val scaleFactor = sqrt((bitmap.width * bitmap.height).toDouble()).toFloat() / 4000f
         layers
             .flatMap { it.objects }
             .forEach { objects ->
@@ -34,13 +34,15 @@ class DrawInBitmap {
                         canvas = canvas,
                         bitmap = bitmap,
                         boundingBox = boundingBox,
-                        objects = objects
+                        objects = objects,
+                        scaleFactor = scaleFactor
                     )
 
                     is LayerObject.Polygon -> drawPolygon(
                         bitmap = bitmap,
                         boundingBox = boundingBox,
-                        objects = objects
+                        objects = objects,
+                        scaleFactor = scaleFactor
                     )
 
                     is LayerObject.Radius -> TODO()
@@ -48,7 +50,8 @@ class DrawInBitmap {
                         canvas = canvas,
                         bitmap = bitmap,
                         boundingBox = boundingBox,
-                        text = objects
+                        text = objects,
+                        scaleFactor = scaleFactor
                     )
 
                     is LayerObject.Object -> drawObjects(
@@ -56,21 +59,24 @@ class DrawInBitmap {
                         canvas = canvas,
                         boundingBox = boundingBox,
                         context = context,
-                        objects = objects
+                        objects = objects,
+                        scaleFactor = scaleFactor
                     )
                 }
             }
         return bitmap
     }
 
-    private fun drawObjects(
+    private suspend fun drawObjects(
         bitmap: Bitmap,
         canvas: Canvas,
         boundingBox: BoundingBox,
         context: Context,
         objects: LayerObject.Object,
+        scaleFactor: Float
     ) {
-        val linesInPixels = GeoCalculator.convertGeoToPixel(
+        withContext(Dispatchers.Default) {
+        val linesInPixels = convertGeoToPixel(
             objects.coords,
             boundingBox,
             bitmapWidth = bitmap.width,
@@ -79,14 +85,14 @@ class DrawInBitmap {
         val drawable = when(objects.res) {
             is ObjectRes.Local -> ContextCompat.getDrawable(context, objects.res.res)
             is ObjectRes.Storage -> Drawable.createFromPath(objects.res.res)
-        } ?:return
+        } ?: return@withContext
 
         val bitmapDrawable = drawable as? BitmapDrawable
         val realWidth = bitmapDrawable?.bitmap?.width ?: drawable.intrinsicWidth
         val realHeight = bitmapDrawable?.bitmap?.height ?: drawable.intrinsicHeight
-        val scaleFactor = objects.style.width / 25f
-        val scaledWidth = (realWidth * scaleFactor).toInt()
-        val scaledHeight = (realHeight * scaleFactor).toInt()
+        val scaleFactor1 = (objects.style.width / 25f) * scaleFactor
+        val scaledWidth = (realWidth * scaleFactor1).toInt()
+        val scaledHeight = (realHeight * scaleFactor1).toInt()
         val centerX = linesInPixels.first
         val centerY = linesInPixels.second
         canvas.save()
@@ -101,6 +107,8 @@ class DrawInBitmap {
         )
         drawable.draw(canvas)
         canvas.restore()
+        }
+
     }
 
 
@@ -109,12 +117,13 @@ class DrawInBitmap {
         bitmap: Bitmap,
         boundingBox: BoundingBox,
         objects: LayerObject.Polygon,
+        scaleFactor: Float
     ): Bitmap {
         return withContext(Dispatchers.Default) {
             val canvas = Canvas(bitmap)
             val paint = Paint().apply {
                 color = objects.style.color    // Цвет линии
-                strokeWidth = objects.style.width     // Толщина линии
+                strokeWidth = (objects.style.width * scaleFactor)
                 isAntiAlias = true   // Убираем зазубрины на линиях
             }
             val pointsInPixels = GeoCalculator.convertGeoToPixel(
@@ -146,12 +155,13 @@ class DrawInBitmap {
         bitmap: Bitmap,
         boundingBox: BoundingBox,
         objects: LayerObject.Line,
+        scaleFactor: Float
     ) {
         withContext(Dispatchers.Default) {
             val paint = Paint().apply {
-                color = objects.style.color    // Цвет линии
-                strokeWidth = objects.style.width     // Толщина линии
-                isAntiAlias = true   // Убираем зазубрины на линиях
+                color = objects.style.color
+                strokeWidth = (objects.style.width * scaleFactor)
+                isAntiAlias = true
             }
             val linesInPixels = convertGeoToPixel(
                 objects.objects,
@@ -173,29 +183,32 @@ class DrawInBitmap {
         }
     }
 
-    private fun drawTextOnBitmap(
+    private suspend fun drawTextOnBitmap(
         canvas: Canvas,
         bitmap: Bitmap,
         boundingBox: BoundingBox,
         text: LayerObject.Text,
+        scaleFactor: Float
     ) {
-        val linesInPixels = convertGeoToPixel(
-            listOf(text.coords),
-            boundingBox,
-            bitmapWidth = bitmap.width,
-            bitmapHeight = bitmap.height
-        )
-        val paint = Paint().apply {
-            color = text.style.color
-            this.textSize = text.style.width
-            isAntiAlias = true
-            textAlign = Paint.Align.LEFT
-        }
+        withContext(Dispatchers.Default) {
+            val linesInPixels = convertGeoToPixel(
+                listOf(text.coords),
+                boundingBox,
+                bitmapWidth = bitmap.width,
+                bitmapHeight = bitmap.height
+            )
+            val paint = Paint().apply {
+                color = text.style.color
+                this.textSize = (text.style.width * scaleFactor)
+                isAntiAlias = true
+                textAlign = Paint.Align.LEFT
+            }
 
-        canvas.save()
-        canvas.translate(linesInPixels.first().first, linesInPixels.first().second)
-        canvas.rotate(text.angle)
-        canvas.drawText(text.text, 0f, 0f, paint)
-        canvas.restore()
+            canvas.save()
+            canvas.translate(linesInPixels.first().first, linesInPixels.first().second)
+            canvas.rotate(text.angle)
+            canvas.drawText(text.text, 0f, 0f, paint)
+            canvas.restore()
+        }
     }
 }

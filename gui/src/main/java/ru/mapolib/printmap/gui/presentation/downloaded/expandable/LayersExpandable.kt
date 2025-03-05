@@ -68,6 +68,9 @@ fun LayersExpandable(
                             selected = !layer.selected
                         )
                     )
+                },
+                onHeaderChange = {
+                    //todo
                 }
             )
         }
