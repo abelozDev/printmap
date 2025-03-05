@@ -124,9 +124,8 @@ internal class DownloadMapService : Service() {
                                 context = this@DownloadMapService,
                                 path = DownloadedState(
                                     path = it,
-                                    zoom = args.zoom,
                                     layers = args.layers,
-                                    tiles = tiles
+                                    boundingBox = args.bound
                                 )
                             )
                         }

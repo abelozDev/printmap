@@ -25,7 +25,7 @@ class DrawInBitmap {
         layers: List<Layer>,
     ): Bitmap {
         val canvas = Canvas(bitmap)
-        val scaleFactor = sqrt((bitmap.width * bitmap.height).toDouble()).toFloat() / 4000f
+        val scaleFactor = sqrt((bitmap.width * bitmap.height).toDouble()).toFloat() / 1000f
         layers
             .flatMap { it.objects }
             .forEach { objects ->

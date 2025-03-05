@@ -55,11 +55,9 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
                     _state.value = when {
                         downloadStatus.isFinished && downloadStatus.filePath != null -> {
                             val args = downloadStatus.filePath!!
-                            val boundingBox =
-                                GeoCalculator.tilesToBoundingBox(args.tiles, args.zoom)
                             DownloadMapState.Finished(
                                 path = args.path,
-                                boundingBox = boundingBox,
+                                boundingBox = args.boundingBox,
                                 layers = args.layers,
                                 isOpen = _state.value.isOpen
                             )

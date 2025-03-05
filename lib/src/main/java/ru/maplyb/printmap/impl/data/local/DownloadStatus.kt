@@ -17,7 +17,6 @@ data class DownloadStatus(
 @Serializable
 data class DownloadedState(
     val path: String,
-    val tiles: List<TileParams>,
-    val zoom: Int,
+    val boundingBox: BoundingBox,
     val layers: List<Layer>,
 )

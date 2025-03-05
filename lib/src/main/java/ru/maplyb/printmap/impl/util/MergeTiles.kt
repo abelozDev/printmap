@@ -114,10 +114,14 @@ internal class MergeTiles {
 
         val metersPerPixel = (earthCircumference / (tileSize * 2.0.pow(zoom))) / cos(Math.toRadians(latitude))
         val scale = (metersPerPixel * dpi * 2.54) / 100
-        val roundScale = (scale / 1000).roundToInt() * 1000
-        // Учитываем DPI и переводим в картографический масштаб
-        return roundScale
+
+        return if (scale >= 1000) {
+            (scale / 1000).roundToInt() * 1000  // Округление до тысяч
+        } else {
+            (scale / 100).roundToInt() * 100  // Округление до сотен
+        }
     }
+
     private fun cropBitmapToCurrentBoundingBox(
         bitmap: Bitmap,
         tiles: List<TileParams>,
@@ -160,24 +164,32 @@ internal class MergeTiles {
         val canvas = Canvas(mutableBitmap)
 
         val textSize = mutableBitmap.width * 0.025f
-
-        val paint = Paint().apply {
-            color = Color.BLACK
+        val paintStroke = Paint().apply {
+            color = Color.WHITE // Белый цвет для обводки
             this.textSize = textSize
             isAntiAlias = true
-            alpha = (256 / 1.75).toInt()
-            setShadowLayer(textSize * 0.6f, textSize * 0.4f, textSize * 0.4f, Color.WHITE)
+            style = Paint.Style.STROKE // Обводка
+            strokeWidth = textSize / 10f // Толщина обводки
         }
 
-        val textHeight = paint.descent() - paint.ascent()
+        val paintFill = Paint().apply {
+            color = Color.BLACK // Основной цвет текста
+            this.textSize = textSize
+            isAntiAlias = true
+            style = Paint.Style.FILL
+        }
+
+        val textHeight = paintFill.descent() - paintFill.ascent()
         val x = mutableBitmap.width * 0.02f
         val y = mutableBitmap.height - textHeight / 2
-        val scaleWidth = paint.measureText(scale)
+        val scaleWidth = paintFill.measureText(scale)
 
         val scaleX = mutableBitmap.width * 0.5f - (scaleWidth/2)
         val scaleY = mutableBitmap.height - textHeight / 2
-        canvas.drawText(author, x, y, paint)
-        canvas.drawText(scale, scaleX, scaleY, paint)
+        canvas.drawText(author, x, y, paintStroke)
+        canvas.drawText(author, x, y, paintFill)
+        canvas.drawText(scale, scaleX, scaleY, paintStroke)
+        canvas.drawText(scale, scaleX, scaleY, paintFill)
         return mutableBitmap
     }
 

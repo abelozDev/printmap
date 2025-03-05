@@ -1188,7 +1188,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                         ),
                         coords = GeoPoint(50.40243799500318, 30.07808115663772),
                         angle = -450f,
-                        res = /*ObjectRes.Local(R.drawable.ic_mkb)*/ObjectRes.Storage("/storage/emulated/0/Download/rls.png")
+                        res = ObjectRes.Local(R.drawable.ic_mkb)/*ObjectRes.Storage("/storage/emulated/0/Download/rls.png")*/
                     )
                 ),
                 selected = true,
