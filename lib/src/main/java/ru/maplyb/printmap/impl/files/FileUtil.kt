@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.pdf.PdfDocument
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,6 +38,27 @@ class FileUtil(private val context: Context) {
             null
         }
     }
+
+    fun saveBitmapToPdf(bitmap: Bitmap, fileName: String): String? {
+        val file = File(directory, "$fileName.pdf")
+        return try {
+            val document = PdfDocument()
+            val pageInfo = PdfDocument.PageInfo.Builder(bitmap.width, bitmap.height, 1).create()
+            val page = document.startPage(pageInfo)
+            val canvas = page.canvas
+            canvas.drawBitmap(bitmap, 0f, 0f, null)
+            document.finishPage(page)
+            FileOutputStream(file).use { outputStream ->
+                document.writeTo(outputStream)
+            }
+            document.close()
+            file.absolutePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
 
     fun clearDownloadMapStorage() {
         directory.deleteRecursively()

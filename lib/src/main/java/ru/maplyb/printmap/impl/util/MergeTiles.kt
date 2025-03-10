@@ -1,5 +1,6 @@
 package ru.maplyb.printmap.impl.util
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -7,6 +8,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
+import android.util.DisplayMetrics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ru.maplyb.printmap.api.model.BoundingBox
@@ -14,12 +16,15 @@ import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.impl.domain.model.TileParams
 import ru.maplyb.printmap.impl.domain.model.TileSchema
+import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
 import kotlin.math.cos
 import kotlin.math.pow
+import kotlin.math.round
 import kotlin.math.roundToInt
 
 internal class MergeTiles {
 
+    /*Получение координат из имени тайла*/
     private fun extractCoordinates(filePath: String): Triple<Int, Int, Int> {
         val regex = """.*_x=(\d+)_y=(\d+)_z=(\d+)\.jpg""".toRegex()
         val matchResult = regex.find(filePath)
@@ -30,7 +35,8 @@ internal class MergeTiles {
         return Triple(-1, -1, -1)
     }
 
-    suspend fun mergeTilesSortedByCoordinates(
+    /*Объединение тайлов в одну большую карту*/
+    suspend fun mergeTilesToResultBitmap(
         author: String,
         boundingBox: BoundingBox,
         tiles: List<TileParams>,
@@ -101,27 +107,42 @@ internal class MergeTiles {
                     zoom = zoom,
                     boundingBox = boundingBox
                 )
-                val scale = getMapScaleForPrint(zoom,boundingBox)
-                addWatermark(croppedBitmap, author, "1:$scale")
+                val scale = calculateMapScale(croppedBitmap.width, croppedBitmap.height ,boundingBox)
+                val roundedScale = round(scale * 10) / 10
+                println("bitmap width: ${croppedBitmap.width}, height: ${croppedBitmap.height}")
+                addWatermark(croppedBitmap, author, "1:$roundedScale")
             }
         }
     }
+    private fun calculateMapScale(
+        widthBitmap: Int,
+        heightBitmap: Int,
+        boundingBox: BoundingBox,
+        dpi: Double = 72.0
+    ): Double {
+        val widthGeo = distanceBetween(
+            boundingBox.latNorth,
+            boundingBox.lonWest,
+            boundingBox.latNorth,
+            boundingBox.lonEast
+        )
+        val heightGeo = distanceBetween(
+            boundingBox.latNorth,
+            boundingBox.lonWest,
+            boundingBox.latSouth,
+            boundingBox.lonWest
+        )
+        val widthCm = (widthBitmap / dpi)
+        val heightCm = (heightBitmap / dpi)
 
-    private fun getMapScaleForPrint(zoom: Int, boundingBox: BoundingBox, dpi: Int = 300): Int {
-        val latitude = (boundingBox.latNorth + boundingBox.latSouth) / 2
-        val earthCircumference = 40_075_016.0 // Длина экватора в метрах
-        val tileSize = 256
+        val scaleWidth = widthGeo / widthCm
+        val scaleHeight = heightGeo / heightCm
 
-        val metersPerPixel = (earthCircumference / (tileSize * 2.0.pow(zoom))) / cos(Math.toRadians(latitude))
-        val scale = (metersPerPixel * dpi * 2.54) / 100
-
-        return if (scale >= 1000) {
-            (scale / 1000).roundToInt() * 1000  // Округление до тысяч
-        } else {
-            (scale / 100).roundToInt() * 100  // Округление до сотен
-        }
+        return (scaleWidth + scaleHeight) / 2 // Усредняем масштаб по ширине и высоте
     }
 
+
+    /*Обрезает итоговую bitmap по переданным boundingBox*/
     private fun cropBitmapToCurrentBoundingBox(
         bitmap: Bitmap,
         tiles: List<TileParams>,
@@ -192,5 +213,4 @@ internal class MergeTiles {
         canvas.drawText(scale, scaleX, scaleY, paintFill)
         return mutableBitmap
     }
-
 }

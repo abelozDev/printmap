@@ -26,7 +26,6 @@ import ru.maplyb.printmap.impl.data.local.DownloadedState
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
 import ru.maplyb.printmap.impl.files.FileUtil
-import ru.maplyb.printmap.impl.util.DrawInBitmap
 import ru.maplyb.printmap.impl.util.GeoCalculator
 import ru.maplyb.printmap.impl.util.MergeTiles
 import ru.maplyb.printmap.impl.util.serializable
@@ -103,7 +102,7 @@ internal class DownloadMapService : Service() {
                         message = "Формирование файла"
                     )
                     MergeTiles()
-                        .mergeTilesSortedByCoordinates(
+                        .mergeTilesToResultBitmap(
                             args.author,
                             boundingBox = args.bound,
                             tiles = tiles,

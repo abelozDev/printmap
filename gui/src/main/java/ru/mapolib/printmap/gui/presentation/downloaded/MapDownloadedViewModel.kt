@@ -156,7 +156,7 @@ class MapDownloadedViewModel(
                     }
                 },
                 doOnAsyncBlock = {
-                    fileUtil.saveBitmapToExternalStorage(
+                    fileUtil.saveBitmapToPdf(
                         bitmap = _state.value.bitmap,
                         fileName = "${System.currentTimeMillis()}"
                     )?.let {
