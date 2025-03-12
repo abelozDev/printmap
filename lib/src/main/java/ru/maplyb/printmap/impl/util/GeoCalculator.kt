@@ -28,7 +28,7 @@ import kotlin.math.tan
  * Расчеты связанные с картой
  * */
 object GeoCalculator {
-    const val EARTH_RADIUS = 6378140.0
+    const val EARTH_RADIUS = 6_378_140.0
     /**Количество тайлов, размер файла*/
     suspend fun calculateTotalTilesCount(
         boundingBox: BoundingBox, zoom: Int
@@ -209,14 +209,13 @@ object GeoCalculator {
         val lat2 = Math.toRadians(bX)
         val lng2 = Math.toRadians(bY)
 
-        // Расстояние по вертикали (широта) учитывается как обычно
         val latDistance = lat2 - lat1
         val lngDistance = lng2 - lng1
 
         val a = sin(latDistance / 2).pow(2) + cos(lat1) * cos(lat2) * sin(lngDistance / 2).pow(2)
         val c = 2 * atan2(sqrt(a), sqrt(1 - a))
 
-        return EARTH_RADIUS * c //km
+        return EARTH_RADIUS * c // в метрах
     }
 }
 

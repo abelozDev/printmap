@@ -1211,11 +1211,11 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                 DownloadMapState.Idle -> {
                     downloadManager.prepareDownloading(
                         boundingBox = BoundingBox(
-//                            latNorth = 55.45021687930256, lonWest = 37.51531531165744, latSouth =  55.43207979637628, lonEast = 37.546198869620454
-                            latNorth = 51.655322,
+                            latNorth = 55.45021687930256, lonWest = 37.51531531165744, latSouth =  55.43207979637628, lonEast = 37.546198869620454
+                            /*latNorth = 51.655322,
                             lonWest = 22.327316,
                             latSouth = 46.976288,
-                            lonEast = 38.433272
+                            lonEast = 38.433272*/
                         ),
                         maps = list,
                         zoom = 10,

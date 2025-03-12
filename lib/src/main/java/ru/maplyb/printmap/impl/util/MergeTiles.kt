@@ -1,6 +1,5 @@
 package ru.maplyb.printmap.impl.util
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -8,7 +7,6 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
-import android.util.DisplayMetrics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ru.maplyb.printmap.api.model.BoundingBox
@@ -17,9 +15,6 @@ import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.impl.domain.model.TileParams
 import ru.maplyb.printmap.impl.domain.model.TileSchema
 import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
-import kotlin.math.cos
-import kotlin.math.pow
-import kotlin.math.round
 import kotlin.math.roundToInt
 
 internal class MergeTiles {
@@ -107,38 +102,11 @@ internal class MergeTiles {
                     zoom = zoom,
                     boundingBox = boundingBox
                 )
-                val scale = calculateMapScale(croppedBitmap.width, croppedBitmap.height ,boundingBox)
-                val roundedScale = round(scale * 10) / 10
-                println("bitmap width: ${croppedBitmap.width}, height: ${croppedBitmap.height}")
-                addWatermark(croppedBitmap, author, "1:$roundedScale")
+//                val scale = calculateMapScale(croppedBitmap.width, croppedBitmap.height ,boundingBox)
+//                println("bitmap width: ${croppedBitmap.width}, height: ${croppedBitmap.height}")
+                addWatermark(croppedBitmap, author)
             }
         }
-    }
-    private fun calculateMapScale(
-        widthBitmap: Int,
-        heightBitmap: Int,
-        boundingBox: BoundingBox,
-        dpi: Double = 72.0
-    ): Double {
-        val widthGeo = distanceBetween(
-            boundingBox.latNorth,
-            boundingBox.lonWest,
-            boundingBox.latNorth,
-            boundingBox.lonEast
-        )
-        val heightGeo = distanceBetween(
-            boundingBox.latNorth,
-            boundingBox.lonWest,
-            boundingBox.latSouth,
-            boundingBox.lonWest
-        )
-        val widthCm = (widthBitmap / dpi)
-        val heightCm = (heightBitmap / dpi)
-
-        val scaleWidth = widthGeo / widthCm
-        val scaleHeight = heightGeo / heightCm
-
-        return (scaleWidth + scaleHeight) / 2 // Усредняем масштаб по ширине и высоте
     }
 
 
@@ -179,7 +147,6 @@ internal class MergeTiles {
     private fun addWatermark(
         bitmap: Bitmap,
         author: String,
-        scale: String
     ): Bitmap {
         val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(mutableBitmap)
@@ -203,14 +170,15 @@ internal class MergeTiles {
         val textHeight = paintFill.descent() - paintFill.ascent()
         val x = mutableBitmap.width * 0.02f
         val y = mutableBitmap.height - textHeight / 2
-        val scaleWidth = paintFill.measureText(scale)
+//        val scaleWidth = paintFill.measureText(scale)
+//        val scaleX = mutableBitmap.width * 0.5f - (scaleWidth/2)
+//        canvas.drawText(scale, scaleX, scaleY, paintStroke)
+//        canvas.drawText(scale, scaleX, scaleY, paintFill)
 
-        val scaleX = mutableBitmap.width * 0.5f - (scaleWidth/2)
         val scaleY = mutableBitmap.height - textHeight / 2
         canvas.drawText(author, x, y, paintStroke)
         canvas.drawText(author, x, y, paintFill)
-        canvas.drawText(scale, scaleX, scaleY, paintStroke)
-        canvas.drawText(scale, scaleX, scaleY, paintFill)
+
         return mutableBitmap
     }
 }

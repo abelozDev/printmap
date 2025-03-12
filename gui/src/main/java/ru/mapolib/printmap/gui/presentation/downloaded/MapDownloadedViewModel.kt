@@ -3,6 +3,9 @@ package ru.mapolib.printmap.gui.presentation.downloaded
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -21,7 +24,9 @@ import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.LayerObject
 import ru.maplyb.printmap.impl.util.DrawInBitmap
 import ru.maplyb.printmap.impl.files.FileUtil
+import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
 import ru.mapolib.printmap.gui.presentation.util.PrintMapViewModel
+import kotlin.math.roundToInt
 
 class MapDownloadedViewModel(
     private val path: String,
@@ -58,7 +63,6 @@ class MapDownloadedViewModel(
     }
     private fun drawLayers() {
         viewModelScope.launch(Dispatchers.Default) {
-            println("start on: ${this.hashCode()}")
             doWork {
                 val bitmapWithDraw =
                     if (_state.value.layers.isNotEmpty()) {
@@ -76,13 +80,8 @@ class MapDownloadedViewModel(
                         }
                     } else _state.value.bitmap
                 if (isActive) {
-                    _state.update {
-                        it.copy(
-                            bitmap = bitmapWithDraw
-                        )
-                    }
+                    updateBitmap(bitmapWithDraw)
                 }
-                println("end on: ${this.hashCode()}, ${this.isActive}")
             }
         }
     }
@@ -124,6 +123,73 @@ class MapDownloadedViewModel(
                 drawLayers()
             }
         }
+    }
+    private fun calculateMapScale(
+        widthBitmap: Int,
+        heightBitmap: Int,
+        boundingBox: BoundingBox,
+        dpi: Double = 72.0
+    ): Int {
+        val widthGeoMetr = distanceBetween(
+            boundingBox.latNorth,
+            boundingBox.lonWest,
+            boundingBox.latNorth,
+            boundingBox.lonEast
+        )
+
+        val heightGeoMetr = distanceBetween(
+            boundingBox.latNorth,
+            boundingBox.lonWest,
+            boundingBox.latSouth,
+            boundingBox.lonWest
+        )
+
+
+        val widthGeoCm = widthGeoMetr * 100
+        val heightGeoCm = heightGeoMetr * 100
+        println("widthGeoCm: $widthGeoMetr, heightGeoCm: $heightGeoMetr")
+        val widthCm = (widthBitmap / dpi) * 2.54 // 1 дюйм = 2.54 см
+        val heightCm = (heightBitmap / dpi) * 2.54
+        println("widthCm: $widthCm, heightCm: $heightCm")
+        val scaleWidth = widthGeoCm / widthCm
+        val scaleHeight = heightGeoCm / heightCm
+
+        val scale = (scaleWidth + scaleHeight) / 2
+
+        return scale.roundToInt()
+    }
+
+    private fun drawScale(
+        bitmap: Bitmap,
+        scale: String,
+    ): Bitmap {
+        val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(mutableBitmap)
+
+        val textSize = mutableBitmap.width * 0.025f
+        val paintStroke = Paint().apply {
+            color = Color.WHITE // Белый цвет для обводки
+            this.textSize = textSize
+            isAntiAlias = true
+            style = Paint.Style.STROKE // Обводка
+            strokeWidth = textSize / 10f // Толщина обводки
+        }
+
+        val paintFill = Paint().apply {
+            color = Color.BLACK // Основной цвет текста
+            this.textSize = textSize
+            isAntiAlias = true
+            style = Paint.Style.FILL
+        }
+
+        val textHeight = paintFill.descent() - paintFill.ascent()
+        val scaleWidth = paintFill.measureText(scale)
+        val scaleY = mutableBitmap.height - textHeight / 2
+        val scaleX = mutableBitmap.width * 0.5f - (scaleWidth/2)
+        canvas.drawText(scale, scaleX, scaleY, paintStroke)
+        canvas.drawText(scale, scaleX, scaleY, paintFill)
+
+        return mutableBitmap
     }
 
     private fun updateMapObjectsStyle(layerObject: LayerObject) {
@@ -167,6 +233,22 @@ class MapDownloadedViewModel(
         }
     }
 
+    private fun updateBitmap(
+        bitmap: Bitmap
+    ) {
+        val scale = calculateMapScale(
+            widthBitmap = bitmap.width,
+            heightBitmap = bitmap.height,
+            boundingBox = _state.value.boundingBox
+        )
+        val bitmapWithScale = drawScale(bitmap, "1:$scale")
+        _state.update {
+            it.copy(
+                bitmap = bitmapWithScale
+            )
+        }
+    }
+
     private fun deleteExistedMap() {
         fileUtil.clearDownloadMapStorage()
         onEffect(MapDownloadedEffect.DeleteMap(_state.value.image ?: error("Image path is null")))
@@ -195,5 +277,4 @@ class MapDownloadedViewModel(
             }
         }
     }
-
 }
