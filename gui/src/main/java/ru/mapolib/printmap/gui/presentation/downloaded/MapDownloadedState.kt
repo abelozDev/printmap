@@ -19,6 +19,7 @@ data class MapDownloadedUiState(
     val updateMapProgress: Boolean = false,
     val showLayers: Boolean = true,
     val boundingBox: BoundingBox,
+    val orientation: ImageOrientation = ImageOrientation.PORTRAIT,
     val layers: List<Layer>
 )
 
@@ -26,10 +27,20 @@ sealed interface MapDownloadedEvent: PrintMapEvent {
     data object DeleteImage: MapDownloadedEvent
     data object Share: MapDownloadedEvent
     data object ShowPolylineChanged: MapDownloadedEvent
+    data object ChangeOrientation: MapDownloadedEvent
     data class UpdateLayer(val layer: Layer): MapDownloadedEvent
     data class UpdateMapObjectStyle(val layerObject: LayerObject): MapDownloadedEvent
     data object UpdateLayers: MapDownloadedEvent
 }
 sealed interface MapDownloadedEffect: PrintMapEffect {
     data class DeleteMap(val path: String): MapDownloadedEffect
+}
+
+enum class ImageOrientation(val description: String) {
+    PORTRAIT("Портрет"),
+    LANDSCAPE("Ландшафт");
+
+    fun getOther(): ImageOrientation {
+        return if (this == PORTRAIT) LANDSCAPE else PORTRAIT
+    }
 }

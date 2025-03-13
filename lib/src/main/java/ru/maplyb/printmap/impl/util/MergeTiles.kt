@@ -169,16 +169,8 @@ internal class MergeTiles {
 
         val textHeight = paintFill.descent() - paintFill.ascent()
         val x = mutableBitmap.width * 0.02f
-        val y = mutableBitmap.height - textHeight / 2
-//        val scaleWidth = paintFill.measureText(scale)
-//        val scaleX = mutableBitmap.width * 0.5f - (scaleWidth/2)
-//        canvas.drawText(scale, scaleX, scaleY, paintStroke)
-//        canvas.drawText(scale, scaleX, scaleY, paintFill)
-
-        val scaleY = mutableBitmap.height - textHeight / 2
-        canvas.drawText(author, x, y, paintStroke)
-        canvas.drawText(author, x, y, paintFill)
-
+        canvas.drawText(author, x, textHeight, paintStroke)
+        canvas.drawText(author, x, textHeight, paintFill)
         return mutableBitmap
     }
 }

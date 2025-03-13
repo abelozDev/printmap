@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             requestNotificationPermission(this)
         }
         val downloadManager = DownloadMapManager.create(this)
-        val type = MapType.Online("https://mt0.google.com//vt/lyrs=m&x={x}&y={y}&z={z}")
+        val type = MapType.Online("https://mt0.google.com//vt/lyrs=s&x={x}&y={y}&z={z}")
         val item = MapItem("google", type, true, 1f, 0, 1, 24)
         val local = MapItem(
             name = "storage/emulated/0/Download/Relief_Ukraine.mbtiles",

@@ -2,6 +2,7 @@ package ru.mapolib.printmap.gui.presentation.downloaded
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.widget.ImageButton
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,9 +25,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -40,10 +44,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -57,6 +64,7 @@ import kotlinx.coroutines.flow.onEach
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.maplyb.printmap.api.model.Layer
+import ru.mapolib.printmap.gui.R
 import ru.mapolib.printmap.gui.presentation.downloaded.expandable.LayersExpandable
 import ru.mapolib.printmap.gui.presentation.downloaded.expandable.MapObjectsSettingExpandable
 
@@ -132,7 +140,30 @@ internal fun MapDownloadedScreen(
             image = state.bitmap,
             context = context,
         )
-        Row {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                modifier = Modifier
+                    .padding(8.dp),
+                text = state.orientation.description
+            )
+            Spacer(Modifier.weight(1f))
+            IconButton(
+                onClick = {
+                    viewModel.sendEvent(MapDownloadedEvent.ChangeOrientation)
+                },
+                content = {
+                    Icon(
+                        Icons.Default.Refresh,
+                        null
+                    )
+                }
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
                 modifier = Modifier
                     .padding(8.dp),
@@ -281,4 +312,15 @@ private fun RowScope.ImageType(
             text = description,
         )
     }
+}
+
+@Preview
+@Composable
+private fun PreviewMapDownloadedScreen() {
+    MapDownloadedScreen(
+        path = "path",
+        boundingBox = BoundingBox(0.0, 0.0, 0.0, 0.0),
+        layers = emptyList(),
+        onDeleteMap = {}
+    )
 }

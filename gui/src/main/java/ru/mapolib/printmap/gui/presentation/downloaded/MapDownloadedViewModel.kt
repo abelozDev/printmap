@@ -10,7 +10,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -26,6 +25,7 @@ import ru.maplyb.printmap.impl.util.DrawInBitmap
 import ru.maplyb.printmap.impl.files.FileUtil
 import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
 import ru.mapolib.printmap.gui.presentation.util.PrintMapViewModel
+import kotlin.math.hypot
 import kotlin.math.roundToInt
 
 class MapDownloadedViewModel(
@@ -61,6 +61,7 @@ class MapDownloadedViewModel(
             }
             .launchIn(viewModelScope)
     }
+
     private fun drawLayers() {
         viewModelScope.launch(Dispatchers.Default) {
             doWork {
@@ -101,7 +102,16 @@ class MapDownloadedViewModel(
                 }
                 drawLayers()
             }
-
+            MapDownloadedEvent.ChangeOrientation -> {
+                val rotatedBitmap = rotateBitmap(
+                    orientation = _state.value.orientation.getOther()
+                )
+                _state.update {
+                    it.copy(
+                        bitmap = rotatedBitmap
+                    )
+                }
+            }
             is MapDownloadedEvent.UpdateLayer -> {
                 val newLayers = _state.value.layers.map { layer ->
                     if (layer.name == action.layer.name) action.layer else layer
@@ -124,6 +134,7 @@ class MapDownloadedViewModel(
             }
         }
     }
+
     private fun calculateMapScale(
         widthBitmap: Int,
         heightBitmap: Int,
@@ -159,12 +170,29 @@ class MapDownloadedViewModel(
         return scale.roundToInt()
     }
 
+    private fun pixelsPerCm(dpi: Float): Float {
+        return dpi / 2.54f
+    }
+
     private fun drawScale(
         bitmap: Bitmap,
-        scale: String,
+        scale: Int,
     ): Bitmap {
         val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(mutableBitmap)
+
+        val pixelsPerSm = pixelsPerCm(72f)
+        val segmentLength = bitmap.width * 0.05f
+        val scaleText = ((segmentLength/pixelsPerSm) * scale).roundToInt().toString()
+
+        val thickness = bitmap.width.coerceAtMost(bitmap.height) * 0.005f // 0.5% от минимального размера
+        val crossLength = thickness * 2  // Длина поперечных линий
+        val paint = Paint().apply {
+            color = Color.BLACK
+            strokeWidth = thickness
+            isAntiAlias = true
+        }
+
 
         val textSize = mutableBitmap.width * 0.025f
         val paintStroke = Paint().apply {
@@ -181,16 +209,74 @@ class MapDownloadedViewModel(
             isAntiAlias = true
             style = Paint.Style.FILL
         }
+        val outlineThickness = thickness * 2 // Обводка в 2 раза толще
 
+        val paintOutline = Paint().apply {
+            color = Color.WHITE
+            strokeWidth = outlineThickness
+            isAntiAlias = true
+        }
         val textHeight = paintFill.descent() - paintFill.ascent()
-        val scaleWidth = paintFill.measureText(scale)
+        val scaleWidth = paintFill.measureText(scaleText)
+
         val scaleY = mutableBitmap.height - textHeight / 2
-        val scaleX = mutableBitmap.width * 0.5f - (scaleWidth/2)
-        canvas.drawText(scale, scaleX, scaleY, paintStroke)
-        canvas.drawText(scale, scaleX, scaleY, paintFill)
+        /*val scaleX = mutableBitmap.width * 0.5f - (scaleWidth / 2)*/
+
+        val padding = 10f // отступ от текста до линии
+        val lineYStart = scaleY - textHeight - padding
+        val lineXStart = padding
+        val lineXEnd = lineXStart + segmentLength
+        canvas.drawLine(lineXStart, lineYStart, lineXEnd, lineYStart, paintStroke)
+        // Основная линия
+        canvas.drawLine(lineXStart, lineYStart, lineXEnd, lineYStart, paintOutline) // Белая обводка
+        canvas.drawLine(lineXStart, lineYStart, lineXEnd, lineYStart, paint)
+
+        // Вычисляем направление линии (вектор)
+        val dx = lineXEnd - lineXStart
+        val dy = lineYStart - lineYStart
+        val length = hypot(dx.toDouble(), dy.toDouble()).toFloat()
+
+        // Нормализуем вектор (направление линии)
+        val nx = dx / length
+        val ny = dy / length
+
+        // Вектор перпендикуляра
+        val px = -ny * crossLength
+        val py = nx * crossLength
+
+        // Поперечные линии на концах
+        canvas.drawLine(lineXStart - px, lineYStart - py, lineXStart + px, lineYStart + py, paintOutline)
+        canvas.drawLine(lineXEnd - px, lineYStart - py, lineXEnd + px, lineYStart + py, paintOutline)
+
+        canvas.drawLine(lineXStart - px, lineYStart - py, lineXStart + px, lineYStart + py, paint)
+        canvas.drawLine(lineXEnd - px, lineYStart - py, lineXEnd + px, lineYStart + py, paint)
+
+        canvas.drawText(scaleText, padding, scaleY, paintStroke)
+        canvas.drawText(scaleText, padding, scaleY, paintFill)
 
         return mutableBitmap
     }
+
+    private fun drawScaleLines() {
+
+    }
+
+    private fun rotateBitmap(orientation: ImageOrientation = _state.value.orientation, bitmap: Bitmap = _state.value.bitmap): Bitmap {
+        val matrix = android.graphics.Matrix()
+        if (orientation == ImageOrientation.LANDSCAPE) {
+            matrix.postRotate(90f)
+        } else {
+            matrix.postRotate(-90f)
+        }
+        val rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+        _state.update {
+            it.copy(
+                orientation = orientation
+            )
+        }
+        return rotatedBitmap
+    }
+
 
     private fun updateMapObjectsStyle(layerObject: LayerObject) {
         val type = layerObject.javaClass
@@ -224,7 +310,7 @@ class MapDownloadedViewModel(
                 doOnAsyncBlock = {
                     fileUtil.saveBitmapToPdf(
                         bitmap = _state.value.bitmap,
-                        fileName = "${System.currentTimeMillis()}"
+                        fileName = "${System.currentTimeMillis()}",
                     )?.let {
                         fileUtil.sendImageAsFile(it)
                     }
@@ -241,7 +327,7 @@ class MapDownloadedViewModel(
             heightBitmap = bitmap.height,
             boundingBox = _state.value.boundingBox
         )
-        val bitmapWithScale = drawScale(bitmap, "1:$scale")
+        val bitmapWithScale = drawScale(bitmap, scale)
         _state.update {
             it.copy(
                 bitmap = bitmapWithScale

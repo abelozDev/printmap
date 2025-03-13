@@ -59,6 +59,38 @@ class FileUtil(private val context: Context) {
         }
     }
 
+    fun saveBitmapToPdfWithRealDpi(bitmap: Bitmap, fileName: String): String? {
+        val oldDpi = 72
+        val newDpi = 300
+
+        val scaleFactor = newDpi / oldDpi.toFloat()
+        val newWidth = (bitmap.width / scaleFactor).toInt()
+        val newHeight = (bitmap.height / scaleFactor).toInt()
+
+        // Уменьшаем изображение до новых размеров
+        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+
+        val file = File(directory, "$fileName.pdf")
+        return try {
+            val document = PdfDocument()
+            val pageInfo = PdfDocument.PageInfo.Builder(newWidth, newHeight, 1).create()
+            val page = document.startPage(pageInfo)
+
+            val canvas = page.canvas
+            canvas.drawBitmap(resizedBitmap, 0f, 0f, null)
+
+            document.finishPage(page)
+            FileOutputStream(file).use { outputStream ->
+                document.writeTo(outputStream)
+            }
+            document.close()
+            file.absolutePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
 
     fun clearDownloadMapStorage() {
         directory.deleteRecursively()
