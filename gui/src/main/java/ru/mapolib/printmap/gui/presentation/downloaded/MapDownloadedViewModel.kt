@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Typeface
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -183,49 +184,60 @@ class MapDownloadedViewModel(
         val scaleInSegment = ((segmentLength / pixelsPerSm) * scale).roundToInt()
         /*Округление до десятков*/
         val roundedScale = ((scaleInSegment/10.0).roundToInt() * 10)
-        val scaleText = "$roundedScale m."
         val padding = 10f // отступ от текста до линии
 
 
-        val textSize = mutableBitmap.width * 0.025f
+        val textSize = mutableBitmap.width * 0.01f
         val paintStroke = Paint().apply {
-            color = Color.WHITE // Белый цвет для обводки
+            color = Color.WHITE
             this.textSize = textSize
             isAntiAlias = true
-            style = Paint.Style.STROKE // Обводка
-            strokeWidth = textSize / 10f // Толщина обводки
+            style = Paint.Style.STROKE
+            strokeWidth = textSize / 5f
         }
 
         val paintFill = Paint().apply {
-            color = Color.BLACK // Основной цвет текста
+            color = Color.BLACK
             this.textSize = textSize
             isAntiAlias = true
             style = Paint.Style.FILL
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) // Добавляем жирность
         }
 
         val textHeight = paintFill.descent() - paintFill.ascent()
         val scaleY = mutableBitmap.height - textHeight / 2
 
-        canvas.drawText(scaleText, padding, scaleY, paintStroke)
-        canvas.drawText(scaleText, padding, scaleY, paintFill)
+
+        /*Рисуем 0*/
+        canvas.drawText("0", padding, scaleY, paintStroke)
+        canvas.drawText("0", padding, scaleY, paintFill)
+
+
+        canvas.drawText(roundedScale.toString(), padding + segmentLength, scaleY, paintStroke)
+        canvas.drawText(roundedScale.toString(), padding + segmentLength, scaleY, paintFill)
+
+        canvas.drawText("${(roundedScale * 2)} м", padding + segmentLength * 2, scaleY, paintStroke)
+        canvas.drawText("${(roundedScale * 2)} м", padding + segmentLength * 2, scaleY, paintFill)
 
         drawScaleLines(
-            bitmap,
-            textHeight,
-            segmentLength,
-            scaleY, canvas
+            padding = padding,
+            bitmap = bitmap,
+            textHeight = textHeight,
+            segmentLength = segmentLength,
+            scaleY = scaleY,
+            canvas = canvas
         )
         return mutableBitmap
     }
 
     private fun drawScaleLines(
+        padding: Float,
         bitmap: Bitmap,
         textHeight: Float,
         segmentLength: Float,
         scaleY: Float,
         canvas: Canvas
     ) {
-        val padding = 10f
         val thickness =
             bitmap.width.coerceAtMost(bitmap.height) * 0.005f // 0.5% от минимального размера
         val crossLength = thickness * 2  // Длина поперечных линий
@@ -242,14 +254,13 @@ class MapDownloadedViewModel(
             isAntiAlias = true
         }
         val lineYStart = scaleY - textHeight - padding
-        val lineXStart = padding
-        val lineXEnd = lineXStart + segmentLength
+        val lineXEnd = padding + segmentLength * 2
 
-        canvas.drawLine(lineXStart, lineYStart, lineXEnd, lineYStart, paintOutline) // Белая обводка
-        canvas.drawLine(lineXStart, lineYStart, lineXEnd, lineYStart, paint)
+        canvas.drawLine(padding, lineYStart, lineXEnd, lineYStart, paintOutline) // Белая обводка
+        canvas.drawLine(padding, lineYStart, lineXEnd, lineYStart, paint)
 
         // Вычисляем направление линии (вектор)
-        val dx = lineXEnd - lineXStart
+        val dx = lineXEnd - padding
         val dy = lineYStart - lineYStart
         val length = hypot(dx.toDouble(), dy.toDouble()).toFloat()
 
@@ -263,9 +274,16 @@ class MapDownloadedViewModel(
 
         // Поперечные линии на концах
         canvas.drawLine(
-            lineXStart - px,
+            padding - px,
             lineYStart - py - (thickness / 2),
-            lineXStart + px,
+            padding + px,
+            lineYStart + py + (thickness / 2),
+            paintOutline
+        )
+        canvas.drawLine(
+            lineXEnd/2 - px,
+            lineYStart - py - (thickness / 2),
+            lineXEnd/2 + px,
             lineYStart + py + (thickness / 2),
             paintOutline
         )
@@ -277,8 +295,27 @@ class MapDownloadedViewModel(
             paintOutline
         )
 
-        canvas.drawLine(lineXStart - px, lineYStart - py, lineXStart + px, lineYStart + py, paint)
-        canvas.drawLine(lineXEnd - px, lineYStart - py, lineXEnd + px, lineYStart + py, paint)
+        canvas.drawLine(
+            padding - px,
+            lineYStart - py,
+            padding + px,
+            lineYStart + py,
+            paint
+        )
+        canvas.drawLine(
+            lineXEnd/2 - px,
+            lineYStart - py,
+            lineXEnd/2 + px,
+            lineYStart + py,
+            paint
+        )
+        canvas.drawLine(
+            lineXEnd - px,
+            lineYStart - py,
+            lineXEnd + px,
+            lineYStart + py,
+            paint
+        )
     }
 
     private fun rotateBitmap(
