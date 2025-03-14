@@ -40,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -136,7 +135,7 @@ internal fun MapDownloadedScreen(
             Text(
                 modifier = Modifier
                     .padding(8.dp),
-                text = stringResource(ru.mapolib.printmap.gui.R.string.show_polyline)
+                text = stringResource(ru.mapolib.printmap.gui.R.string.printmap_show_polyline)
             )
             Spacer(Modifier.weight(1f))
             Checkbox(

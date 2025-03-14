@@ -131,7 +131,7 @@ internal fun DownloadMapSettingsScreen(
                 .fillMaxWidth()
         ) {
             Text(
-                text = stringResource(ru.mapolib.printmap.gui.R.string.zoom)
+                text = stringResource(ru.mapolib.printmap.gui.R.string.printmap_zoom)
             )
             Spacer(Modifier.weight(1f))
             Text(
@@ -155,7 +155,7 @@ internal fun DownloadMapSettingsScreen(
                 .fillMaxWidth()
         ) {
             Text(
-                text = stringResource(ru.mapolib.printmap.gui.R.string.quality)
+                text = stringResource(ru.mapolib.printmap.gui.R.string.printmap_quality)
             )
             Spacer(Modifier.weight(1f))
             Text(

@@ -1,8 +1,8 @@
 <resources>
-    <string name="cancel">Отмена</string>
-    <string name="zoom">Зум</string>
-    <string name="quality">Качество</string>
-    <string name="offline">Оффлайн</string>
-    <string name="online">Онлайн</string>
-    <string name="show_polyline">Показывать разметку</string>
+    <string name="printmap_cancel">Отмена</string>
+    <string name="printmap_zoom">Зум</string>
+    <string name="printmap_quality">Качество</string>
+    <string name="printmap_offline">Оффлайн</string>
+    <string name="printmap_online">Онлайн</string>
+    <string name="printmap_show_polyline">Показывать разметку</string>
 </resources>

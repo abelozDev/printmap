@@ -43,7 +43,7 @@ fun ProgressScreen(
         Button(
             content = {
                 Text(
-                    text = stringResource(R.string.cancel)
+                    text = stringResource(R.string.printmap_cancel)
                 )
             },
             onClick = {
