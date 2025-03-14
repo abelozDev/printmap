@@ -20,6 +20,7 @@ data class MapDownloadedUiState(
     val showLayers: Boolean = true,
     val boundingBox: BoundingBox,
     val orientation: ImageOrientation = ImageOrientation.PORTRAIT,
+    val name: String = "",
     val layers: List<Layer>
 )
 
@@ -29,6 +30,7 @@ sealed interface MapDownloadedEvent: PrintMapEvent {
     data object ShowPolylineChanged: MapDownloadedEvent
     data object ChangeOrientation: MapDownloadedEvent
     data class UpdateLayer(val layer: Layer): MapDownloadedEvent
+    data class UpdateName(val name: String): MapDownloadedEvent
     data class UpdateMapObjectStyle(val layerObject: LayerObject): MapDownloadedEvent
     data object UpdateLayers: MapDownloadedEvent
 }

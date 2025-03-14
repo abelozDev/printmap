@@ -32,6 +32,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -39,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,9 +60,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.maplyb.printmap.api.model.Layer
@@ -73,27 +80,15 @@ import ru.mapolib.printmap.gui.utils.formatSize
 
 @Composable
 internal fun MapDownloadedScreen(
-    path: String,
-    boundingBox: BoundingBox,
-    layers: List<Layer>,
+    viewModel: MapDownloadedViewModel,
+    dispose: () -> Unit,
     onDeleteMap: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val downloadedViewModelStore = remember { ViewModelStore() }
-    val downloadedViewModelStoreOwner = remember {
-        object : ViewModelStoreOwner {
-            override val viewModelStore: ViewModelStore
-                get() = downloadedViewModelStore
-        }
-    }
-    val viewModel = ViewModelProvider(
-        owner = downloadedViewModelStoreOwner,
-        factory = MapDownloadedViewModel.create(path, boundingBox, layers, context)
-    )[MapDownloadedViewModel::class.java]
 
     DisposableEffect(Unit) {
         onDispose {
-            downloadedViewModelStore.clear()
+            dispose()
         }
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -110,13 +105,13 @@ internal fun MapDownloadedScreen(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
             Image(
@@ -135,6 +130,26 @@ internal fun MapDownloadedScreen(
                 contentDescription = null
             )
         }
+        Spacer(Modifier.height(8.dp))
+        var name by remember {
+            mutableStateOf(state.name)
+        }
+        LaunchedEffect(name) {
+            delay(300)
+            viewModel.sendEvent(MapDownloadedEvent.UpdateName(name = name))
+        }
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = name,
+            onValueChange = {
+                name = it
+            },
+            label = {
+                Text(
+                    text = stringResource(R.string.map_name)
+                )
+            }
+        )
         ImageItem(
             progress = state.updateMapProgress,
             image = state.bitmap,
@@ -144,8 +159,6 @@ internal fun MapDownloadedScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                modifier = Modifier
-                    .padding(8.dp),
                 text = state.orientation.description
             )
             Spacer(Modifier.weight(1f))
@@ -165,8 +178,6 @@ internal fun MapDownloadedScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                modifier = Modifier
-                    .padding(8.dp),
                 text = stringResource(ru.mapolib.printmap.gui.R.string.show_polyline)
             )
             Spacer(Modifier.weight(1f))
@@ -231,9 +242,7 @@ private fun ImageItem(
     var selectedImage by remember {
         mutableIntStateOf(images.first().id)
     }
-    Column(
-        modifier = Modifier.padding(horizontal = 16.dp)
-    ) {
+    Column {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -318,9 +327,8 @@ private fun RowScope.ImageType(
 @Composable
 private fun PreviewMapDownloadedScreen() {
     MapDownloadedScreen(
-        path = "path",
-        boundingBox = BoundingBox(0.0, 0.0, 0.0, 0.0),
-        layers = emptyList(),
-        onDeleteMap = {}
+        viewModel = viewModel(),
+        onDeleteMap = {},
+        dispose = {}
     )
 }

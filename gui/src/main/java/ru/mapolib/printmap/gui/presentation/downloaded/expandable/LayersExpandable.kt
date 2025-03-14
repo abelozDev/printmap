@@ -42,7 +42,6 @@ fun LayersExpandable(
             .clickable {
                 isOpen = !isOpen
             }
-            .padding(8.dp)
     ) {
         Text(
             text = stringResource(R.string.selected_layers)

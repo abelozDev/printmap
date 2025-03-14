@@ -133,7 +133,42 @@ class MapDownloadedViewModel(
             MapDownloadedEvent.UpdateLayers -> {
                 drawLayers()
             }
+
+            is MapDownloadedEvent.UpdateName -> {
+                _state.update {
+                    it.copy(
+                        name = action.name
+                    )
+                }
+                drawLayers()
+            }
         }
+    }
+
+    private fun drawName(bitmap: Bitmap, name: String): Bitmap {
+        val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(mutableBitmap)
+        val textSize = mutableBitmap.width * 0.025f
+        val paintStroke = Paint().apply {
+            color = Color.WHITE // Белый цвет для обводки
+            this.textSize = textSize
+            isAntiAlias = true
+            style = Paint.Style.STROKE // Обводка
+            strokeWidth = textSize / 10f // Толщина обводки
+        }
+
+        val paintFill = Paint().apply {
+            color = Color.BLACK // Основной цвет текста
+            this.textSize = textSize
+            isAntiAlias = true
+            style = Paint.Style.FILL
+        }
+        val textLength = paintFill.measureText(name)
+        val x = (mutableBitmap.width / 2f) - (textLength / 2)
+        val textHeight = paintFill.descent() - paintFill.ascent()
+        canvas.drawText(name, x, textHeight, paintStroke)
+        canvas.drawText(name, x, textHeight, paintFill)
+        return mutableBitmap
     }
 
     private fun calculateMapScale(
@@ -389,9 +424,10 @@ class MapDownloadedViewModel(
             boundingBox = _state.value.boundingBox
         )
         val bitmapWithScale = drawScale(bitmap, scale)
+        val bitmapWithName = drawName(bitmapWithScale, _state.value.name)
         _state.update {
             it.copy(
-                bitmap = bitmapWithScale
+                bitmap = bitmapWithName
             )
         }
     }

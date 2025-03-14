@@ -5,4 +5,5 @@
     <string name="offline">Оффлайн</string>
     <string name="online">Онлайн</string>
     <string name="show_polyline">Показывать разметку</string>
+    <string name="map_name">Название карты</string>
 </resources>
