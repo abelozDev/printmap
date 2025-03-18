@@ -139,7 +139,7 @@ internal fun MapDownloadedScreen(
             },
             label = {
                 Text(
-                    text = stringResource(R.string.map_name)
+                    text = "Название карты"
                 )
             }
         )
