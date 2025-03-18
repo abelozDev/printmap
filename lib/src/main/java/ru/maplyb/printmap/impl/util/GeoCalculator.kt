@@ -13,12 +13,12 @@ import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.GeoPointMercator
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.model.TileParams
-import java.io.File
 import kotlin.math.asinh
+import kotlin.math.atan2
 import kotlin.math.cos
-import kotlin.math.floor
-import kotlin.math.ln
 import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 import kotlin.math.tan
 
 //lat - широта (y)
@@ -28,7 +28,7 @@ import kotlin.math.tan
  * Расчеты связанные с картой
  * */
 object GeoCalculator {
-
+    const val EARTH_RADIUS = 6_378_140.0
     /**Количество тайлов, размер файла*/
     suspend fun calculateTotalTilesCount(
         boundingBox: BoundingBox, zoom: Int
@@ -199,6 +199,23 @@ object GeoCalculator {
             result.add(GeoPointMercator(targetCoord.x, targetCoord.y))
         }
         return result
+    }
+
+
+    /*Разница в километрах*/
+    fun distanceBetween(aX: Double, aY: Double, bX: Double, bY: Double): Double {
+        val lat1 = Math.toRadians(aX)
+        val lng1 = Math.toRadians(aY)
+        val lat2 = Math.toRadians(bX)
+        val lng2 = Math.toRadians(bY)
+
+        val latDistance = lat2 - lat1
+        val lngDistance = lng2 - lng1
+
+        val a = sin(latDistance / 2).pow(2) + cos(lat1) * cos(lat2) * sin(lngDistance / 2).pow(2)
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+        return EARTH_RADIUS * c // в метрах
     }
 }
 

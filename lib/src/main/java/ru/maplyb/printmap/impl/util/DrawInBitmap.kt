@@ -183,7 +183,7 @@ class DrawInBitmap {
         }
     }
 
-    private suspend fun drawTextOnBitmap(
+    suspend fun drawTextOnBitmap(
         canvas: Canvas,
         bitmap: Bitmap,
         boundingBox: BoundingBox,

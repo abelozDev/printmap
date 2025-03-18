@@ -47,7 +47,6 @@ fun MapObjectsSettingExpandable(
             .clickable {
                 isOpen = !isOpen
             }
-            .padding(8.dp)
     ) {
         Text(
             text = stringResource(R.string.map_objects_settings)

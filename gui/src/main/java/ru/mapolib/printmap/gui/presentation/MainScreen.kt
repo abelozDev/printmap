@@ -16,12 +16,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.FormingMapArgs
 import ru.mapolib.printmap.gui.api.DownloadMapManagerImpl
 import ru.mapolib.printmap.gui.api.DownloadMapState
 import ru.mapolib.printmap.gui.presentation.downloaded.MapDownloadedScreen
+import ru.mapolib.printmap.gui.presentation.downloaded.MapDownloadedViewModel
 import ru.mapolib.printmap.gui.presentation.failure.FailureScreen
 import ru.mapolib.printmap.gui.presentation.progress.ProgressScreen
 import ru.mapolib.printmap.gui.presentation.settings.DownloadMapSettingsScreen
@@ -71,11 +75,26 @@ fun MainScreen() {
                     }
 
                     is DownloadMapState.Finished -> {
-                        println("image path: ${(state as DownloadMapState.Finished).path}")
+                        val downloadedViewModelStore = remember { ViewModelStore() }
+                        val downloadedViewModelStoreOwner = remember {
+                            object : ViewModelStoreOwner {
+                                override val viewModelStore: ViewModelStore
+                                    get() = downloadedViewModelStore
+                            }
+                        }
+                        val viewModel = ViewModelProvider(
+                            owner = downloadedViewModelStoreOwner,
+                            factory = MapDownloadedViewModel.create(
+                                path = (state as DownloadMapState.Finished).path,
+                                boundingBox = (state as DownloadMapState.Finished).boundingBox,
+                                layers = (state as DownloadMapState.Finished).layers, context)
+                        )[MapDownloadedViewModel::class.java]
+
                         MapDownloadedScreen(
-                            path = (state as DownloadMapState.Finished).path,
-                            layers = (state as DownloadMapState.Finished).layers,
-                            boundingBox = (state as DownloadMapState.Finished).boundingBox,
+                            viewModel = viewModel,
+                            dispose = {
+                                downloadedViewModelStore.clear()
+                            },
                             onDeleteMap = {
                                 scope.launch {
                                     downloadManager.deleteMap(it)
