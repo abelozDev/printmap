@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.Paint
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -52,7 +53,10 @@ class MapDownloadedViewModel(
             _state.update {
                 it.copy(
                     exportType = (_state.value.exportType as ExportTypes.PDF).copy(
-                        pagesSize = fileUtil.calculatePagesSize(_state.value.bitmap, (_state.value.exportType as ExportTypes.PDF).format)
+                        pagesSize = fileUtil.calculatePagesSize(
+                            _state.value.bitmap,
+                            (_state.value.exportType as ExportTypes.PDF).format
+                        )
                     )
                 )
             }
@@ -74,26 +78,48 @@ class MapDownloadedViewModel(
     private fun drawLayers() {
         viewModelScope.launch(Dispatchers.Default) {
             doWork {
-                val bitmapWithDraw =
-                    if (_state.value.layers.isNotEmpty()) {
-                        val currentBitmap = BitmapFactory.decodeFile(path)
-                        if (!_state.value.showLayers) { currentBitmap } else {
-                            val bitmap = currentBitmap.copy(Bitmap.Config.ARGB_8888, true)
-                            val drawLayers = DrawInBitmap()
-                            drawLayers.drawLayers(
-                                bitmap = bitmap,
-                                boundingBox = _state.value.boundingBox,
-                                layers = _state.value.layers.filter { it.selected },
-                                context = context
-                            )
-                            bitmap
-                        }
-                    } else _state.value.bitmap
+                val currentBitmap = BitmapFactory.decodeFile(path)
+                val bitmapWithDraw = if (!_state.value.showLayers) {
+                    currentBitmap
+                } else {
+                    val bitmap = currentBitmap.copy(Bitmap.Config.ARGB_8888, true)
+                    val drawLayers = DrawInBitmap()
+                    drawLayers.drawLayers(
+                        bitmap = bitmap,
+                        boundingBox = _state.value.boundingBox,
+                        layers = _state.value.layers.filter { it.selected },
+                        context = context
+                    )
+                    bitmap
+                }
                 if (isActive) {
-                    updateBitmap(bitmapWithDraw)
+                    val bitmapWithDefaults = setDefault(bitmapWithDraw)
+                    val rotatedBitmap = if (_state.value.orientation != ImageOrientation.PORTRAIT) {
+                        rotateBitmap(
+                            bitmap = bitmapWithDefaults
+                        )
+                    } else bitmapWithDefaults
+                    _state.update {
+                        it.copy(
+                            bitmap = rotatedBitmap
+                        )
+                    }
                 }
             }
         }
+    }
+
+    private fun setDefault(
+        bitmap: Bitmap
+    ): Bitmap {
+        val scale = calculateMapScale(
+            widthBitmap = bitmap.width,
+            heightBitmap = bitmap.height,
+            boundingBox = _state.value.boundingBox
+        )
+        val bitmapWithScale = drawScale(bitmap, scale)
+        val bitmapWithName = drawName(bitmapWithScale, _state.value.name)
+        return bitmapWithName
     }
 
     override fun consumeEvent(action: MapDownloadedEvent) {
@@ -111,6 +137,7 @@ class MapDownloadedViewModel(
                 }
                 drawLayers()
             }
+
             MapDownloadedEvent.ChangeOrientation -> {
                 val rotatedBitmap = rotateBitmap(
                     orientation = _state.value.orientation.getOther()
@@ -121,6 +148,7 @@ class MapDownloadedViewModel(
                     )
                 }
             }
+
             is MapDownloadedEvent.UpdateLayer -> {
                 val newLayers = _state.value.layers.map { layer ->
                     if (layer.name == action.layer.name) action.layer else layer
@@ -141,10 +169,14 @@ class MapDownloadedViewModel(
             MapDownloadedEvent.UpdateLayers -> {
                 drawLayers()
             }
+
             is MapDownloadedEvent.UpdateExportType -> {
                 val type = if (action.type is ExportTypes.PDF) {
                     action.type.copy(
-                        pagesSize = fileUtil.calculatePagesSize(_state.value.bitmap, action.type.format)
+                        pagesSize = fileUtil.calculatePagesSize(
+                            _state.value.bitmap,
+                            action.type.format
+                        )
                     )
                 } else action.type
                 _state.update {
@@ -153,6 +185,7 @@ class MapDownloadedViewModel(
                     )
                 }
             }
+
             is MapDownloadedEvent.UpdateName -> {
                 _state.update {
                     it.copy(
@@ -237,7 +270,7 @@ class MapDownloadedViewModel(
         /*Масштаб в зависимости от размера линии масштаба*/
         val scaleInSegment = ((segmentLength / pixelsPerSm) * scale).roundToInt()
         /*Округление до десятков*/
-        val roundedScale = ((scaleInSegment/10.0).roundToInt() * 10)
+        val roundedScale = ((scaleInSegment / 10.0).roundToInt() * 10)
         val padding = 10f // отступ от текста до линии
 
 
@@ -334,9 +367,9 @@ class MapDownloadedViewModel(
             paintOutline
         )
         canvas.drawLine(
-            lineXEnd/2 - px,
+            lineXEnd / 2 - px,
             lineYStart - py - (thickness / 2),
-            lineXEnd/2 + px,
+            lineXEnd / 2 + px,
             lineYStart + py + (thickness / 2),
             paintOutline
         )
@@ -356,9 +389,9 @@ class MapDownloadedViewModel(
             paint
         )
         canvas.drawLine(
-            lineXEnd/2 - px,
+            lineXEnd / 2 - px,
             lineYStart - py,
-            lineXEnd/2 + px,
+            lineXEnd / 2 + px,
             lineYStart + py,
             paint
         )
@@ -375,7 +408,7 @@ class MapDownloadedViewModel(
         orientation: ImageOrientation = _state.value.orientation,
         bitmap: Bitmap = _state.value.bitmap
     ): Bitmap {
-        /*val matrix = Matrix()
+        val matrix = Matrix()
         if (orientation == ImageOrientation.LANDSCAPE) {
             matrix.postRotate(90f)
         } else {
@@ -388,8 +421,7 @@ class MapDownloadedViewModel(
                 orientation = orientation
             )
         }
-        return rotatedBitmap*/
-        return bitmap
+        return rotatedBitmap
     }
 
     private fun updateMapObjectsStyle(layerObject: LayerObject) {
@@ -422,7 +454,7 @@ class MapDownloadedViewModel(
                     }
                 },
                 doOnAsyncBlock = {
-                    when(_state.value.exportType) {
+                    when (_state.value.exportType) {
                         is ExportTypes.PDF -> {
                             fileUtil.saveBitmapToPdf(
                                 bitmap = _state.value.bitmap,
@@ -430,6 +462,7 @@ class MapDownloadedViewModel(
                                 pageFormat = (_state.value.exportType as ExportTypes.PDF).format
                             )
                         }
+
                         is ExportTypes.PNG -> {
                             fileUtil.saveBitmapToExternalStorage(
                                 bitmap = _state.value.bitmap,
@@ -438,16 +471,16 @@ class MapDownloadedViewModel(
                             )
                         }
                     }
-                    ?.let {
-                        fileUtil.sendImageAsFile(it)
-                    }
+                        ?.let {
+                            fileUtil.sendImageAsFile(it)
+                        }
                 }
             )
         }
     }
 
     private fun updateBitmap(
-        bitmap: Bitmap
+        bitmap: Bitmap,
     ) {
         val scale = calculateMapScale(
             widthBitmap = bitmap.width,
@@ -456,10 +489,9 @@ class MapDownloadedViewModel(
         )
         val bitmapWithScale = drawScale(bitmap, scale)
         val bitmapWithName = drawName(bitmapWithScale, _state.value.name)
-        val rotatedBitmap = rotateBitmap(bitmap = bitmapWithName)
         _state.update {
             it.copy(
-                bitmap = rotatedBitmap
+                bitmap = bitmapWithName
             )
         }
     }

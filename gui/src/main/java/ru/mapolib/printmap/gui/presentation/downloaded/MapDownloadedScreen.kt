@@ -143,7 +143,7 @@ internal fun MapDownloadedScreen(
                 )
             }
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(16.dp))
         ExportPopup(
             selectedExportType = state.exportType,
             updateExportType = {
