@@ -6,7 +6,6 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Typeface
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -49,6 +48,15 @@ class MapDownloadedViewModel(
 
     init {
         drawLayers()
+        if (_state.value.exportType is ExportTypes.PDF) {
+            _state.update {
+                it.copy(
+                    exportType = (_state.value.exportType as ExportTypes.PDF).copy(
+                        pagesSize = fileUtil.calculatePagesSize(_state.value.bitmap, (_state.value.exportType as ExportTypes.PDF).format)
+                    )
+                )
+            }
+        }
         activeRequestCount
             .map {
                 it > 0
@@ -69,7 +77,7 @@ class MapDownloadedViewModel(
                 val bitmapWithDraw =
                     if (_state.value.layers.isNotEmpty()) {
                         val currentBitmap = BitmapFactory.decodeFile(path)
-                        if (!_state.value.showLayers) currentBitmap else {
+                        if (!_state.value.showLayers) { currentBitmap } else {
                             val bitmap = currentBitmap.copy(Bitmap.Config.ARGB_8888, true)
                             val drawLayers = DrawInBitmap()
                             drawLayers.drawLayers(
@@ -133,7 +141,18 @@ class MapDownloadedViewModel(
             MapDownloadedEvent.UpdateLayers -> {
                 drawLayers()
             }
-
+            is MapDownloadedEvent.UpdateExportType -> {
+                val type = if (action.type is ExportTypes.PDF) {
+                    action.type.copy(
+                        pagesSize = fileUtil.calculatePagesSize(_state.value.bitmap, action.type.format)
+                    )
+                } else action.type
+                _state.update {
+                    it.copy(
+                        exportType = type
+                    )
+                }
+            }
             is MapDownloadedEvent.UpdateName -> {
                 _state.update {
                     it.copy(
@@ -236,7 +255,6 @@ class MapDownloadedViewModel(
             this.textSize = textSize
             isAntiAlias = true
             style = Paint.Style.FILL
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD) // Добавляем жирность
         }
 
         val textHeight = paintFill.descent() - paintFill.ascent()
@@ -357,7 +375,7 @@ class MapDownloadedViewModel(
         orientation: ImageOrientation = _state.value.orientation,
         bitmap: Bitmap = _state.value.bitmap
     ): Bitmap {
-        val matrix = android.graphics.Matrix()
+        /*val matrix = Matrix()
         if (orientation == ImageOrientation.LANDSCAPE) {
             matrix.postRotate(90f)
         } else {
@@ -370,9 +388,9 @@ class MapDownloadedViewModel(
                 orientation = orientation
             )
         }
-        return rotatedBitmap
+        return rotatedBitmap*/
+        return bitmap
     }
-
 
     private fun updateMapObjectsStyle(layerObject: LayerObject) {
         val type = layerObject.javaClass
@@ -404,10 +422,23 @@ class MapDownloadedViewModel(
                     }
                 },
                 doOnAsyncBlock = {
-                    fileUtil.saveBitmapToPdf(
-                        bitmap = _state.value.bitmap,
-                        fileName = "${System.currentTimeMillis()}",
-                    )?.let {
+                    when(_state.value.exportType) {
+                        is ExportTypes.PDF -> {
+                            fileUtil.saveBitmapToPdf(
+                                bitmap = _state.value.bitmap,
+                                fileName = "${System.currentTimeMillis()}",
+                                pageFormat = (_state.value.exportType as ExportTypes.PDF).format
+                            )
+                        }
+                        is ExportTypes.PNG -> {
+                            fileUtil.saveBitmapToExternalStorage(
+                                bitmap = _state.value.bitmap,
+                                fileName = "${System.currentTimeMillis()}",
+                                dpi = 300
+                            )
+                        }
+                    }
+                    ?.let {
                         fileUtil.sendImageAsFile(it)
                     }
                 }
@@ -425,9 +456,10 @@ class MapDownloadedViewModel(
         )
         val bitmapWithScale = drawScale(bitmap, scale)
         val bitmapWithName = drawName(bitmapWithScale, _state.value.name)
+        val rotatedBitmap = rotateBitmap(bitmap = bitmapWithName)
         _state.update {
             it.copy(
-                bitmap = bitmapWithName
+                bitmap = rotatedBitmap
             )
         }
     }

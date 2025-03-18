@@ -16,6 +16,7 @@ import ru.maplyb.printmap.impl.domain.model.TileParams
 import ru.maplyb.printmap.impl.domain.model.TileSchema
 import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
 import kotlin.math.roundToInt
+import androidx.core.graphics.createBitmap
 
 internal class MergeTiles {
 
@@ -48,8 +49,7 @@ internal class MergeTiles {
 
             val resultWidth = 256 * horizontalSize
             val resultHeight = 256 * verticalSize
-            val resultBitmap =
-                Bitmap.createBitmap(resultWidth, resultHeight, Bitmap.Config.ARGB_8888)
+            val resultBitmap = createBitmap(resultWidth, resultHeight)
             val canvas = Canvas(resultBitmap)
             val sortedMaps = tilesPaths.keys.sortedBy { it.position }
             withContext(Dispatchers.Default) {

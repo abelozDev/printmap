@@ -2,7 +2,6 @@ package ru.mapolib.printmap.gui.presentation.downloaded
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.widget.ImageButton
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -25,6 +25,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Checkbox
@@ -40,37 +42,28 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.ViewModelStoreOwner
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
-import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.DownloadedImage
-import ru.maplyb.printmap.api.model.Layer
+import ru.maplyb.printmap.impl.domain.model.PageFormat
 import ru.mapolib.printmap.gui.R
 import ru.mapolib.printmap.gui.presentation.downloaded.expandable.LayersExpandable
 import ru.mapolib.printmap.gui.presentation.downloaded.expandable.MapObjectsSettingExpandable
@@ -150,11 +143,28 @@ internal fun MapDownloadedScreen(
                 )
             }
         )
+        Spacer(Modifier.height(8.dp))
+        ExportPopup(
+            selectedExportType = state.exportType,
+            updateExportType = {
+                viewModel.sendEvent(MapDownloadedEvent.UpdateExportType(it))
+            }
+        )
+        if (state.exportType is ExportTypes.PDF) {
+            Spacer(Modifier.height(8.dp))
+            FormatPopup(
+                selectedExportType = state.exportType as ExportTypes.PDF,
+                updateExportType = {
+                    viewModel.sendEvent(MapDownloadedEvent.UpdateExportType(it))
+                }
+            )
+        }
         ImageItem(
             progress = state.updateMapProgress,
             image = state.bitmap,
             context = context,
         )
+
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -219,6 +229,136 @@ internal fun MapDownloadedScreen(
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.ExportPopup(
+    selectedExportType: ExportTypes,
+    updateExportType: (ExportTypes) -> Unit
+) {
+    var exportIsVisible by remember {
+        mutableStateOf(false)
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.clickable {
+            exportIsVisible = !exportIsVisible
+        }
+    ) {
+        Text(
+            text = "Формат экспорта"
+        )
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = selectedExportType.name
+        )
+        Icon(
+            imageVector = if (exportIsVisible) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            contentDescription = null
+        )
+    }
+    Spacer(Modifier.height(8.dp))
+    if (exportIsVisible) {
+        Box(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Popup(
+                alignment = Alignment.TopEnd,
+                onDismissRequest = {
+                    exportIsVisible = !exportIsVisible
+                },
+                properties = PopupProperties()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .background(Color.DarkGray/*MaterialTheme.colorScheme.surface*/)
+                        .padding(8.dp)
+                ) {
+                    Column {
+                        ExportTypes.entries.forEach {
+                            Text(
+                                modifier = Modifier
+                                    .clickable {
+                                        updateExportType(it)
+                                        exportIsVisible = false
+                                    }
+                                    .padding(8.dp),
+                                text = it.name,
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColumnScope.FormatPopup(
+    selectedExportType: ExportTypes.PDF,
+    updateExportType: (ExportTypes.PDF) -> Unit
+) {
+    var formatsVisibility by remember {
+        mutableStateOf(false)
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.clickable {
+            formatsVisibility = !formatsVisibility
+        }
+    ) {
+        Text(
+            text = "Формат листа. \nКоличество листов: ${selectedExportType.pagesSize}"
+        )
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = selectedExportType.format.name
+        )
+        Icon(
+            imageVector = if (formatsVisibility) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            contentDescription = null
+        )
+    }
+    Spacer(Modifier.height(8.dp))
+    if (formatsVisibility) {
+        Box(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Popup(
+                alignment = Alignment.TopEnd,
+                onDismissRequest = {
+                    formatsVisibility = !formatsVisibility
+                },
+                properties = PopupProperties()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .background(Color.DarkGray)
+                        .padding(8.dp)
+                ) {
+                    Column {
+                        PageFormat.entries.forEach {
+                            Text(
+                                modifier = Modifier
+                                    .clickable {
+                                        updateExportType(
+                                            selectedExportType.copy(
+                                                format = it
+                                            )
+                                        )
+                                        formatsVisibility = false
+                                    }
+                                    .padding(8.dp),
+                                text = it.name,
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
             }
         }
     }
