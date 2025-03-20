@@ -40,10 +40,9 @@ android {
 }
 
 dependencies {
-    implementation(project(":gui"))
-    /*implementation("com.github.abelozDev.printmap:lib:1.0.10")
-    implementation("com.github.abelozDev.printmap:gui:1.0.10")*/
-    implementation(project(":gui"))
+    implementation("com.github.abelozDev.printmap:lib:1.0.16-fixed")
+    implementation("com.github.abelozDev.printmap:gui:1.0.16-fixed")
+    /*implementation(project(":gui"))*/
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
