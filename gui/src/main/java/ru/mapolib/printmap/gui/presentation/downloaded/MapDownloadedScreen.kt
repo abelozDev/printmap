@@ -64,7 +64,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.maplyb.printmap.impl.domain.model.PageFormat
-import ru.mapolib.printmap.gui.R
 import ru.mapolib.printmap.gui.presentation.downloaded.expandable.LayersExpandable
 import ru.mapolib.printmap.gui.presentation.downloaded.expandable.MapObjectsSettingExpandable
 
@@ -158,7 +157,14 @@ internal fun MapDownloadedScreen(
                     viewModel.sendEvent(MapDownloadedEvent.UpdateExportType(it))
                 }
             )
+            DpiPopup(
+                selectedDpi = state.dpi,
+                updateDpi = {
+                    viewModel.sendEvent(MapDownloadedEvent.SelectDpi(it))
+                }
+            )
         }
+
         ImageItem(
             progress = state.updateMapProgress,
             image = state.bitmap,
@@ -234,6 +240,68 @@ internal fun MapDownloadedScreen(
     }
 }
 
+@Composable
+private fun ColumnScope.DpiPopup(
+    selectedDpi: Dpi,
+    updateDpi: (Dpi) -> Unit
+) {
+    var visibility by remember {
+        mutableStateOf(false)
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.clickable {
+            visibility = !visibility
+        }
+    ) {
+        Text(
+            text = "DPI"
+        )
+        Spacer(Modifier.weight(1f))
+        Text(
+            text = selectedDpi.toString()
+        )
+        Icon(
+            imageVector = if (visibility) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            contentDescription = null
+        )
+    }
+    Spacer(Modifier.height(8.dp))
+    if (visibility) {
+        Box(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Popup(
+                alignment = Alignment.TopEnd,
+                onDismissRequest = {
+                    visibility = !visibility
+                },
+                properties = PopupProperties()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .background(Color.DarkGray/*MaterialTheme.colorScheme.surface*/)
+                        .padding(8.dp)
+                ) {
+                    Column {
+                        dpiVariants.forEach {
+                            Text(
+                                modifier = Modifier
+                                    .clickable {
+                                        updateDpi(it)
+                                        visibility = false
+                                    }
+                                    .padding(8.dp),
+                                text = it.toString(),
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 @Composable
 private fun ColumnScope.ExportPopup(
     selectedExportType: ExportTypes,

@@ -115,7 +115,8 @@ class MapDownloadedViewModel(
         val scale = calculateMapScale(
             widthBitmap = bitmap.width,
             heightBitmap = bitmap.height,
-            boundingBox = _state.value.boundingBox
+            boundingBox = _state.value.boundingBox,
+            dpi = _state.value.dpi
         )
         val bitmapWithScale = drawScale(bitmap, scale)
         val bitmapWithName = drawName(bitmapWithScale, _state.value.name)
@@ -194,6 +195,14 @@ class MapDownloadedViewModel(
                 }
                 drawLayers()
             }
+
+            is MapDownloadedEvent.SelectDpi -> {
+                _state.update {
+                    it.copy(
+                        dpi = action.dpi
+                    )
+                }
+            }
         }
     }
 
@@ -227,7 +236,7 @@ class MapDownloadedViewModel(
         widthBitmap: Int,
         heightBitmap: Int,
         boundingBox: BoundingBox,
-        dpi: Double = 72.0
+        dpi: Dpi
     ): Int {
         val widthGeoMetr = distanceBetween(
             boundingBox.latNorth,
@@ -454,20 +463,22 @@ class MapDownloadedViewModel(
                     }
                 },
                 doOnAsyncBlock = {
+                    val fileName = if(_state.value.name.isNotEmpty()) _state.value.name else "${System.currentTimeMillis()}"
                     when (_state.value.exportType) {
                         is ExportTypes.PDF -> {
                             fileUtil.saveBitmapToPdf(
                                 bitmap = _state.value.bitmap,
-                                fileName = "${System.currentTimeMillis()}",
-                                pageFormat = (_state.value.exportType as ExportTypes.PDF).format
+                                fileName = fileName,
+                                pageFormat = (_state.value.exportType as ExportTypes.PDF).format,
+                                dpi = _state.value.dpi
                             )
                         }
 
                         is ExportTypes.PNG -> {
                             fileUtil.saveBitmapToExternalStorage(
                                 bitmap = _state.value.bitmap,
-                                fileName = "${System.currentTimeMillis()}",
-                                dpi = 300
+                                fileName = fileName,
+                                dpi = _state.value.dpi
                             )
                         }
                     }
@@ -485,7 +496,8 @@ class MapDownloadedViewModel(
         val scale = calculateMapScale(
             widthBitmap = bitmap.width,
             heightBitmap = bitmap.height,
-            boundingBox = _state.value.boundingBox
+            boundingBox = _state.value.boundingBox,
+            dpi = _state.value.dpi
         )
         val bitmapWithScale = drawScale(bitmap, scale)
         val bitmapWithName = drawName(bitmapWithScale, _state.value.name)

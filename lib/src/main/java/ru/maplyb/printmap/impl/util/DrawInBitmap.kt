@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.PathEffect
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
@@ -162,24 +164,36 @@ class DrawInBitmap {
                 color = objects.style.color
                 strokeWidth = (objects.style.width * scaleFactor)
                 isAntiAlias = true
+                style = Paint.Style.STROKE
+
             }
+
             val linesInPixels = convertGeoToPixel(
                 objects.objects,
                 boundingBox,
                 bitmapWidth = bitmap.width,
                 bitmapHeight = bitmap.height
             )
+
+            val path = Path() // Используем Path для сглаживания
+            var firstPoint = true
+
             for (i in 1..linesInPixels.lastIndex) {
                 val start = linesInPixels[i - 1]
                 val end = linesInPixels[i]
-                // Преобразование GeoPoint в пиксели (понадобится функция преобразования)
-                val startX = start.first
-                val startY = start.second
-                val endX = end.first
-                val endY = end.second
-                // Рисуем линию между двумя точками
-                canvas.drawLine(startX, startY, endX, endY, paint)
+
+                // Если это первая точка, начинаем путь
+                if (firstPoint) {
+                    path.moveTo(start.first, start.second)
+                    firstPoint = false
+                }
+
+                // Добавляем линии к пути
+                path.lineTo(end.first, end.second)
             }
+
+            // Рисуем весь путь за один раз
+            canvas.drawPath(path, paint)
         }
     }
 

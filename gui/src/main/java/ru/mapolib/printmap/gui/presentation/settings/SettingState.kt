@@ -20,7 +20,7 @@ data class SettingUiState(
     val maps: List<MapItem>,
     val showPolyline: Boolean = true,
     val objects: List<Layer>,
-    val tilesCount: Int,
+    val tilesCount: Long,
     val boundingBox: BoundingBox,
     val progress: Boolean = false
 ) {

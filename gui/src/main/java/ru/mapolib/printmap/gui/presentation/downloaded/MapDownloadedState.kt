@@ -12,7 +12,7 @@ sealed interface MapDownloadedState {
     data object Initial: MapDownloadedState
     data object Progress: MapDownloadedState
 }
-
+typealias Dpi = Int
 data class MapDownloadedUiState(
     val state: MapDownloadedState = MapDownloadedState.Initial,
     val image: String? = null,
@@ -22,9 +22,14 @@ data class MapDownloadedUiState(
     val boundingBox: BoundingBox,
     val exportType: ExportTypes = ExportTypes.PDF(),
     val orientation: ImageOrientation = ImageOrientation.PORTRAIT,
+    val dpi: Dpi = 72,
     val name: String = "",
     val layers: List<Layer>
 )
+
+
+val dpiVariants: List<Dpi> = listOf(72,300)
+
 
 sealed interface ExportTypes {
     val name: String
@@ -49,6 +54,7 @@ sealed interface MapDownloadedEvent: PrintMapEvent {
     data object ChangeOrientation: MapDownloadedEvent
     data class UpdateLayer(val layer: Layer): MapDownloadedEvent
     data class UpdateName(val name: String): MapDownloadedEvent
+    data class SelectDpi(val dpi: Dpi): MapDownloadedEvent
     data class UpdateMapObjectStyle(val layerObject: LayerObject): MapDownloadedEvent
     data object UpdateLayers: MapDownloadedEvent
 }

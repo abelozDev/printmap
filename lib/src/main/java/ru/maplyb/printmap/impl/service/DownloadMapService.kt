@@ -69,7 +69,7 @@ internal class DownloadMapService : Service() {
     ) {
         coroutineScope.launch {
             val tiles =
-                GeoCalculator.calculateTotalTilesCount(args.bound, args.zoom).successDataOrNull()
+                GeoCalculator.calculateTotalTiles(args.bound, args.zoom).successDataOrNull()
                     ?: return@launch
             val fullSize = args.mapList.size * tiles.size
             startForeground(
