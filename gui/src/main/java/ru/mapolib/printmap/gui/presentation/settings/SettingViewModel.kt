@@ -148,7 +148,7 @@ internal class SettingViewModel(
                     is OperationResult.Success -> {
                         _state.update {
                             it.copy(
-                                tilesCount = result.data.first.count(),
+                                tilesCount = result.data.first,
                                 fileSize = result.data.second,
                                 state = SettingState.Initial
                             )

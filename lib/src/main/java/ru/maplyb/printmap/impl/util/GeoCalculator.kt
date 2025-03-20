@@ -1,6 +1,5 @@
 package ru.maplyb.printmap.impl.util
 
-import android.database.sqlite.SQLiteDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.osgeo.proj4j.CRSFactory
@@ -13,11 +12,8 @@ import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.GeoPointMercator
 import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.domain.model.TileParams
-import java.io.File
+import kotlin.math.absoluteValue
 import kotlin.math.asinh
-import kotlin.math.cos
-import kotlin.math.floor
-import kotlin.math.ln
 import kotlin.math.pow
 import kotlin.math.tan
 
@@ -29,8 +25,25 @@ import kotlin.math.tan
  * */
 object GeoCalculator {
 
+    suspend fun calculateTotalSizeCount(
+        boundingBox: BoundingBox, zoom: Int
+    ): OperationResult<Long> = withContext(Dispatchers.Default) {
+        try {
+            val (xMin, yMin) = degToNum(boundingBox.latSouth, boundingBox.lonWest, zoom)
+            val (xMax, yMax) = degToNum(boundingBox.latNorth, boundingBox.lonEast, zoom)
+
+            val tilesCount = ((xMax - xMin).absoluteValue.toLong() + 1) * ((yMax - yMin).absoluteValue.toLong() + 1)
+            if (tilesCount > 2500L) {
+                return@withContext OperationResult.Error("Слишком большой размер карты. Попробуйте уменьшить размер или зум")
+            }
+            OperationResult.Success(tilesCount)
+        } catch (e: OutOfMemoryError) {
+            OperationResult.Error("Слишком большой размер карты. Попробуйте уменьшить размер или зум")
+        }
+    }
+
     /**Количество тайлов, размер файла*/
-    suspend fun calculateTotalTilesCount(
+    suspend fun calculateTotalTiles(
         boundingBox: BoundingBox, zoom: Int
     ): OperationResult<List<TileParams>> {
         return withContext(Dispatchers.Default) {

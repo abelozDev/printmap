@@ -26,7 +26,6 @@ import ru.maplyb.printmap.impl.data.local.DownloadedState
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.domain.repo.DownloadTilesManager
 import ru.maplyb.printmap.impl.files.FileUtil
-import ru.maplyb.printmap.impl.util.DrawInBitmap
 import ru.maplyb.printmap.impl.util.GeoCalculator
 import ru.maplyb.printmap.impl.util.MergeTiles
 import ru.maplyb.printmap.impl.util.serializable
@@ -70,7 +69,7 @@ internal class DownloadMapService : Service() {
     ) {
         coroutineScope.launch {
             val tiles =
-                GeoCalculator.calculateTotalTilesCount(args.bound, args.zoom).successDataOrNull()
+                GeoCalculator.calculateTotalTiles(args.bound, args.zoom).successDataOrNull()
                     ?: return@launch
             val fullSize = args.mapList.size * tiles.size
             startForeground(

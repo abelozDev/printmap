@@ -82,7 +82,7 @@ internal class MapPrintImpl(
         bound: BoundingBox,
         zoom: Int,
     ): OperationResult<List<TileParams>> {
-        return GeoCalculator.calculateTotalTilesCount(bound, zoom)
+        return GeoCalculator.calculateTotalTiles(bound, zoom)
     }
 
     override suspend fun startFormingAMap(
