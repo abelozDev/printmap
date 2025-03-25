@@ -3,20 +3,24 @@ package ru.maplyb.printmap.impl.util
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.PathEffect
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import ru.maplyb.printmap.api.PathEffectTypes
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.LayerObject
 import ru.maplyb.printmap.api.model.ObjectRes
 import ru.maplyb.printmap.impl.util.GeoCalculator.convertGeoToPixel
 import kotlin.math.sqrt
+import androidx.core.graphics.withSave
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 
 class DrawInBitmap {
 
@@ -47,7 +51,7 @@ class DrawInBitmap {
                         scaleFactor = scaleFactor
                     )
 
-                    is LayerObject.Radius -> TODO()
+                    is LayerObject.Radius -> Unit
                     is LayerObject.Text -> drawTextOnBitmap(
                         canvas = canvas,
                         bitmap = bitmap,
@@ -77,42 +81,54 @@ class DrawInBitmap {
         objects: LayerObject.Object,
         scaleFactor: Float
     ) {
-        withContext(Dispatchers.Default) {
-        val linesInPixels = convertGeoToPixel(
-            objects.coords,
-            boundingBox,
-            bitmapWidth = bitmap.width,
-            bitmapHeight = bitmap.height
-        )
-        val drawable = when(objects.res) {
-            is ObjectRes.Local -> ContextCompat.getDrawable(context, objects.res.res)
-            is ObjectRes.Storage -> Drawable.createFromPath(objects.res.res)
-        } ?: return@withContext
+        coroutineScope {
+            ensureActive()
+            val linesInPixels = convertGeoToPixel(
+                objects.coords,
+                boundingBox,
+                bitmapWidth = bitmap.width,
+                bitmapHeight = bitmap.height
+            )
+            val drawable = when (objects.res) {
+                is ObjectRes.Local -> ContextCompat.getDrawable(context, objects.res.res)
+                is ObjectRes.Storage -> Drawable.createFromPath(objects.res.res)
+            } ?: return@coroutineScope
 
-        val bitmapDrawable = drawable as? BitmapDrawable
-        val realWidth = bitmapDrawable?.bitmap?.width ?: drawable.intrinsicWidth
-        val realHeight = bitmapDrawable?.bitmap?.height ?: drawable.intrinsicHeight
-        val scaleFactor1 = (objects.style.width / 25f) * scaleFactor
-        val scaledWidth = (realWidth * scaleFactor1).toInt()
-        val scaledHeight = (realHeight * scaleFactor1).toInt()
-        val centerX = linesInPixels.first
-        val centerY = linesInPixels.second
-        canvas.save()
-        canvas.translate(centerX, centerY)
+            val bitmapDrawable = drawable as? BitmapDrawable
+            val realWidth = bitmapDrawable?.bitmap?.width ?: drawable.intrinsicWidth
+            val realHeight = bitmapDrawable?.bitmap?.height ?: drawable.intrinsicHeight
+            val scaleFactor1 = (objects.style.width / 25f) * scaleFactor
+            val scaledWidth = (realWidth * scaleFactor1).toInt()
+            val scaledHeight = (realHeight * scaleFactor1).toInt()
+            val centerX = linesInPixels.first
+            val centerY = linesInPixels.second
+            canvas.save()
+            canvas.translate(centerX, centerY)
 
-        canvas.rotate(objects.angle)
-        drawable.setBounds(
-            -scaledWidth / 2,
-            -scaledHeight / 2,
-            scaledWidth / 2,
-            scaledHeight / 2
-        )
-        drawable.draw(canvas)
-        canvas.restore()
+            canvas.rotate(objects.angle)
+            drawable.setBounds(
+                -scaledWidth / 2,
+                -scaledHeight / 2,
+                scaledWidth / 2,
+                scaledHeight / 2
+            )
+            drawable.draw(canvas)
+            canvas.restore()
+            val textHeight = (objects.style.width * scaleFactor)
+            val paint = Paint().apply {
+                color = Color.BLACK
+                this.textSize = textHeight
+                isAntiAlias = true
+                textAlign = Paint.Align.LEFT
+            }
+            val textLength = paint.measureText(objects.style.name)
+            val nameX = centerX - (textLength / 2)
+            val nameY = centerY + (scaledHeight / 2) + (textHeight * 1.25f)
+            canvas.withSave {
+                drawText(objects.style.name, nameX, nameY, paint)
+            }
         }
-
     }
-
 
 
     private suspend fun drawPolygon(
@@ -160,14 +176,12 @@ class DrawInBitmap {
         scaleFactor: Float
     ) {
         withContext(Dispatchers.Default) {
-            val paint = Paint().apply {
+            val basePaint = Paint().apply {
                 color = objects.style.color
                 strokeWidth = (objects.style.width * scaleFactor)
                 isAntiAlias = true
                 style = Paint.Style.STROKE
-
             }
-
             val linesInPixels = convertGeoToPixel(
                 objects.objects,
                 boundingBox,
@@ -175,7 +189,18 @@ class DrawInBitmap {
                 bitmapHeight = bitmap.height
             )
 
-            val path = Path() // Используем Path для сглаживания
+            val firstPaint = Paint(basePaint).apply {
+                if (objects.pathEffect != null && objects.pathEffect != "DEFAULT") {
+                    pathEffect = PathEffectTypes.valueOf(objects.pathEffect).effect1
+                }
+            }
+            val secondPaint = Paint(basePaint).apply {
+                if (objects.pathEffect != null && objects.pathEffect != "DEFAULT") {
+                    pathEffect = PathEffectTypes.valueOf(objects.pathEffect).effect2
+                }
+            }
+
+            val path = Path()
             var firstPoint = true
 
             for (i in 1..linesInPixels.lastIndex) {
@@ -191,9 +216,8 @@ class DrawInBitmap {
                 // Добавляем линии к пути
                 path.lineTo(end.first, end.second)
             }
-
-            // Рисуем весь путь за один раз
-            canvas.drawPath(path, paint)
+            canvas.drawPath(path, firstPaint)
+            canvas.drawPath(path, secondPaint)
         }
     }
 

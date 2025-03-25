@@ -20,6 +20,7 @@ sealed interface LayerObject: Serializable {
     @kotlinx.serialization.Serializable
     data class Line(
         override val style: MapObjectStyle,
+        val pathEffect: String? = "DEFAULT",
         val objects: List<GeoPoint>,
     ): LayerObject {
         override fun updateStyle(newStyle: MapObjectStyle): LayerObject {

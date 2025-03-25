@@ -47,6 +47,15 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             zoomMin = 0,
             zoomMax = 13
         )
+        //latNorth = 51.655322,
+        //                            lonWest = 22.327316,
+        //                            latSouth = 46.976288,
+        //                            lonEast = 38.433272
+        val lats = generateSequence(51.655322, 46.976288, 5000).map {
+            GeoPoint(it, 38.2526255)
+        }
+        val lines3000 = (0..3000).map {
+        }
         val lines = listOf(
             GeoPoint(48.9454533, 38.2526255),
             GeoPoint(48.93221440000001, 38.2555645),
@@ -1133,6 +1142,18 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             GeoPoint(49.25965321366459, 23.85797202028449),
         )
 
+        val generatedObjects = (0..100).map {
+            LayerObject.Object(
+                style = MapObjectStyle(
+                    color = android.graphics.Color.BLUE,
+                    width = 25f,
+                    name = it.toString()
+                ),
+                coords = GeoPoint(50.40243799500318 + (it * 0.0001), 30.07808115663772 * (it * 0.0001)),
+                angle = -450f,
+                res = ObjectRes.Local(R.drawable.ic_mkb)
+            )
+        }
         val objects = listOf(
             Layer(
                 objects = listOf(
@@ -1143,6 +1164,22 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                             name = "qwe"
                         ),
                         objects = lines,
+                        pathEffect = "ATGM_PTUR_INSIDE"
+                    )
+                ),
+                name = "LBS",
+                selected = true,
+            ),
+            Layer(
+                objects = listOf(
+                    LayerObject.Line(
+                        style = MapObjectStyle(
+                            color = android.graphics.Color.RED,
+                            width = 5f,
+                            name = "qwe"
+                        ),
+                        objects = lats,
+                        pathEffect = "ATGM_PTUR_INSIDE"
                     )
                 ),
                 name = "LBS",
@@ -1156,6 +1193,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                             width = 5f,
                             name = "polygon"
                         ),
+                        pathEffect = "TANK_LINE",
                         objects = polygonLines,
                     )
                 ),
@@ -1179,18 +1217,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                 name = "textetxtetxtetxtetxtetxte"
             ),
             Layer(
-                objects = listOf(
-                    LayerObject.Object(
-                        style = MapObjectStyle(
-                            color = android.graphics.Color.BLUE,
-                            width = 25f,
-                            name = "object"
-                        ),
-                        coords = GeoPoint(50.40243799500318, 30.07808115663772),
-                        angle = -450f,
-                        res = ObjectRes.Local(R.drawable.ic_mkb)/*ObjectRes.Storage("/storage/emulated/0/Download/rls.png")*/
-                    )
-                ),
+                objects = generatedObjects,
                 selected = true,
                 name = "object"
             )
@@ -1277,4 +1304,11 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             MainScreen()
         }
     }
+}
+
+fun generateSequence(start: Double, end: Double, count: Int): List<Double> {
+    if (count <= 0) return emptyList()
+
+    val step = (end - start) / (count + 1)
+    return List(count) { index -> start + (index + 1) * step }
 }

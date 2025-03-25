@@ -40,7 +40,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":gui"))
     /*implementation("com.github.abelozDev.printmap:lib:1.0.10")
     implementation("com.github.abelozDev.printmap:gui:1.0.10")*/
     implementation(project(":gui"))

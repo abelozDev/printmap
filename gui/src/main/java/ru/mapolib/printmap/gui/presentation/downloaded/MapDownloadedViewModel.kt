@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -74,9 +75,10 @@ class MapDownloadedViewModel(
             }
             .launchIn(viewModelScope)
     }
-
+    private var drawJob: Job? = null
     private fun drawLayers() {
-        viewModelScope.launch(Dispatchers.Default) {
+        drawJob?.cancel()
+        drawJob = viewModelScope.launch(Dispatchers.Default) {
             doWork {
                 val currentBitmap = BitmapFactory.decodeFile(path)
                 val bitmapWithDraw = if (!_state.value.showLayers) {
