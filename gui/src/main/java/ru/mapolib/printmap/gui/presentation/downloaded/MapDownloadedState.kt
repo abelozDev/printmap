@@ -20,7 +20,7 @@ data class MapDownloadedUiState(
     val updateMapProgress: Boolean = false,
     val showLayers: Boolean = true,
     val boundingBox: BoundingBox,
-    val exportType: ExportTypes = ExportTypes.PDF(),
+    val exportType: ExportTypes = ExportTypes.PNG(),
     val orientation: ImageOrientation = ImageOrientation.PORTRAIT,
     val dpi: Dpi = 72,
     val name: String = "",

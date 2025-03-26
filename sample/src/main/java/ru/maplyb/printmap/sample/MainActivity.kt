@@ -1187,12 +1187,13 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             ),
             Layer(
                 objects = listOf(
-                    LayerObject.Line(
+                    LayerObject.Polygon(
                         style = MapObjectStyle(
                             color = android.graphics.Color.BLUE,
                             width = 5f,
                             name = "polygon"
                         ),
+                        alpha = 25f,
                         pathEffect = "TANK_LINE",
                         objects = polygonLines,
                     )

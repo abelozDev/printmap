@@ -39,6 +39,8 @@ sealed interface LayerObject: Serializable {
     @kotlinx.serialization.Serializable
     data class Polygon(
         override val style: MapObjectStyle,
+        val alpha: Float = 0f,
+        val pathEffect: String? = "DEFAULT",
         val objects: List<GeoPoint>,
     ): LayerObject {
         override fun updateStyle(newStyle: MapObjectStyle): LayerObject {
@@ -72,6 +74,7 @@ sealed interface LayerObject: Serializable {
     data class Text(
         val coords: GeoPoint,
         val text: String,
+        /**0..100*/
         val angle: Float,
         override val style: MapObjectStyle
     ): LayerObject {

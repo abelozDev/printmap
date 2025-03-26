@@ -102,8 +102,6 @@ internal class MergeTiles {
                     zoom = zoom,
                     boundingBox = boundingBox
                 )
-//                val scale = calculateMapScale(croppedBitmap.width, croppedBitmap.height ,boundingBox)
-//                println("bitmap width: ${croppedBitmap.width}, height: ${croppedBitmap.height}")
                 addWatermark(croppedBitmap, author)
             }
         }

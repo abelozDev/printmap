@@ -21,8 +21,9 @@ import kotlin.math.sqrt
 import androidx.core.graphics.withSave
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
+import kotlin.math.roundToInt
 
-class DrawInBitmap {
+class DrawOnBitmap {
 
     suspend fun drawLayers(
         context: Context,
@@ -136,35 +137,55 @@ class DrawInBitmap {
         boundingBox: BoundingBox,
         objects: LayerObject.Polygon,
         scaleFactor: Float
-    ): Bitmap {
-        return withContext(Dispatchers.Default) {
+    ) {
+        withContext(Dispatchers.Default) {
+            if (objects.objects.isEmpty()) return@withContext // Проверка, есть ли точки
             val canvas = Canvas(bitmap)
-            val paint = Paint().apply {
-                color = objects.style.color    // Цвет линии
-                strokeWidth = (objects.style.width * scaleFactor)
-                isAntiAlias = true   // Убираем зазубрины на линиях
+            val alpha = (objects.alpha / 100.0f).coerceIn(0f, 1f) * 255
+            // Кисть для заливки (с учетом прозрачности)
+            val fillPaint = Paint().apply {
+                color = objects.style.color
+                isAntiAlias = true
+                style = Paint.Style.FILL
+                this.alpha = alpha.roundToInt()
             }
-            val pointsInPixels = GeoCalculator.convertGeoToPixel(
+
+            // Кисть для обводки (без прозрачности)
+            val basePaint = Paint().apply {
+                color = objects.style.color
+                strokeWidth = (objects.style.width * scaleFactor)
+                isAntiAlias = true
+                style = Paint.Style.STROKE
+            }
+            val firstPaint = Paint(basePaint).apply {
+                if (objects.pathEffect != null && objects.pathEffect != "DEFAULT") {
+                    pathEffect = PathEffectTypes.valueOf(objects.pathEffect).effect1
+                }
+            }
+            val secondPaint = Paint(basePaint).apply {
+                if (objects.pathEffect != null && objects.pathEffect != "DEFAULT") {
+                    pathEffect = PathEffectTypes.valueOf(objects.pathEffect).effect2
+                }
+            }
+            val pointsInPixels = convertGeoToPixel(
                 objects.objects,
                 boundingBox,
                 bitmapWidth = bitmap.width,
                 bitmapHeight = bitmap.height
             )
-            for (i in 1..pointsInPixels.size) {
-                val (start, end) = if (i == pointsInPixels.size) {
-                    pointsInPixels[0] to pointsInPixels[i - 1]
-                } else {
-                    pointsInPixels[i - 1] to pointsInPixels[i]
+            val path = Path().apply {
+                moveTo(pointsInPixels.first().first, pointsInPixels.first().second)
+                for (i in 1 until pointsInPixels.size) {
+                    val (x, y) = pointsInPixels[i]
+                    lineTo(x, y)
                 }
-                // Преобразование GeoPoint в пиксели (понадобится функция преобразования)
-                val startX = start.first
-                val startY = start.second
-                val endX = end.first
-                val endY = end.second
-                // Рисуем линию между двумя точками
-                canvas.drawLine(startX, startY, endX, endY, paint)
+                close() // Закрываем контур
             }
-            bitmap
+
+            // Сначала заливаем, затем рисуем контур
+            canvas.drawPath(path, fillPaint)
+            canvas.drawPath(path, firstPaint)
+            canvas.drawPath(path, secondPaint)
         }
     }
 

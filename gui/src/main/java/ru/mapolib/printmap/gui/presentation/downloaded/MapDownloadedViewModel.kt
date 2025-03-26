@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.LayerObject
-import ru.maplyb.printmap.impl.util.DrawInBitmap
+import ru.maplyb.printmap.impl.util.DrawOnBitmap
 import ru.maplyb.printmap.impl.files.FileUtil
 import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
 import ru.mapolib.printmap.gui.presentation.util.PrintMapViewModel
@@ -85,7 +85,7 @@ class MapDownloadedViewModel(
                     currentBitmap
                 } else {
                     val bitmap = currentBitmap.copy(Bitmap.Config.ARGB_8888, true)
-                    val drawLayers = DrawInBitmap()
+                    val drawLayers = DrawOnBitmap()
                     drawLayers.drawLayers(
                         bitmap = bitmap,
                         boundingBox = _state.value.boundingBox,
@@ -285,7 +285,7 @@ class MapDownloadedViewModel(
         val padding = 10f // отступ от текста до линии
 
 
-        val textSize = mutableBitmap.width * 0.01f
+        val textSize = mutableBitmap.width * 0.015f
         val paintStroke = Paint().apply {
             color = Color.WHITE
             this.textSize = textSize
@@ -308,7 +308,6 @@ class MapDownloadedViewModel(
         /*Рисуем 0*/
         canvas.drawText("0", padding, scaleY, paintStroke)
         canvas.drawText("0", padding, scaleY, paintFill)
-
 
         canvas.drawText(roundedScale.toString(), padding + segmentLength, scaleY, paintStroke)
         canvas.drawText(roundedScale.toString(), padding + segmentLength, scaleY, paintFill)
