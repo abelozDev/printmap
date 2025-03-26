@@ -8,5 +8,6 @@ data class FormingMapArgs(
     val layers: List<Layer>,
     val zoom: Int,
     val quality: Int,
-    val author: String
+    val author: String,
+    val appName: String
 ): Serializable

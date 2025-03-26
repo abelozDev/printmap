@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.StateFlow
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.MapItem
-import ru.maplyb.printmap.api.model.MapObjectStyle
 
 interface DownloadMapManager {
 
@@ -13,7 +12,8 @@ interface DownloadMapManager {
 
     suspend fun deleteMap(path: String)
     fun prepareDownloading(
-        author: String,
+        appName: String,
+        author: String? = null,
         boundingBox: BoundingBox,
         maps: List<MapItem>,
         objects: List<Layer>,

@@ -16,7 +16,6 @@ import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.impl.domain.local.PreferencesDataSource
 import ru.maplyb.printmap.impl.util.DestroyLifecycleCallback
-import ru.maplyb.printmap.impl.util.GeoCalculator
 
 internal object DownloadMapManagerImpl : DownloadMapManager {
     private val _state = MutableStateFlow<DownloadMapState>(DownloadMapState.Idle)
@@ -59,7 +58,9 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
                                 path = args.path,
                                 boundingBox = args.boundingBox,
                                 layers = args.layers,
-                                isOpen = _state.value.isOpen
+                                isOpen = _state.value.isOpen,
+                                author = args.author,
+                                appName = args.appName
                             )
                         }
 
@@ -107,6 +108,7 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
     override fun open() {
         _state.value = _state.value.open()
     }
+
     suspend fun startFormingAMap(
         args: FormingMapArgs,
     ) {
@@ -114,7 +116,8 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
     }
 
     override fun prepareDownloading(
-        author: String,
+        appName: String,
+        author: String?,
         boundingBox: BoundingBox,
         maps: List<MapItem>,
         objects: List<Layer>,
@@ -127,7 +130,15 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
                     alpha = (clampedValue * 255)
                 )
             }
-        _state.value = DownloadMapState.PrepareDownloading(boundingBox, modifiedMaps, zoom, objects, author, isOpen = true)
+        _state.value = DownloadMapState.PrepareDownloading(
+            boundingBox = boundingBox,
+            maps = modifiedMaps,
+            zoom = zoom,
+            objects = objects,
+            appName = appName,
+            isOpen = true,
+            author = author
+        )
     }
 }
 
@@ -140,7 +151,8 @@ sealed interface DownloadMapState {
         val maps: List<MapItem>,
         val zoom: Int,
         val objects: List<Layer>,
-        val author: String,
+        val appName: String,
+        val author: String? = null,
         override val isOpen: Boolean = false
     ) : DownloadMapState {
         override fun hide(): DownloadMapState {
@@ -154,6 +166,8 @@ sealed interface DownloadMapState {
 
     data class Finished(
         val path: String,
+        val author: String,
+        val appName: String,
         val boundingBox: BoundingBox,
         val layers: List<Layer>,
         override val isOpen: Boolean = false

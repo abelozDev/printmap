@@ -124,7 +124,9 @@ internal class DownloadMapService : Service() {
                                 path = DownloadedState(
                                     path = it,
                                     layers = args.layers,
-                                    boundingBox = args.bound
+                                    boundingBox = args.bound,
+                                    author = args.author,
+                                    appName = args.appName
                                 )
                             )
                         }

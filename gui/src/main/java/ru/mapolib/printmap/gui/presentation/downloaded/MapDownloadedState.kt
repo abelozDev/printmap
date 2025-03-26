@@ -17,6 +17,8 @@ data class MapDownloadedUiState(
     val state: MapDownloadedState = MapDownloadedState.Initial,
     val image: String? = null,
     val bitmap: Bitmap,
+    val appName: String,
+    val author: String,
     val updateMapProgress: Boolean = false,
     val showLayers: Boolean = true,
     val boundingBox: BoundingBox,

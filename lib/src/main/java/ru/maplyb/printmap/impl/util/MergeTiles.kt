@@ -102,7 +102,7 @@ internal class MergeTiles {
                     zoom = zoom,
                     boundingBox = boundingBox
                 )
-                addWatermark(croppedBitmap, author)
+                croppedBitmap
             }
         }
     }
@@ -142,7 +142,7 @@ internal class MergeTiles {
         return Bitmap.createBitmap(bitmap, xMin.toInt(), yMin.toInt(), widthPx, heightPx)
     }
 
-    private fun addWatermark(
+    fun addWatermark(
         bitmap: Bitmap,
         author: String,
     ): Bitmap {

@@ -87,7 +87,11 @@ fun MainScreen() {
                             factory = MapDownloadedViewModel.create(
                                 path = (state as DownloadMapState.Finished).path,
                                 boundingBox = (state as DownloadMapState.Finished).boundingBox,
-                                layers = (state as DownloadMapState.Finished).layers, context)
+                                layers = (state as DownloadMapState.Finished).layers,
+                                context = context,
+                                author = (state as DownloadMapState.Finished).author,
+                                appName = (state as DownloadMapState.Finished).appName
+                            )
                         )[MapDownloadedViewModel::class.java]
 
                         MapDownloadedScreen(
@@ -119,7 +123,8 @@ fun MainScreen() {
                                             layers = objects,
                                             zoom = zoom,
                                             quality = quality,
-                                            author = (state as DownloadMapState.PrepareDownloading).author
+                                            author = (state as DownloadMapState.PrepareDownloading).author ?: "",
+                                            appName = (state as DownloadMapState.PrepareDownloading).appName
                                         )
                                     )
                                 }

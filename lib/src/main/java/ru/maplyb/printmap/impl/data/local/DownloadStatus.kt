@@ -18,5 +18,7 @@ data class DownloadStatus(
 data class DownloadedState(
     val path: String,
     val boundingBox: BoundingBox,
+    val author: String = "",
+    val appName: String = "",
     val layers: List<Layer>,
 )

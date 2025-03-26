@@ -33,6 +33,8 @@ import kotlin.math.roundToInt
 class MapDownloadedViewModel(
     private val path: String,
     boundingBox: BoundingBox,
+    appName: String,
+    author: String,
     layers: List<Layer>,
     private val fileUtil: FileUtil,
     private val context: Context
@@ -43,7 +45,9 @@ class MapDownloadedViewModel(
             image = path,
             bitmap = BitmapFactory.decodeFile(path),
             boundingBox = boundingBox,
-            layers = layers
+            layers = layers,
+            appName = appName,
+            author = author
         )
     )
     val state = _state.asStateFlow()
@@ -75,6 +79,7 @@ class MapDownloadedViewModel(
             }
             .launchIn(viewModelScope)
     }
+
     private var drawJob: Job? = null
     private fun drawLayers() {
         drawJob?.cancel()
@@ -95,15 +100,15 @@ class MapDownloadedViewModel(
                     bitmap
                 }
                 if (isActive) {
-                    val bitmapWithDefaults = setDefault(bitmapWithDraw)
                     val rotatedBitmap = if (_state.value.orientation != ImageOrientation.PORTRAIT) {
                         rotateBitmap(
-                            bitmap = bitmapWithDefaults
+                            bitmap = bitmapWithDraw
                         )
-                    } else bitmapWithDefaults
+                    } else bitmapWithDraw
+                    val bitmapWithDefaults = setDefault(rotatedBitmap)
                     _state.update {
                         it.copy(
-                            bitmap = rotatedBitmap
+                            bitmap = bitmapWithDefaults
                         )
                     }
                 }
@@ -122,7 +127,49 @@ class MapDownloadedViewModel(
         )
         val bitmapWithScale = drawScale(bitmap, scale)
         val bitmapWithName = drawName(bitmapWithScale, _state.value.name)
-        return bitmapWithName
+        val bitmapWithWatermark =
+            addWatermark(
+                bitmap = bitmapWithName,
+                appName = _state.value.appName,
+                author = _state.value.author
+            )
+        return bitmapWithWatermark
+    }
+
+    fun addWatermark(
+        bitmap: Bitmap,
+        appName: String,
+        author: String
+    ): Bitmap {
+        val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(mutableBitmap)
+
+        val textSize = (mutableBitmap.width + mutableBitmap.height) / 2 * 0.025f
+        val paintStroke = Paint().apply {
+            color = Color.WHITE // Белый цвет для обводки
+            this.textSize = textSize
+            isAntiAlias = true
+            style = Paint.Style.STROKE // Обводка
+            strokeWidth = textSize / 10f // Толщина обводки
+        }
+
+        val paintFill = Paint().apply {
+            color = Color.BLACK // Основной цвет текста
+            this.textSize = textSize
+            isAntiAlias = true
+            style = Paint.Style.FILL
+        }
+
+        val textHeight = paintFill.descent() - paintFill.ascent()
+        val x = mutableBitmap.width * 0.02f
+        canvas.drawText(appName, x, textHeight, paintStroke)
+        canvas.drawText(appName, x, textHeight, paintFill)
+
+        if (author.isNotEmpty()) {
+            canvas.drawText(author, x, textHeight *2, paintStroke)
+            canvas.drawText(author, x, textHeight *2, paintFill)
+        }
+        return mutableBitmap
     }
 
     override fun consumeEvent(action: MapDownloadedEvent) {
@@ -142,14 +189,12 @@ class MapDownloadedViewModel(
             }
 
             MapDownloadedEvent.ChangeOrientation -> {
-                val rotatedBitmap = rotateBitmap(
-                    orientation = _state.value.orientation.getOther()
-                )
                 _state.update {
                     it.copy(
-                        bitmap = rotatedBitmap
+                        orientation = _state.value.orientation.getOther(),
                     )
                 }
+                drawLayers()
             }
 
             is MapDownloadedEvent.UpdateLayer -> {
@@ -285,7 +330,7 @@ class MapDownloadedViewModel(
         val padding = 10f // отступ от текста до линии
 
 
-        val textSize = mutableBitmap.width * 0.015f
+        val textSize = (mutableBitmap.width + mutableBitmap.height) / 2 * 0.015f
         val paintStroke = Paint().apply {
             color = Color.WHITE
             this.textSize = textSize
@@ -464,7 +509,8 @@ class MapDownloadedViewModel(
                     }
                 },
                 doOnAsyncBlock = {
-                    val fileName = if(_state.value.name.isNotEmpty()) _state.value.name else "${System.currentTimeMillis()}"
+                    val fileName =
+                        if (_state.value.name.isNotEmpty()) _state.value.name else "${System.currentTimeMillis()}"
                     when (_state.value.exportType) {
                         is ExportTypes.PDF -> {
                             fileUtil.saveBitmapToPdf(
@@ -519,6 +565,8 @@ class MapDownloadedViewModel(
             path: String,
             boundingBox: BoundingBox,
             layers: List<Layer>,
+            appName: String,
+            author: String,
             context: Context
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -530,7 +578,9 @@ class MapDownloadedViewModel(
                         boundingBox = boundingBox,
                         layers = layers,
                         fileUtil = saveBitmap,
-                        context = context
+                        context = context,
+                        appName = appName,
+                        author = author
                     ) as T
                 }
                 throw IllegalArgumentException("Unknown ViewModel class")
