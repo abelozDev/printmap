@@ -6,6 +6,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
@@ -95,7 +97,14 @@ class DrawOnBitmap {
                 is ObjectRes.Storage -> Drawable.createFromPath(objects.res.res)
             } ?: return@coroutineScope
 
-            val bitmapDrawable = drawable as? BitmapDrawable
+            val bitmapDrawable = objects.style.color?.let {
+                val colorFilter = PorterDuffColorFilter(it, PorterDuff.Mode.SRC_IN)
+                val bitmapDraw = drawable as? BitmapDrawable
+                bitmapDraw?.colorFilter = colorFilter
+                bitmapDraw
+            } ?: drawable as? BitmapDrawable
+
+
             val realWidth = bitmapDrawable?.bitmap?.width ?: drawable.intrinsicWidth
             val realHeight = bitmapDrawable?.bitmap?.height ?: drawable.intrinsicHeight
             val scaleFactor1 = (objects.style.width / 25f) * scaleFactor
@@ -144,7 +153,7 @@ class DrawOnBitmap {
             val alpha = (objects.alpha / 100.0f).coerceIn(0f, 1f) * 255
             // Кисть для заливки (с учетом прозрачности)
             val fillPaint = Paint().apply {
-                color = objects.style.color
+                color = objects.style.color ?: Color.RED
                 isAntiAlias = true
                 style = Paint.Style.FILL
                 this.alpha = alpha.roundToInt()
@@ -152,7 +161,7 @@ class DrawOnBitmap {
 
             // Кисть для обводки (без прозрачности)
             val basePaint = Paint().apply {
-                color = objects.style.color
+                color = objects.style.color ?: Color.RED
                 strokeWidth = (objects.style.width * scaleFactor)
                 isAntiAlias = true
                 style = Paint.Style.STROKE
@@ -198,7 +207,7 @@ class DrawOnBitmap {
     ) {
         withContext(Dispatchers.Default) {
             val basePaint = Paint().apply {
-                color = objects.style.color
+                color = objects.style.color ?: Color.RED
                 strokeWidth = (objects.style.width * scaleFactor)
                 isAntiAlias = true
                 style = Paint.Style.STROKE
@@ -257,7 +266,7 @@ class DrawOnBitmap {
                 bitmapHeight = bitmap.height
             )
             val paint = Paint().apply {
-                color = text.style.color
+                color = text.style.color ?: Color.RED
                 this.textSize = (text.style.width * scaleFactor)
                 isAntiAlias = true
                 textAlign = Paint.Align.LEFT
