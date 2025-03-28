@@ -75,8 +75,8 @@ class FileUtil(private val context: Context) {
     ): Int {
         val pageWidth = pageFormat.width
         val pageHeight = pageFormat.height
-        val pageWidthInPixel = ((pageWidth/25.4) * dpi).roundToInt()
-        val pageHeightInPixel = ((pageHeight/25.4) * dpi).roundToInt()
+        val pageWidthInPixel = ((pageWidth / 25.4) * dpi).roundToInt()
+        val pageHeightInPixel = ((pageHeight / 25.4) * dpi).roundToInt()
         val scaleFactor = dpi.toFloat() / 72f
         val bitmapHeight = (bitmap.height * scaleFactor).toInt()
         val bitmapWidth = (bitmap.width * scaleFactor).toInt()
@@ -85,15 +85,13 @@ class FileUtil(private val context: Context) {
         return cols * rows
     }
 
-    fun saveBitmapToPdf(bitmap: Bitmap, fileName: String, pageFormat: PageFormat, dpi: Int): OperationResult<String> {
-        if (canAllocateBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)) {
-            val solving = when {
-                dpi > 72 -> "Попробуйте уменьшить DPI"
-                pageFormat == PageFormat.A4 -> "Попробуйте использовать лист большего формата"
-                else -> "Попробуйте выбрать меньший сертор или изменить зум"
-            }
-            return OperationResult.Error("Слишком большой файл. $solving")
-        }
+    fun saveBitmapToPdf(
+        bitmap: Bitmap,
+        fileName: String,
+        pageFormat: PageFormat,
+        dpi: Int
+    ): OperationResult<String> {
+
 
         val file = File(directory, "$fileName.pdf")
         val document = PdfDocument()
@@ -101,19 +99,40 @@ class FileUtil(private val context: Context) {
         val pageWidth = pageFormat.width
         val pageHeight = pageFormat.height
 
-        val pageWidthInPixel = ((pageWidth/25.4) * dpi).roundToInt()
-        val pageHeightInPixel = ((pageHeight/25.4) * dpi).roundToInt()
+        val pageWidthInPixel = ((pageWidth / 25.4) * dpi).roundToInt()
+        val pageHeightInPixel = ((pageHeight / 25.4) * dpi).roundToInt()
         val scaleFactor = dpi.toFloat() / 72f
+        val newWidth = (bitmap.width * scaleFactor).toInt()
+        val newHeight = (bitmap.height * scaleFactor).toInt()
+        val otherSize = bitmap.height != newHeight && bitmap.width != newHeight
+        if (!canAllocateBitmap(
+                newWidth,
+                newHeight,
+                Bitmap.Config.ARGB_8888
+            ) && otherSize
+        ) {
+            val solving = when {
+                dpi > 72 -> "Попробуйте уменьшить DPI"
+                pageFormat == PageFormat.A4 -> "Попробуйте использовать лист большего формата"
+                else -> "Попробуйте выбрать меньший сертор или изменить зум"
+            }
+            return OperationResult.Error("Слишком большой файл. $solving")
+        }
         val scaledBitmap = bitmap.scale(
             (bitmap.width * scaleFactor).toInt(),
             (bitmap.height * scaleFactor).toInt()
         )
+
         val cols = (scaledBitmap.width + pageWidthInPixel - 1) / pageWidthInPixel
         val rows = (scaledBitmap.height + pageHeightInPixel - 1) / pageHeightInPixel
         return try {
             for (row in 0 until rows) {
                 for (col in 0 until cols) {
-                    val pageInfo = PdfDocument.PageInfo.Builder(pageWidthInPixel, pageHeightInPixel, row * cols + col + 1).create()
+                    val pageInfo = PdfDocument.PageInfo.Builder(
+                        pageWidthInPixel,
+                        pageHeightInPixel,
+                        row * cols + col + 1
+                    ).create()
                     val page = document.startPage(pageInfo)
                     val canvas = page.canvas
 
@@ -122,7 +141,13 @@ class FileUtil(private val context: Context) {
                     val srcRight = minOf((col + 1) * pageWidthInPixel, scaledBitmap.width)
                     val srcBottom = minOf((row + 1) * pageHeightInPixel, scaledBitmap.height)
 
-                    val croppedBitmap = Bitmap.createBitmap(scaledBitmap, srcLeft, srcTop, srcRight - srcLeft, srcBottom - srcTop)
+                    val croppedBitmap = Bitmap.createBitmap(
+                        scaledBitmap,
+                        srcLeft,
+                        srcTop,
+                        srcRight - srcLeft,
+                        srcBottom - srcTop
+                    )
                     canvas.drawBitmap(croppedBitmap, 0f, 0f, null)
                     document.finishPage(page)
                 }
@@ -143,7 +168,12 @@ class FileUtil(private val context: Context) {
         directory.deleteRecursively()
     }
 
-    suspend fun saveTileToPNG(byteArray: ByteArray, filePath: String, alpha: Int, quality: Int): String? {
+    suspend fun saveTileToPNG(
+        byteArray: ByteArray,
+        filePath: String,
+        alpha: Int,
+        quality: Int
+    ): String? {
         return withContext(Dispatchers.Default) {
             val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
             if (bitmap != null) {
@@ -172,12 +202,17 @@ class FileUtil(private val context: Context) {
             }
         }
     }
+
     fun sendImageAsFile(path: String) {
         val file = File(path)
         try {
             if (file.exists()) {
                 val uri =
-                    FileProvider.getUriForFile(context, "ru.mapolib.printmap.gui.fileprovider", file)
+                    FileProvider.getUriForFile(
+                        context,
+                        "ru.mapolib.printmap.gui.fileprovider",
+                        file
+                    )
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "*/*" // Указываем, что это файл
                     putExtra(Intent.EXTRA_STREAM, uri) // Прикрепляем URI файла

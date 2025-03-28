@@ -17,5 +17,5 @@ fun canAllocateBitmap(width: Int, height: Int, config: Bitmap.Config): Boolean {
 
     val availableMemory = maxMemory - allocatedMemory + freeMemory
 
-    return estimatedSize < availableMemory / 2 // Оставляем запас памяти
+    return estimatedSize < availableMemory * 0.75 // Оставляем запас памяти
 }
