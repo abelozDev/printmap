@@ -60,8 +60,9 @@ class FileUtil(private val context: Context) {
     }
 
     fun resizeBitmapForDpi(bitmap: Bitmap, targetDpi: Int): Bitmap {
-        val originalDpi = 72 // Стандартный DPI в Android Bitmap
-        val scaleFactor = targetDpi / originalDpi.toFloat()
+        val originalDpi = 72f // Стандартный DPI в Android Bitmap
+        if (originalDpi == targetDpi.toFloat()) return bitmap
+        val scaleFactor = targetDpi / originalDpi
 
         val matrix = Matrix().apply { postScale(scaleFactor, scaleFactor) }
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)

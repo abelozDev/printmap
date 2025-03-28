@@ -28,6 +28,7 @@ import ru.maplyb.printmap.impl.util.DrawOnBitmap
 import ru.maplyb.printmap.impl.files.FileUtil
 import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
 import ru.mapolib.printmap.gui.presentation.util.PrintMapViewModel
+import ru.maplyb.printmap.impl.util.timesNewRomanTypeface
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 
@@ -40,7 +41,6 @@ class MapDownloadedViewModel(
     private val fileUtil: FileUtil,
     private val context: Context
 ) : PrintMapViewModel<MapDownloadedEvent, MapDownloadedEffect>() {
-
     private val _state = MutableStateFlow(
         MapDownloadedUiState(
             image = path,
@@ -145,10 +145,12 @@ class MapDownloadedViewModel(
         val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(mutableBitmap)
 
+
         val textSize = (mutableBitmap.width + mutableBitmap.height) / 2 * 0.025f
         val paintStroke = Paint().apply {
             color = Color.WHITE // Белый цвет для обводки
             this.textSize = textSize
+            typeface = timesNewRomanTypeface(context)
             isAntiAlias = true
             style = Paint.Style.STROKE // Обводка
             strokeWidth = textSize / 10f // Толщина обводки
@@ -157,6 +159,7 @@ class MapDownloadedViewModel(
         val paintFill = Paint().apply {
             color = Color.BLACK // Основной цвет текста
             this.textSize = textSize
+            typeface = timesNewRomanTypeface(context)
             isAntiAlias = true
             style = Paint.Style.FILL
         }
@@ -269,6 +272,7 @@ class MapDownloadedViewModel(
         val paintStroke = Paint().apply {
             color = Color.WHITE // Белый цвет для обводки
             this.textSize = textSize
+            typeface = timesNewRomanTypeface(context)
             isAntiAlias = true
             style = Paint.Style.STROKE // Обводка
             strokeWidth = textSize / 10f // Толщина обводки
@@ -277,6 +281,7 @@ class MapDownloadedViewModel(
         val paintFill = Paint().apply {
             color = Color.BLACK // Основной цвет текста
             this.textSize = textSize
+            typeface = timesNewRomanTypeface(context)
             isAntiAlias = true
             style = Paint.Style.FILL
         }
@@ -342,6 +347,7 @@ class MapDownloadedViewModel(
         val textSize = (mutableBitmap.width + mutableBitmap.height) / 2 * 0.015f
         val paintStroke = Paint().apply {
             color = Color.WHITE
+            typeface = timesNewRomanTypeface(context)
             this.textSize = textSize
             isAntiAlias = true
             style = Paint.Style.STROKE
@@ -350,6 +356,7 @@ class MapDownloadedViewModel(
 
         val paintFill = Paint().apply {
             color = Color.BLACK
+            typeface = timesNewRomanTypeface(context)
             this.textSize = textSize
             isAntiAlias = true
             style = Paint.Style.FILL
@@ -393,6 +400,7 @@ class MapDownloadedViewModel(
         val crossLength = thickness * 2  // Длина поперечных линий
         val paint = Paint().apply {
             color = Color.BLACK
+            typeface = timesNewRomanTypeface(context)
             strokeWidth = thickness
             isAntiAlias = true
         }
@@ -400,13 +408,17 @@ class MapDownloadedViewModel(
 
         val paintOutline = Paint().apply {
             color = Color.WHITE
+            typeface = timesNewRomanTypeface(context)
             strokeWidth = outlineThickness
             isAntiAlias = true
         }
-        val lineYStart = scaleY - textHeight - padding
-        val lineXEnd = padding + segmentLength * 2
 
-        canvas.drawLine(padding, lineYStart, lineXEnd, lineYStart, paintOutline) // Белая обводка
+        val lineYStart = scaleY - textHeight - padding
+        val lineXEnd = padding + segmentLength * 2  // Это корректное значение для второго отрезка
+
+        // Рисуем белую обводку
+        canvas.drawLine(padding, lineYStart, lineXEnd, lineYStart, paintOutline)
+        // Рисуем основную линию
         canvas.drawLine(padding, lineYStart, lineXEnd, lineYStart, paint)
 
         // Вычисляем направление линии (вектор)
@@ -430,17 +442,21 @@ class MapDownloadedViewModel(
             lineYStart + py + (thickness / 2),
             paintOutline
         )
+        val startX = (lineXEnd - px)/2
+        val endX = (lineXEnd + px)/2
         canvas.drawLine(
-            lineXEnd / 2 - px,
+            padding + segmentLength,
             lineYStart - py - (thickness / 2),
-            lineXEnd / 2 + px,
+            padding + segmentLength,
             lineYStart + py + (thickness / 2),
             paintOutline
         )
+        val endLineStartX = lineXEnd - px
+        val endLineEndX = lineXEnd + px
         canvas.drawLine(
-            lineXEnd - px,
+            endLineStartX,
             lineYStart - py - (thickness / 2),
-            lineXEnd + px,
+            endLineEndX,
             lineYStart + py + (thickness / 2),
             paintOutline
         )
@@ -453,9 +469,9 @@ class MapDownloadedViewModel(
             paint
         )
         canvas.drawLine(
-            lineXEnd / 2 - px,
+            padding + segmentLength,
             lineYStart - py,
-            lineXEnd / 2 + px,
+            padding + segmentLength,
             lineYStart + py,
             paint
         )
@@ -467,6 +483,7 @@ class MapDownloadedViewModel(
             paint
         )
     }
+
 
     private fun rotateBitmap(
         orientation: ImageOrientation = _state.value.orientation,
