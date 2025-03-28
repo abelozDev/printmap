@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.pdf.PdfDocument
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +18,8 @@ import androidx.core.graphics.createBitmap
 import ru.maplyb.printmap.impl.domain.model.PageFormat
 import kotlin.math.roundToInt
 import androidx.core.graphics.scale
+import ru.maplyb.printmap.api.model.OperationResult
+import ru.maplyb.printmap.impl.util.canAllocateBitmap
 
 class FileUtil(private val context: Context) {
 
@@ -81,7 +84,16 @@ class FileUtil(private val context: Context) {
         return cols * rows
     }
 
-    fun saveBitmapToPdf(bitmap: Bitmap, fileName: String, pageFormat: PageFormat, dpi: Int): String? {
+    fun saveBitmapToPdf(bitmap: Bitmap, fileName: String, pageFormat: PageFormat, dpi: Int): OperationResult<String> {
+        if (canAllocateBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)) {
+            val solving = when {
+                dpi > 72 -> "Попробуйте уменьшить DPI"
+                pageFormat == PageFormat.A4 -> "Попробуйте использовать лист большего формата"
+                else -> "Попробуйте выбрать меньший сертор или изменить зум"
+            }
+            return OperationResult.Error("Слишком большой файл. $solving")
+        }
+
         val file = File(directory, "$fileName.pdf")
         val document = PdfDocument()
 
@@ -119,10 +131,10 @@ class FileUtil(private val context: Context) {
                 document.writeTo(outputStream)
             }
             document.close()
-            file.absolutePath
+            OperationResult.Success(file.absolutePath)
         } catch (e: Exception) {
             e.printStackTrace()
-            null
+            OperationResult.Error("Слишком большой файл. Попробуйте уменьшить DPI")
         }
     }
 

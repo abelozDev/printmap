@@ -91,7 +91,7 @@ class DrawOnBitmap {
                 boundingBox,
                 bitmapWidth = bitmap.width,
                 bitmapHeight = bitmap.height
-            )
+            ) ?: return@coroutineScope
             val drawable = when (objects.res) {
                 is ObjectRes.Local -> ContextCompat.getDrawable(context, objects.res.res)
                 is ObjectRes.Storage -> Drawable.createFromPath(objects.res.res)
@@ -181,7 +181,7 @@ class DrawOnBitmap {
                 boundingBox,
                 bitmapWidth = bitmap.width,
                 bitmapHeight = bitmap.height
-            )
+            ) ?: return@withContext
             val path = Path().apply {
                 moveTo(pointsInPixels.first().first, pointsInPixels.first().second)
                 for (i in 1 until pointsInPixels.size) {
@@ -217,7 +217,7 @@ class DrawOnBitmap {
                 boundingBox,
                 bitmapWidth = bitmap.width,
                 bitmapHeight = bitmap.height
-            )
+            ) ?: return@withContext
 
             val firstPaint = Paint(basePaint).apply {
                 if (objects.pathEffect != null && objects.pathEffect != "DEFAULT") {
@@ -264,7 +264,7 @@ class DrawOnBitmap {
                 boundingBox,
                 bitmapWidth = bitmap.width,
                 bitmapHeight = bitmap.height
-            )
+            ) ?: return@withContext
             val paint = Paint().apply {
                 color = text.style.color ?: Color.RED
                 this.textSize = (text.style.width * scaleFactor)

@@ -65,9 +65,17 @@ internal class DownloadMapService : Service() {
     }
 
     private fun downloadMap(
-        args: FormingMapArgs
+        args: FormingMapArgs?
     ) {
+
         coroutineScope.launch {
+            if (args == null) {
+                prefs?.setError(
+                    this@DownloadMapService,
+                    "Пустые аргументы"
+                )
+                return@launch
+            }
             val tiles =
                 GeoCalculator.calculateTotalTiles(args.bound, args.zoom).successDataOrNull()
                     ?: return@launch
@@ -175,7 +183,6 @@ private fun notifyNewNotification(message: String, maxProgress: Int, progress: I
 override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
     if (intent != null) {
         val args = intent.serializable(FORMING_MAP_ARGS) as? FormingMapArgs
-            ?: throw NullPointerException("Args is null")
         downloadMap(args)
     }
     return super.onStartCommand(intent, flags, startId)

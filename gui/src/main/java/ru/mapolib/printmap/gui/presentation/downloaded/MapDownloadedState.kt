@@ -11,6 +11,7 @@ import ru.mapolib.printmap.gui.presentation.util.PrintMapEvent
 sealed interface MapDownloadedState {
     data object Initial: MapDownloadedState
     data object Progress: MapDownloadedState
+    data class Failure(val message: String): MapDownloadedState
 }
 typealias Dpi = Int
 data class MapDownloadedUiState(
@@ -59,6 +60,7 @@ sealed interface MapDownloadedEvent: PrintMapEvent {
     data class SelectDpi(val dpi: Dpi): MapDownloadedEvent
     data class UpdateMapObjectStyle(val layerObject: LayerObject): MapDownloadedEvent
     data object UpdateLayers: MapDownloadedEvent
+    data class UpdateState(val state: MapDownloadedState): MapDownloadedEvent
 }
 sealed interface MapDownloadedEffect: PrintMapEffect {
     data class DeleteMap(val path: String): MapDownloadedEffect

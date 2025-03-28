@@ -64,6 +64,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.maplyb.printmap.impl.domain.model.PageFormat
+import ru.mapolib.printmap.gui.presentation.components.ErrorDialog
 import ru.mapolib.printmap.gui.presentation.downloaded.expandable.LayersExpandable
 import ru.mapolib.printmap.gui.presentation.downloaded.expandable.MapObjectsSettingExpandable
 
@@ -221,20 +222,31 @@ internal fun MapDownloadedScreen(
             }
         )
     }
-    if (state.state is MapDownloadedState.Progress) {
-        Dialog(
-            onDismissRequest = {
-            },
-            properties = DialogProperties(
-                dismissOnBackPress = true,
-                dismissOnClickOutside = true,
+    when(state.state) {
+        is MapDownloadedState.Failure -> {
+            ErrorDialog(
+                message = (state.state as MapDownloadedState.Failure).message,
+                onDismiss = {
+                    viewModel.sendEvent(MapDownloadedEvent.UpdateState(MapDownloadedState.Initial))
+                }
             )
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+        }
+        MapDownloadedState.Initial -> Unit
+        MapDownloadedState.Progress -> {
+            Dialog(
+                onDismissRequest = {
+                },
+                properties = DialogProperties(
+                    dismissOnBackPress = true,
+                    dismissOnClickOutside = true,
+                )
             ) {
-                CircularProgressIndicator()
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
             }
         }
     }

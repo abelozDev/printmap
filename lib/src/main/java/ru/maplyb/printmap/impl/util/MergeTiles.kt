@@ -125,7 +125,7 @@ internal class MergeTiles {
             boundingBox = currentBoundingBox,
             bitmapHeight = bitmap.height,
             bitmapWidth = bitmap.width
-        )
+        ) ?: return bitmap
         val (xMax, yMax) = GeoCalculator.convertGeoToPixel(
             objects = GeoPoint(
                 boundingBox.latSouth,
@@ -134,7 +134,7 @@ internal class MergeTiles {
             boundingBox = currentBoundingBox,
             bitmapHeight = bitmap.height,
             bitmapWidth = bitmap.width
-        )
+        ) ?: return bitmap
 
         val widthPx = (xMax - xMin).toInt()
         val heightPx = (yMax - yMin).toInt()

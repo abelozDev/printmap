@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.LayerObject
+import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.util.DrawOnBitmap
 import ru.maplyb.printmap.impl.files.FileUtil
 import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
@@ -166,8 +167,8 @@ class MapDownloadedViewModel(
         canvas.drawText(appName, x, textHeight, paintFill)
 
         if (author.isNotEmpty()) {
-            canvas.drawText(author, x, textHeight *2, paintStroke)
-            canvas.drawText(author, x, textHeight *2, paintFill)
+            canvas.drawText(author, x, textHeight * 2, paintStroke)
+            canvas.drawText(author, x, textHeight * 2, paintFill)
         }
         return mutableBitmap
     }
@@ -247,6 +248,14 @@ class MapDownloadedViewModel(
                 _state.update {
                     it.copy(
                         dpi = action.dpi
+                    )
+                }
+            }
+
+            is MapDownloadedEvent.UpdateState -> {
+                _state.update {
+                    it.copy(
+                        state = action.state
                     )
                 }
             }
@@ -502,10 +511,12 @@ class MapDownloadedViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             doWork(
                 onProgress = { progress ->
-                    _state.update {
-                        it.copy(
-                            state = if (progress) MapDownloadedState.Progress else MapDownloadedState.Initial
-                        )
+                    if (progress) {
+                        _state.update {
+                            it.copy(
+                                state = MapDownloadedState.Progress
+                            )
+                        }
                     }
                 },
                 doOnAsyncBlock = {
@@ -513,12 +524,30 @@ class MapDownloadedViewModel(
                         if (_state.value.name.isNotEmpty()) _state.value.name else "${System.currentTimeMillis()}"
                     when (_state.value.exportType) {
                         is ExportTypes.PDF -> {
-                            fileUtil.saveBitmapToPdf(
+                            when (val saveResult = fileUtil.saveBitmapToPdf(
                                 bitmap = _state.value.bitmap,
                                 fileName = fileName,
                                 pageFormat = (_state.value.exportType as ExportTypes.PDF).format,
                                 dpi = _state.value.dpi
                             )
+                            ) {
+                                is OperationResult.Error -> {
+                                    _state.update {
+                                        it.copy(
+                                            state = MapDownloadedState.Failure(saveResult.message)
+                                        )
+                                    }
+                                }
+
+                                is OperationResult.Success<String> -> {
+                                    fileUtil.sendImageAsFile(saveResult.data)
+                                    _state.update {
+                                        it.copy(
+                                            state = MapDownloadedState.Initial
+                                        )
+                                    }
+                                }
+                            }
                         }
 
                         is ExportTypes.PNG -> {
@@ -526,12 +555,16 @@ class MapDownloadedViewModel(
                                 bitmap = _state.value.bitmap,
                                 fileName = fileName,
                                 dpi = _state.value.dpi
-                            )
+                            )?.let {
+                                fileUtil.sendImageAsFile(it)
+                                _state.update {
+                                    it.copy(
+                                        state = MapDownloadedState.Initial
+                                    )
+                                }
+                            }
                         }
                     }
-                        ?.let {
-                            fileUtil.sendImageAsFile(it)
-                        }
                 }
             )
         }
