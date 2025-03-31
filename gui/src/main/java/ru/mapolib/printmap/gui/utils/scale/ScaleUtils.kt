@@ -10,7 +10,8 @@ fun roundScale(
     val segmentLength = bitmapWidth * 0.075f
     /*Масштаб в зависимости от размера линии масштаба*/
     val scaleInSegment = ((segmentLength / pixelsPerSm) * scale).roundToInt()
-    val roundedScale = (scaleInSegment / 500.0).roundToInt() * 500
+    val roundAmount = if (scaleInSegment < 500) 100 else 500
+    val roundedScale = (scaleInSegment / roundAmount.toDouble()).roundToInt() * roundAmount
     val segmentLengthWithNewScale = (roundedScale.toDouble() / scale.toDouble()) * pixelsPerSm
     return roundedScale to segmentLengthWithNewScale.toFloat()
 }
