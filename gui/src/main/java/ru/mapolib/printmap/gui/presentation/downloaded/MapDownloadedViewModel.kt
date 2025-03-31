@@ -334,7 +334,7 @@ class MapDownloadedViewModel(
         val scaleInSegment = ((segmentLength / pixelsPerSm) * scale).roundToInt()
         /*Округление до десятков*/
         val roundedScale = ((scaleInSegment / 10.0).roundToInt() * 10)
-        val padding = 10f // отступ от текста до линии
+        val padding = mutableBitmap.width * 0.025f // отступ от текста до линии
 
 
         val textSize = (mutableBitmap.width + mutableBitmap.height) / 2 * 0.015f
@@ -401,7 +401,7 @@ class MapDownloadedViewModel(
             isAntiAlias = true
         }
 
-        val lineYStart = scaleY - textHeight - padding
+        val lineYStart = scaleY - textHeight - crossLength
         val lineXEnd = padding + segmentLength * 2  // Это корректное значение для второго отрезка
 
         // Рисуем белую обводку
@@ -430,8 +430,6 @@ class MapDownloadedViewModel(
             lineYStart + py + (thickness / 2),
             paintOutline
         )
-        val startX = (lineXEnd - px)/2
-        val endX = (lineXEnd + px)/2
         canvas.drawLine(
             padding + segmentLength,
             lineYStart - py - (thickness / 2),
