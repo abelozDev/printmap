@@ -27,8 +27,8 @@ import ru.maplyb.printmap.api.model.OperationResult
 import ru.maplyb.printmap.impl.util.DrawOnBitmap
 import ru.maplyb.printmap.impl.files.FileUtil
 import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
+import ru.maplyb.printmap.impl.util.defTextPaint
 import ru.mapolib.printmap.gui.presentation.util.PrintMapViewModel
-import ru.maplyb.printmap.impl.util.timesNewRomanTypeface
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 
@@ -147,22 +147,19 @@ class MapDownloadedViewModel(
 
 
         val textSize = (mutableBitmap.width + mutableBitmap.height) / 2 * 0.025f
-        val paintStroke = Paint().apply {
-            color = Color.WHITE // Белый цвет для обводки
-            this.textSize = textSize
-            typeface = timesNewRomanTypeface(context)
-            isAntiAlias = true
-            style = Paint.Style.STROKE // Обводка
-            strokeWidth = textSize / 10f // Толщина обводки
-        }
+        val paintStroke = defTextPaint(
+            context = context,
+            color = Color.WHITE,
+            textSize = textSize,
+            strokeWidth = textSize / 10f,
+            style = Paint.Style.STROKE
+        )
 
-        val paintFill = Paint().apply {
-            color = Color.BLACK // Основной цвет текста
-            this.textSize = textSize
-            typeface = timesNewRomanTypeface(context)
-            isAntiAlias = true
-            style = Paint.Style.FILL
-        }
+        val paintFill = defTextPaint(
+            context = context,
+            color = Color.BLACK,
+            textSize = textSize,
+        )
 
         val textHeight = paintFill.descent() - paintFill.ascent()
         val x = mutableBitmap.width * 0.02f
@@ -269,22 +266,18 @@ class MapDownloadedViewModel(
         val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(mutableBitmap)
         val textSize = mutableBitmap.width * 0.025f
-        val paintStroke = Paint().apply {
-            color = Color.WHITE // Белый цвет для обводки
-            this.textSize = textSize
-            typeface = timesNewRomanTypeface(context)
-            isAntiAlias = true
-            style = Paint.Style.STROKE // Обводка
-            strokeWidth = textSize / 10f // Толщина обводки
-        }
-
-        val paintFill = Paint().apply {
-            color = Color.BLACK // Основной цвет текста
-            this.textSize = textSize
-            typeface = timesNewRomanTypeface(context)
-            isAntiAlias = true
-            style = Paint.Style.FILL
-        }
+        val paintStroke = defTextPaint(
+            context = context,
+            color = Color.WHITE,
+            textSize = textSize,
+            strokeWidth = textSize / 10f,
+            style = Paint.Style.STROKE
+        )
+        val paintFill = defTextPaint(
+            context = context,
+            color = Color.BLACK,
+            textSize = textSize,
+        )
         val textLength = paintFill.measureText(name)
         val x = (mutableBitmap.width / 2f) - (textLength / 2)
         val textHeight = paintFill.descent() - paintFill.ascent()
@@ -345,22 +338,19 @@ class MapDownloadedViewModel(
 
 
         val textSize = (mutableBitmap.width + mutableBitmap.height) / 2 * 0.015f
-        val paintStroke = Paint().apply {
-            color = Color.WHITE
-            typeface = timesNewRomanTypeface(context)
-            this.textSize = textSize
-            isAntiAlias = true
+        val paintStroke = defTextPaint(
+            context = context,
+            color = Color.WHITE,
+            textSize = textSize,
+            strokeWidth = textSize / 10f,
             style = Paint.Style.STROKE
-            strokeWidth = textSize / 5f
-        }
+        )
 
-        val paintFill = Paint().apply {
-            color = Color.BLACK
-            typeface = timesNewRomanTypeface(context)
-            this.textSize = textSize
-            isAntiAlias = true
-            style = Paint.Style.FILL
-        }
+        val paintFill = defTextPaint(
+            context = context,
+            color = Color.BLACK,
+            textSize = textSize,
+        )
 
         val textHeight = paintFill.descent() - paintFill.ascent()
         val scaleY = mutableBitmap.height - textHeight / 2
@@ -400,7 +390,6 @@ class MapDownloadedViewModel(
         val crossLength = thickness * 2  // Длина поперечных линий
         val paint = Paint().apply {
             color = Color.BLACK
-            typeface = timesNewRomanTypeface(context)
             strokeWidth = thickness
             isAntiAlias = true
         }
@@ -408,7 +397,6 @@ class MapDownloadedViewModel(
 
         val paintOutline = Paint().apply {
             color = Color.WHITE
-            typeface = timesNewRomanTypeface(context)
             strokeWidth = outlineThickness
             isAntiAlias = true
         }

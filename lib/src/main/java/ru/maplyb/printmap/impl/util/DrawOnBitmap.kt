@@ -8,7 +8,6 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
-import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
@@ -36,7 +35,6 @@ class DrawOnBitmap {
     ): Bitmap {
         val canvas = Canvas(bitmap)
         val scaleFactor = sqrt((bitmap.width * bitmap.height).toDouble()).toFloat() / 1000f
-        val typeface = timesNewRomanTypeface(context)
         layers
             .flatMap { it.objects }
             .forEach { objects ->
@@ -47,7 +45,6 @@ class DrawOnBitmap {
                         boundingBox = boundingBox,
                         objects = objects,
                         scaleFactor = scaleFactor,
-                        typeface = typeface
                     )
 
                     is LayerObject.Polygon -> drawPolygon(
@@ -55,7 +52,6 @@ class DrawOnBitmap {
                         boundingBox = boundingBox,
                         objects = objects,
                         scaleFactor = scaleFactor,
-                        typeface = typeface
                     )
 
                     is LayerObject.Radius -> Unit
@@ -65,7 +61,7 @@ class DrawOnBitmap {
                         boundingBox = boundingBox,
                         text = objects,
                         scaleFactor = scaleFactor,
-                        typeface = typeface
+                        context = context
                     )
 
                     is LayerObject.Object -> drawObjects(
@@ -75,7 +71,6 @@ class DrawOnBitmap {
                         context = context,
                         objects = objects,
                         scaleFactor = scaleFactor,
-                        typeface = typeface
                     )
                 }
             }
@@ -86,7 +81,6 @@ class DrawOnBitmap {
         bitmap: Bitmap,
         canvas: Canvas,
         boundingBox: BoundingBox,
-        typeface: Typeface,
         context: Context,
         objects: LayerObject.Object,
         scaleFactor: Float
@@ -132,13 +126,12 @@ class DrawOnBitmap {
             drawable.draw(canvas)
             canvas.restore()
             val textHeight = (objects.style.width * scaleFactor)
-            val paint = Paint().apply {
-                color = Color.BLACK
-                this.textSize = textHeight
-                this.typeface = typeface
-                isAntiAlias = true
-                textAlign = Paint.Align.LEFT
-            }
+            val paint = defTextPaint(
+                context = context,
+                color = Color.BLACK,
+                textSize = textHeight,
+
+            )
             val textLength = paint.measureText(objects.style.name)
             val nameX = centerX - (textLength / 2)
             val nameY = centerY + (scaledHeight / 2) + (textHeight * 1.25f)
@@ -151,7 +144,6 @@ class DrawOnBitmap {
 
     private suspend fun drawPolygon(
         bitmap: Bitmap,
-        typeface: Typeface,
         boundingBox: BoundingBox,
         objects: LayerObject.Polygon,
         scaleFactor: Float
@@ -164,7 +156,6 @@ class DrawOnBitmap {
             val fillPaint = Paint().apply {
                 color = objects.style.color ?: Color.RED
                 isAntiAlias = true
-                this.typeface = typeface
                 style = Paint.Style.FILL
                 this.alpha = alpha.roundToInt()
             }
@@ -172,7 +163,6 @@ class DrawOnBitmap {
             // Кисть для обводки (без прозрачности)
             val basePaint = Paint().apply {
                 color = objects.style.color ?: Color.RED
-                this.typeface = typeface
                 strokeWidth = (objects.style.width * scaleFactor)
                 isAntiAlias = true
                 style = Paint.Style.STROKE
@@ -212,7 +202,6 @@ class DrawOnBitmap {
     private suspend fun drawLine(
         canvas: Canvas,
         bitmap: Bitmap,
-        typeface: Typeface,
         boundingBox: BoundingBox,
         objects: LayerObject.Line,
         scaleFactor: Float
@@ -221,7 +210,6 @@ class DrawOnBitmap {
             val basePaint = Paint().apply {
                 color = objects.style.color ?: Color.RED
                 strokeWidth = (objects.style.width * scaleFactor)
-                this.typeface = typeface
                 isAntiAlias = true
                 style = Paint.Style.STROKE
             }
@@ -268,7 +256,7 @@ class DrawOnBitmap {
         canvas: Canvas,
         bitmap: Bitmap,
         boundingBox: BoundingBox,
-        typeface: Typeface,
+        context: Context,
         text: LayerObject.Text,
         scaleFactor: Float
     ) {
@@ -279,14 +267,12 @@ class DrawOnBitmap {
                 bitmapWidth = bitmap.width,
                 bitmapHeight = bitmap.height
             ) ?: return@withContext
-            val paint = Paint().apply {
-                color = text.style.color ?: Color.RED
-                this.textSize = (text.style.width * scaleFactor)
-                this.typeface = typeface
-                isAntiAlias = true
-                textAlign = Paint.Align.LEFT
-            }
-
+            val textSize = (text.style.width * scaleFactor)
+            val paint = defTextPaint(
+                context = context,
+                color = text.style.color ?: Color.RED,
+                textSize = textSize
+            )
             canvas.save()
             canvas.translate(linesInPixels.first().first, linesInPixels.first().second)
             canvas.rotate(text.angle)
