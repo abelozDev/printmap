@@ -232,7 +232,7 @@ object GeoCalculator {
     }
 
 
-    /*Разница в километрах*/
+    /*Разница в метрах*/
     fun distanceBetween(aX: Double, aY: Double, bX: Double, bY: Double): Double {
         val lat1 = Math.toRadians(aX)
         val lng1 = Math.toRadians(aY)

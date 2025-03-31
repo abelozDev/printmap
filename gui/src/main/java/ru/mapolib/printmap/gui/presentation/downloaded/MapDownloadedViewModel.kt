@@ -29,6 +29,8 @@ import ru.maplyb.printmap.impl.files.FileUtil
 import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
 import ru.maplyb.printmap.impl.util.defTextPaint
 import ru.mapolib.printmap.gui.presentation.util.PrintMapViewModel
+import ru.mapolib.printmap.gui.utils.scale.pixelsPerCm
+import ru.mapolib.printmap.gui.utils.scale.roundScale
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 
@@ -286,6 +288,7 @@ class MapDownloadedViewModel(
         return mutableBitmap
     }
 
+    /*Масштаб м/см*/
     private fun calculateMapScale(
         widthBitmap: Int,
         heightBitmap: Int,
@@ -317,9 +320,6 @@ class MapDownloadedViewModel(
         return scale.roundToInt()
     }
 
-    private fun pixelsPerCm(dpi: Float): Float {
-        return dpi / 2.54f
-    }
 
     private fun drawScale(
         bitmap: Bitmap,
@@ -327,15 +327,11 @@ class MapDownloadedViewModel(
     ): Bitmap {
         val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(mutableBitmap)
-
-        val pixelsPerSm = pixelsPerCm(72f)
-        val segmentLength = bitmap.width * 0.075f
-        /*Масштаб в зависимости от размера линии масштаба*/
-        val scaleInSegment = ((segmentLength / pixelsPerSm) * scale).roundToInt()
-        /*Округление до десятков*/
-        val roundedScale = ((scaleInSegment / 10.0).roundToInt() * 10)
+        val (scaleInSegment, segmentLength) = roundScale(
+            bitmap.width,
+            scale
+        )
         val padding = mutableBitmap.width * 0.025f // отступ от текста до линии
-
 
         val textSize = (mutableBitmap.width + mutableBitmap.height) / 2 * 0.015f
         val paintStroke = defTextPaint(
@@ -360,11 +356,11 @@ class MapDownloadedViewModel(
         canvas.drawText("0", padding, scaleY, paintStroke)
         canvas.drawText("0", padding, scaleY, paintFill)
 
-        canvas.drawText(roundedScale.toString(), padding + segmentLength, scaleY, paintStroke)
-        canvas.drawText(roundedScale.toString(), padding + segmentLength, scaleY, paintFill)
+        canvas.drawText(scaleInSegment.toString(), padding + segmentLength, scaleY, paintStroke)
+        canvas.drawText(scaleInSegment.toString(), padding + segmentLength, scaleY, paintFill)
 
-        canvas.drawText("${(roundedScale * 2)} м", padding + segmentLength * 2, scaleY, paintStroke)
-        canvas.drawText("${(roundedScale * 2)} м", padding + segmentLength * 2, scaleY, paintFill)
+        canvas.drawText("${(scaleInSegment * 2)} м", padding + segmentLength * 2, scaleY, paintStroke)
+        canvas.drawText("${(scaleInSegment * 2)} м", padding + segmentLength * 2, scaleY, paintFill)
 
         drawScaleLines(
             padding = padding,
