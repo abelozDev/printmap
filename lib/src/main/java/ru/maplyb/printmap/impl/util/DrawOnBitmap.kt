@@ -128,15 +128,22 @@ class DrawOnBitmap {
             val textHeight = (objects.style.width * scaleFactor)
             val paint = defTextPaint(
                 context = context,
-                color = Color.BLACK,
+                color = objects.nameColor,
                 textSize = textHeight,
-
+            )
+            val paintStroke = defTextPaint(
+                context = context,
+                color = Color.WHITE,
+                textSize = textHeight,
+                strokeWidth = textHeight / 10f,
+                style = Paint.Style.STROKE
             )
             val textLength = paint.measureText(objects.style.name)
             val nameX = centerX - (textLength / 2)
             val nameY = centerY + (scaledHeight / 2) + (textHeight * 1.25f)
             canvas.withSave {
                 drawText(objects.style.name, nameX, nameY, paint)
+                drawText(objects.style.name, nameX, nameY, paintStroke)
             }
         }
     }

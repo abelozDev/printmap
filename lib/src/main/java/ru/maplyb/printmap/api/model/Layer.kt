@@ -1,5 +1,7 @@
 package ru.maplyb.printmap.api.model
 
+import android.graphics.Color
+import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import java.io.Serializable
 
@@ -93,6 +95,7 @@ sealed interface LayerObject: Serializable {
     data class Object(
         val coords: GeoPoint,
         val res: ObjectRes,
+        @ColorInt val nameColor: Int = Color.BLACK,
         val angle: Float,
         override val style: MapObjectStyle
     ): LayerObject {

@@ -1,0 +1,3 @@
+-keep class ru.maplyb.printmap.api.**
+-keep class ru.maplyb.printmap.impl.**
+-keep class ru.mapolib.printmap.gui.**

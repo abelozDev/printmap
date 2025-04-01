@@ -7,6 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.domain.MapPrint
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.FormingMapArgs
@@ -20,18 +23,18 @@ import ru.maplyb.printmap.impl.service.MapResult
 import ru.maplyb.printmap.impl.service.NotificationChannel
 import ru.maplyb.printmap.impl.util.DestroyLifecycleCallback
 import ru.maplyb.printmap.impl.util.GeoCalculator
+import kotlin.coroutines.CoroutineContext
 
 internal class MapPrintImpl(
     private val activity: Activity,
     private val prefs: PreferencesDataSource
-) : MapPrint {
+) : MapPrint, CoroutineScope {
     private var mapResult: MapResult? = null
     private lateinit var mService: DownloadMapService
     private var mBound: Boolean = false
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             val binder = service as DownloadMapService.LocalBinder
-            println("onServiceConnected")
             mService = binder.getService()
             mBound = true
         }
@@ -42,7 +45,6 @@ internal class MapPrintImpl(
     }
 
     init {
-        println("onServiceConnected init")
         activity.application.registerActivityLifecycleCallbacks(DestroyLifecycleCallback { activity ->
             if (activity == this@MapPrintImpl.activity) {
                 try {
@@ -53,7 +55,6 @@ internal class MapPrintImpl(
         }
         )
         if (isServiceRunning(activity, DownloadMapService::class.java)) {
-            println("onServiceConnected isServiceRunning")
             val intent = Intent(activity.applicationContext, DownloadMapService::class.java)
             activity.bindService(intent, connection, Context.BIND_AUTO_CREATE)
         }
@@ -68,9 +69,23 @@ internal class MapPrintImpl(
     }
 
     override fun cancelDownloading() {
-        mService.cancelDownloading()
-        if (mBound) {
-            activity.unbindService(connection)
+        if (::mService.isInitialized) {
+            try {
+                mService.cancelDownloading()
+                if (mBound) {
+                    activity.unbindService(connection)
+                    mBound = false
+                }
+            } catch (e: IllegalArgumentException) {
+                launch {
+                    prefs.clear(context = activity)
+                }
+            }
+        } else {
+            launch {
+                prefs.clear(context = activity)
+            }
+            mBound = false
         }
     }
 
@@ -87,13 +102,24 @@ internal class MapPrintImpl(
 
     override suspend fun startFormingAMap(
         args: FormingMapArgs,
-        ) {
+    ) {
+        cancelDownloading()
         NotificationChannel.create(activity)
         val intent = Intent(activity.applicationContext, DownloadMapService::class.java).run {
             putExtra(DownloadMapService.FORMING_MAP_ARGS, args)
         }
-        activity.startService(intent)
-        activity.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        if (!isServiceRunning(activity, DownloadMapService::class.java)) {
+            activity.startService(intent)
+        }
+        if (!mBound) {
+            activity.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        }
+    }
+
+    fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
+        val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        return manager.getRunningServices(Int.MAX_VALUE)
+            .any { it.service.className == serviceClass.name }
     }
 
     /** Считаем тестовый размер файла*/
@@ -102,12 +128,9 @@ internal class MapPrintImpl(
         val approximateSize = 255 * 255 * 4 * tiles.size
         debugLog(TILES_SIZE_TAG, "Approximate size: $approximateSize")*/
     }
-}
 
-private fun isServiceRunning(activity: Activity, serviceClass: Class<*>): Boolean {
-    val manager = activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-    return manager.getRunningServices(Int.MAX_VALUE)
-        .any { it.service.className == serviceClass.name }
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.Main
 }
 
 

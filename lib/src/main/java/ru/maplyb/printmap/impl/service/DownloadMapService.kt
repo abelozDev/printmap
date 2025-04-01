@@ -67,7 +67,6 @@ internal class DownloadMapService : Service() {
     private fun downloadMap(
         args: FormingMapArgs?
     ) {
-
         coroutineScope.launch {
             if (args == null) {
                 prefs?.setError(
