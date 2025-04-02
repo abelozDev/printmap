@@ -6,12 +6,16 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideIn
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -24,8 +28,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ru.maplyb.printmap.R
 import ru.maplyb.printmap.api.model.LayerObject
@@ -36,7 +43,9 @@ import kotlin.math.roundToInt
 @Composable
 fun MapObjectsSettingExpandable(
     layersObjects: List<LayerObject>,
+    layerObjectsColors: Map<String, Int?>,
     changeObjectStyle: (LayerObject) -> Unit,
+    onColorChangeClicked: (LayerObject) -> Unit,
     changeStyleFinished: () -> Unit
 ) {
     var isOpen by remember {
@@ -82,7 +91,11 @@ fun MapObjectsSettingExpandable(
                         onValueChanged = { newValue ->
                             changeObjectStyle(it.updateStyle(it.style.copy(width = newValue.toFloat())))
                         },
-                        onValueChangedFinished = changeStyleFinished
+                        onValueChangedFinished = changeStyleFinished,
+                        selectedColor = layerObjectsColors[it::class.simpleName!!],
+                        onColorChangeClicked = {
+                            onColorChangeClicked(it)
+                        }
                     )
                 }
         }
@@ -92,16 +105,33 @@ fun MapObjectsSettingExpandable(
 @Composable
 private fun MapObjectsSettingSlider(
     slideInfo: MapObjectSliderInfo,
+    selectedColor: Int?,
+    onColorChangeClicked: () -> Unit,
     onValueChanged: (Int) -> Unit,
     onValueChangedFinished: () -> Unit
 ) {
 
     Column {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp)
+            modifier = Modifier.padding(horizontal = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = slideInfo.name
+            )
+            Spacer(Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 2.dp)
+                    .size(24.dp)
+                    .background(
+                        if (selectedColor == null) {
+                            Color.Gray
+                        } else Color(selectedColor)
+                    )
+                    .clickable {
+                        onColorChangeClicked()
+                    }
             )
             Spacer(Modifier.weight(1f))
             Text(
@@ -121,4 +151,32 @@ private fun MapObjectsSettingSlider(
             }
         )
     }
+}
+
+@Composable
+@Preview(showBackground = true)
+private fun PreviewMapObjectsSettingSlider() {
+    MapObjectsSettingSlider(
+        slideInfo = MapObjectSliderInfo(
+            0f,
+            1,
+            "a",
+            0f..1f
+        ),
+        selectedColor = null,
+        onColorChangeClicked = {},
+        onValueChanged = {},
+        onValueChangedFinished = {}
+    )
+}
+@Composable
+@Preview
+private fun PreviewMapObjectsSettingExpandable() {
+    MapObjectsSettingExpandable(
+        layersObjects = emptyList(),
+        layerObjectsColors = mapOf(),
+        changeObjectStyle = {},
+        onColorChangeClicked = {},
+        changeStyleFinished = {}
+    )
 }

@@ -1,6 +1,7 @@
 package ru.maplib.palette
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,7 +35,8 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun PalletScreen(
-    initialColor: android.graphics.Color
+    initialColor: android.graphics.Color,
+    dismiss: (android.graphics.Color?) -> Unit
 ) {
     var currentColor by remember(initialColor) {
             mutableStateOf(initialColor)
@@ -55,7 +58,10 @@ fun PalletScreen(
             )
             Icon(
                 modifier = Modifier
-                    .align(Alignment.TopEnd),
+                    .align(Alignment.TopEnd)
+                    .clickable {
+                        dismiss(currentColor)
+                    },
                 imageVector = Icons.Default.Close,
                 tint = Color.Red,
                 contentDescription = null
@@ -98,6 +104,18 @@ fun PalletScreen(
                 )
             }
         }
+        Spacer(Modifier.height(16.dp))
+        Button(
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            onClick = {
+                dismiss(null)
+            },
+            content = {
+                Text(
+                    text = "ПО УМОЛЧАНИЮ"
+                )
+            }
+        )
     }
 }
 
@@ -126,19 +144,6 @@ internal fun palletColors(): List<Color> {
         Color(0xffFFFFFF),
     )
 }
-
-/*val randomColor: Int
-    get() = Random.nextInt(1, 255)
-
-fun generateColors(): List<Int> {
-    return List(12) {
-        Color(
-            red = randomColor,
-            green = randomColor,
-            blue = randomColor
-        ).toArgb()
-    }
-}*/
 
 @Composable
 @Preview

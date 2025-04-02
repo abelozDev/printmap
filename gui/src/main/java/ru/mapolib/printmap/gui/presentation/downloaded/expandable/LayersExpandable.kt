@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -28,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import ru.maplyb.printmap.R
 import ru.maplyb.printmap.api.model.Layer
 import ru.mapolib.printmap.gui.presentation.settings.expand.ExpandableItem
-import kotlin.math.roundToInt
 
 @Composable
 fun LayersExpandable(

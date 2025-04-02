@@ -43,6 +43,15 @@ class MapDownloadedViewModel(
     private val fileUtil: FileUtil,
     private val context: Context
 ) : PrintMapViewModel<MapDownloadedEvent, MapDownloadedEffect>() {
+
+    private fun createLayerObjectsColor(layers: List<Layer>): Map<String, Int?> {
+        return layers
+            .flatMap { it.objects }
+            .distinctBy { it::class }
+            .map { it::class.simpleName!! }
+            .associateWith { null }
+    }
+
     private val _state = MutableStateFlow(
         MapDownloadedUiState(
             image = path,
@@ -50,7 +59,8 @@ class MapDownloadedViewModel(
             boundingBox = boundingBox,
             layers = layers,
             appName = appName,
-            author = author
+            author = author,
+            layerObjectsColor = createLayerObjectsColor(layers)
         )
     )
     val state = _state.asStateFlow()
@@ -88,22 +98,24 @@ class MapDownloadedViewModel(
         drawJob?.cancel()
         drawJob = viewModelScope.launch(Dispatchers.Default) {
             doWork {
+                val currentState = _state.value
                 val currentBitmap = BitmapFactory.decodeFile(path)
-                val bitmapWithDraw = if (!_state.value.showLayers) {
+                val bitmapWithDraw = if (!currentState.showLayers) {
                     currentBitmap
                 } else {
                     val bitmap = currentBitmap.copy(Bitmap.Config.ARGB_8888, true)
                     val drawLayers = DrawOnBitmap()
                     drawLayers.drawLayers(
                         bitmap = bitmap,
-                        boundingBox = _state.value.boundingBox,
-                        layers = _state.value.layers.filter { it.selected },
-                        context = context
+                        boundingBox = currentState.boundingBox,
+                        layers = currentState.layers.filter { it.selected },
+                        context = context,
+                        layerObjectsColor = currentState.layerObjectsColor
                     )
                     bitmap
                 }
                 if (isActive) {
-                    val rotatedBitmap = if (_state.value.orientation != ImageOrientation.PORTRAIT) {
+                    val rotatedBitmap = if (currentState.orientation != ImageOrientation.PORTRAIT) {
                         rotateBitmap(
                             bitmap = bitmapWithDraw
                         )
@@ -261,6 +273,18 @@ class MapDownloadedViewModel(
                     )
                 }
             }
+
+            is MapDownloadedEvent.UpdateColorToObjects -> {
+                val updatedMap = _state.value.layerObjectsColor.toMutableMap()
+                updatedMap[action.layerObject::class.simpleName!!] = action.color?.toArgb()
+                _state.update {
+                    it.copy(
+                        state = MapDownloadedState.Initial,
+                        layerObjectsColor = updatedMap
+                    )
+                }
+                drawLayers()
+            }
         }
     }
 
@@ -359,7 +383,12 @@ class MapDownloadedViewModel(
         canvas.drawText(scaleInSegment.toString(), padding + segmentLength, scaleY, paintStroke)
         canvas.drawText(scaleInSegment.toString(), padding + segmentLength, scaleY, paintFill)
 
-        canvas.drawText("${(scaleInSegment * 2)} м", padding + segmentLength * 2, scaleY, paintStroke)
+        canvas.drawText(
+            "${(scaleInSegment * 2)} м",
+            padding + segmentLength * 2,
+            scaleY,
+            paintStroke
+        )
         canvas.drawText("${(scaleInSegment * 2)} м", padding + segmentLength * 2, scaleY, paintFill)
 
         drawScaleLines(

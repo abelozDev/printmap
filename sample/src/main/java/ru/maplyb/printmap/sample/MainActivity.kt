@@ -1328,11 +1328,12 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
 
         composeView.setContent {
             MainScreen()
-            PalletScreen(
+            /*PalletScreen(
                 android.graphics.Color.valueOf(
                     214f/255.0f, 134f/255.0f, 189f/255.0f, 255f/255.0f
-                )
-            )
+                ),
+
+            )*/
         }
     }
 }

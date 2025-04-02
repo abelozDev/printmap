@@ -1,6 +1,7 @@
 package ru.mapolib.printmap.gui.presentation.downloaded
 
 import android.graphics.Bitmap
+import android.graphics.Color
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.LayerObject
@@ -12,6 +13,7 @@ sealed interface MapDownloadedState {
     data object Initial: MapDownloadedState
     data object Progress: MapDownloadedState
     data class Failure(val message: String): MapDownloadedState
+    data class ChangeColor(val layerObject: LayerObject): MapDownloadedState
 }
 typealias Dpi = Int
 data class MapDownloadedUiState(
@@ -27,12 +29,11 @@ data class MapDownloadedUiState(
     val orientation: ImageOrientation = ImageOrientation.PORTRAIT,
     val dpi: Dpi = 72,
     val name: String = "",
+    val layerObjectsColor: Map<String, Int?>,
     val layers: List<Layer>
 )
 
-
 val dpiVariants: List<Dpi> = listOf(72,300)
-
 
 sealed interface ExportTypes {
     val name: String
@@ -49,6 +50,7 @@ sealed interface ExportTypes {
         val entries = listOf(PDF(), PNG())
     }
 }
+
 sealed interface MapDownloadedEvent: PrintMapEvent {
     data object DeleteImage: MapDownloadedEvent
     data object Share: MapDownloadedEvent
@@ -61,6 +63,7 @@ sealed interface MapDownloadedEvent: PrintMapEvent {
     data class UpdateMapObjectStyle(val layerObject: LayerObject): MapDownloadedEvent
     data object UpdateLayers: MapDownloadedEvent
     data class UpdateState(val state: MapDownloadedState): MapDownloadedEvent
+    data class UpdateColorToObjects(val color: Color?, val layerObject: LayerObject): MapDownloadedEvent
 }
 sealed interface MapDownloadedEffect: PrintMapEffect {
     data class DeleteMap(val path: String): MapDownloadedEffect

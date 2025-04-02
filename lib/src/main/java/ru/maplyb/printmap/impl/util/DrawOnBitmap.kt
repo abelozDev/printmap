@@ -31,49 +31,57 @@ class DrawOnBitmap {
         context: Context,
         bitmap: Bitmap,
         boundingBox: BoundingBox,
+        layerObjectsColor: Map<String, Int?>,
         layers: List<Layer>,
     ): Bitmap {
         val canvas = Canvas(bitmap)
         val scaleFactor = sqrt((bitmap.width * bitmap.height).toDouble()).toFloat() / 1000f
         layers
             .flatMap { it.objects }
-            .forEach { objects ->
-                when (objects) {
-                    is LayerObject.Line -> drawLine(
-                        canvas = canvas,
-                        bitmap = bitmap,
-                        boundingBox = boundingBox,
-                        objects = objects,
-                        scaleFactor = scaleFactor,
-                    )
-
-                    is LayerObject.Polygon -> drawPolygon(
-                        bitmap = bitmap,
-                        boundingBox = boundingBox,
-                        objects = objects,
-                        scaleFactor = scaleFactor,
-                    )
-
-                    is LayerObject.Radius -> Unit
-                    is LayerObject.Text -> drawTextOnBitmap(
-                        canvas = canvas,
-                        bitmap = bitmap,
-                        boundingBox = boundingBox,
-                        text = objects,
-                        scaleFactor = scaleFactor,
-                        context = context
-                    )
-
-                    is LayerObject.Object -> drawObjects(
-                        bitmap = bitmap,
-                        canvas = canvas,
-                        boundingBox = boundingBox,
-                        context = context,
-                        objects = objects,
-                        scaleFactor = scaleFactor,
-                    )
-                }
+            .map {
+                val color = layerObjectsColor[it::class.simpleName] ?: return@map it
+                if (it is LayerObject.Object) {
+                    /*У целей меняем цвет имени*/
+                    it.copy(nameColor = color)
+                } else it.updateStyle(it.style.copy(color = color))
             }
+            .forEach { layerObject ->
+            when (layerObject) {
+                is LayerObject.Line -> drawLine(
+                    canvas = canvas,
+                    bitmap = bitmap,
+                    boundingBox = boundingBox,
+                    objects = layerObject,
+                    scaleFactor = scaleFactor,
+                )
+
+                is LayerObject.Polygon -> drawPolygon(
+                    bitmap = bitmap,
+                    boundingBox = boundingBox,
+                    objects = layerObject,
+                    scaleFactor = scaleFactor,
+                )
+
+                is LayerObject.Radius -> Unit
+                is LayerObject.Text -> drawTextOnBitmap(
+                    canvas = canvas,
+                    bitmap = bitmap,
+                    boundingBox = boundingBox,
+                    text = layerObject,
+                    scaleFactor = scaleFactor,
+                    context = context
+                )
+
+                is LayerObject.Object -> drawObjects(
+                    bitmap = bitmap,
+                    canvas = canvas,
+                    boundingBox = boundingBox,
+                    context = context,
+                    objects = layerObject,
+                    scaleFactor = scaleFactor,
+                )
+            }
+        }
         return bitmap
     }
 
@@ -142,8 +150,8 @@ class DrawOnBitmap {
             val nameX = centerX - (textLength / 2)
             val nameY = centerY + (scaledHeight / 2) + (textHeight * 1.25f)
             canvas.withSave {
-                drawText(objects.style.name, nameX, nameY, paint)
                 drawText(objects.style.name, nameX, nameY, paintStroke)
+                drawText(objects.style.name, nameX, nameY, paint)
             }
         }
     }

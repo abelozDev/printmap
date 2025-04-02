@@ -12,7 +12,7 @@ import ru.maplib.palette.components.ColorItem
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun PallerColorSelector(
+internal fun PallerColorSelector(
     initialColor: android.graphics.Color,
     selectColor: (android.graphics.Color) -> Unit
 ) {

@@ -56,12 +56,14 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import androidx.core.graphics.toColor
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import ru.maplib.palette.PalletScreen
 import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.maplyb.printmap.impl.domain.model.PageFormat
 import ru.mapolib.printmap.gui.presentation.components.ErrorDialog
@@ -78,7 +80,6 @@ internal fun MapDownloadedScreen(
     onDeleteMap: (String) -> Unit
 ) {
     val context = LocalContext.current
-
     DisposableEffect(Unit) {
         onDispose {
             dispose()
@@ -222,10 +223,20 @@ internal fun MapDownloadedScreen(
             },
             changeStyleFinished = {
                 viewModel.sendEvent(MapDownloadedEvent.UpdateLayers)
-            }
+            },
+            layerObjectsColors = state.layerObjectsColor,
+            onColorChangeClicked = {
+                viewModel.sendEvent(
+                    MapDownloadedEvent.UpdateState(
+                        MapDownloadedState.ChangeColor(
+                            it
+                        )
+                    )
+                )
+            },
         )
     }
-    when(state.state) {
+    when (state.state) {
         is MapDownloadedState.Failure -> {
             ErrorDialog(
                 message = (state.state as MapDownloadedState.Failure).message,
@@ -234,6 +245,7 @@ internal fun MapDownloadedScreen(
                 }
             )
         }
+
         MapDownloadedState.Initial -> Unit
         MapDownloadedState.Progress -> {
             Dialog(
@@ -251,6 +263,27 @@ internal fun MapDownloadedScreen(
                     CircularProgressIndicator()
                 }
             }
+        }
+
+        is MapDownloadedState.ChangeColor -> {
+            val layerObject = (state.state as MapDownloadedState.ChangeColor).layerObject
+            val currentColor = state.layerObjectsColor[layerObject::class.simpleName] ?: android.graphics.Color.WHITE
+            Dialog(
+                onDismissRequest = {},
+                content = {
+                    PalletScreen(
+                        initialColor = currentColor.toColor(),
+                        dismiss = {
+                            viewModel.sendEvent(
+                                MapDownloadedEvent.UpdateColorToObjects(
+                                    color = it,
+                                    layerObject = layerObject
+                                )
+                            )
+                        }
+                    )
+                }
+            )
         }
     }
 }
@@ -317,6 +350,7 @@ private fun ColumnScope.DpiPopup(
         }
     }
 }
+
 @Composable
 private fun ColumnScope.ExportPopup(
     selectedExportType: ExportTypes,

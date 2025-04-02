@@ -27,7 +27,7 @@ import androidx.core.graphics.toColor
 import androidx.core.graphics.toColorInt
 
 @Composable
-fun CustomColorSelector(
+internal fun CustomColorSelector(
     initialColor: android.graphics.Color,
     selectColor: (android.graphics.Color) -> Unit
 ) {
