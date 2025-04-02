@@ -51,7 +51,7 @@ publishing {
 }
 dependencies {
     api(project(":lib"))
-    api(project(":palette"))
+    compileOnly(project(":palette"))
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.core.ktx)

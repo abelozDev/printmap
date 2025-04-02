@@ -40,8 +40,8 @@ android {
 }
 
 dependencies {
-    /*implementation("com.github.abelozDev.printmap:lib:1.0.19-alpha6")
-    implementation("com.github.abelozDev.printmap:gui:1.0.19-alpha6")*/
+    /*implementation("com.github.abelozDev.printmap:lib:1.0.19-alpha9")
+    implementation("com.github.abelozDev.printmap:gui:1.0.19-alpha9")*/
     implementation(project(":gui"))
     implementation(project(":palette"))
     implementation(libs.androidx.core.ktx)
