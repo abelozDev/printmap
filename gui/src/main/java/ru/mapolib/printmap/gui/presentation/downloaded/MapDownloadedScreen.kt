@@ -210,6 +210,9 @@ internal fun MapDownloadedScreen(
             layers = state.layers,
             updateLayer = {
                 viewModel.sendEvent(MapDownloadedEvent.UpdateLayer(it))
+            },
+            editLayer = {
+
             }
         )
         MapObjectsSettingExpandable(

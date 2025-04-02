@@ -1,11 +1,18 @@
 package ru.mapolib.printmap.gui.presentation.settings.expand
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -14,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -23,10 +31,12 @@ import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapType
 
 @Composable
-fun ExpandableItem(
+fun ColumnScope.ExpandableItem(
     items: List<Expandable>,
     onHeaderChange: (Boolean) -> Unit,
-    onChange: (Expandable) -> Unit
+    onChange: (Expandable) -> Unit,
+    actionIcon: ImageVector? = null,
+    onActionClick: (Expandable) -> Unit? = {},
 ) {
     val showHeader by remember(items) {
         derivedStateOf {
@@ -74,6 +84,16 @@ fun ExpandableItem(
                     text = map.name
                 )
             }
+            if (actionIcon != null) {
+                Icon(
+                    modifier = Modifier.clickable {
+                        onActionClick(map)
+                    },
+                    imageVector = actionIcon,
+                    contentDescription = null,
+                )
+                Spacer(Modifier.width(4.dp))
+            }
             Checkbox(
                 checked = map.selected,
                 onCheckedChange = {
@@ -86,40 +106,43 @@ fun ExpandableItem(
 }
 
 @Composable
-@Preview
+@Preview(showBackground = true)
 fun PreviewExpandableItem() {
-    ExpandableItem(
-        items = listOf(
-            MapItem(
-                name = "OpenStreetMap",
-                type = MapType.Online("https://mt0.google.com//vt/lyrs=s"),
-                isVisible = true,
-                alpha = 1f,
-                position = 1,
-                zoomMin = 0,
-                zoomMax = 13
+    Column {
+        ExpandableItem(
+            actionIcon = Icons.Default.Edit,
+            items = listOf(
+                MapItem(
+                    name = "OpenStreetMap",
+                    type = MapType.Online("https://mt0.google.com//vt/lyrs=s"),
+                    isVisible = true,
+                    alpha = 1f,
+                    position = 1,
+                    zoomMin = 0,
+                    zoomMax = 13
 
+                ),
+                /*MapItem(
+                    name = "Google",
+                    type = MapType.Online("https://mt0.google.com//vt/lyrs=y&x={x}&y={y}&z={z}"),
+                    isVisible = true,
+                    alpha = 1f,
+                    position = 2,
+                    zoomMin = 0,
+                    zoomMax = 13
+                ),
+                MapItem(
+                    name = "LocalTest",
+                    type = MapType.Offline("storage/emulated/0/Download/Relief_Ukraine.mbtiles"),
+                    isVisible = true,
+                    alpha = 1f,
+                    position = 3,
+                    zoomMin = 0,
+                    zoomMax = 13
+                )*/
             ),
-            MapItem(
-                name = "Google",
-                type = MapType.Online("https://mt0.google.com//vt/lyrs=y&x={x}&y={y}&z={z}"),
-                isVisible = true,
-                alpha = 1f,
-                position = 2,
-                zoomMin = 0,
-                zoomMax = 13
-            ),
-            MapItem(
-                name = "LocalTest",
-                type = MapType.Offline("storage/emulated/0/Download/Relief_Ukraine.mbtiles"),
-                isVisible = true,
-                alpha = 1f,
-                position = 3,
-                zoomMin = 0,
-                zoomMax = 13
-            )
-        ),
-        onHeaderChange = {},
-        onChange = {}
-    )
+            onHeaderChange = {},
+            onChange = {}
+        )
+    }
 }

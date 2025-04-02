@@ -24,7 +24,8 @@ compile-sdk = "34"
 uiAndroid = "1.7.8"
 proj4j = "0.1.0"
 junit-jupiter = "5.7.0"
-
+accomponist = "0.36.0"
+min-sdk-version = "26"
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -57,7 +58,7 @@ datastore = { group = "androidx.datastore", name = "datastore-preferences", vers
 firebase-components = { group = "com.google.firebase", name = "firebase-components", version.ref = "firebaseComponents" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
 proj4j = { group = "org.osgeo", name = "proj4j", version.ref = "proj4j" }
-
+accomponist = { group = "com.google.accompanist", name = "accompanist-pager", version.ref = "accomponist"}
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

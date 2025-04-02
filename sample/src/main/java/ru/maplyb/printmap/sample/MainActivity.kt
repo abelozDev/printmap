@@ -4,8 +4,9 @@ import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import androidx.activity.ComponentActivity
-import androidx.compose.ui.graphics.Color
+import androidx.annotation.RequiresApi
 import androidx.compose.ui.platform.ComposeView
+import ru.maplib.palette.PalletScreen
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.Layer
@@ -26,6 +27,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
     private lateinit var addMapBtn: Button
     private lateinit var deleteMapBtn: Button
     private lateinit var composeView: ComposeView
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         btn = findViewById(ru.maplyb.printmap.R.id.get_map)
@@ -1326,6 +1328,11 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
 
         composeView.setContent {
             MainScreen()
+            PalletScreen(
+                android.graphics.Color.valueOf(
+                    214f/255.0f, 134f/255.0f, 189f/255.0f, 255f/255.0f
+                )
+            )
         }
     }
 }

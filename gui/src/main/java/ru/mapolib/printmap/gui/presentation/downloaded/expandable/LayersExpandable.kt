@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
@@ -33,6 +34,7 @@ import kotlin.math.roundToInt
 fun LayersExpandable(
     layers: List<Layer>,
     updateLayer: (Layer) -> Unit,
+    editLayer: (Layer) -> Unit
 ) {
     var isOpen by remember {
         mutableStateOf(false)
@@ -67,6 +69,10 @@ fun LayersExpandable(
                             selected = !layer.selected
                         )
                     )
+                },
+                actionIcon = Icons.Default.Edit,
+                onActionClick = { layer ->
+                    editLayer(layer as Layer)
                 },
                 onHeaderChange = {
                     //todo
