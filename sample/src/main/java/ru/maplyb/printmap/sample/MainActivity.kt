@@ -6,7 +6,6 @@ import android.widget.Button
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.platform.ComposeView
-import ru.maplib.palette.PalletScreen
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.Layer

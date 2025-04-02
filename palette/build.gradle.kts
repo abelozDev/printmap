@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("maven-publish")
+    alias(libs.plugins.jetbrains.kotlin.jvm) apply false
 }
 
 android {
@@ -32,6 +34,19 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+}
+
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            afterEvaluate {
+                from(components["release"])
+                groupId = "com.github.abelozDev"
+                artifactId = "palette"
+                version = libs.versions.lib.version
+            }
+        }
     }
 }
 
