@@ -154,7 +154,27 @@ object GeoCalculator {
         val pointPixelY = ((leftTopPoint.y - pointsMercator.y) / pixelSizeY).toFloat()
         return pointPixelX to pointPixelY
     }
+    fun degreeToMercator(point: GeoPoint): Result<GeoPointMercator> {
+        val crsFactory = CRSFactory()
+        val crsDegree = crsFactory.createFromName("EPSG:4326") // WGS 84 (широта/долгота)
+        val crsMercator = crsFactory.createFromName("EPSG:3857") // Web Mercator
 
+        val transformFactory = CoordinateTransformFactory()
+        val transform: CoordinateTransform =
+            transformFactory.createTransform(crsDegree, crsMercator)
+
+        val sourceCoord =
+            ProjCoordinate(point.longitude, point.latitude) // Порядок: долгота, широта
+        val targetCoord = ProjCoordinate()
+
+        return try {
+            transform.transform(sourceCoord, targetCoord)
+            Result.success(GeoPointMercator(targetCoord.x, targetCoord.y))
+        } catch (e: Proj4jException) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
     fun convertGeoToPixel(
         objects: List<GeoPoint>,
         boundingBox: BoundingBox,
@@ -186,27 +206,7 @@ object GeoCalculator {
         }
     }
 
-    fun degreeToMercator(point: GeoPoint): Result<GeoPointMercator> {
-        val crsFactory = CRSFactory()
-        val crsDegree = crsFactory.createFromName("EPSG:4326") // WGS 84 (широта/долгота)
-        val crsMercator = crsFactory.createFromName("EPSG:3857") // Web Mercator
 
-        val transformFactory = CoordinateTransformFactory()
-        val transform: CoordinateTransform =
-            transformFactory.createTransform(crsDegree, crsMercator)
-
-        val sourceCoord =
-            ProjCoordinate(point.longitude, point.latitude) // Порядок: долгота, широта
-        val targetCoord = ProjCoordinate()
-
-        return try {
-            transform.transform(sourceCoord, targetCoord)
-            Result.success(GeoPointMercator(targetCoord.x, targetCoord.y))
-        } catch (e: Proj4jException) {
-            e.printStackTrace()
-            Result.failure(e)
-        }
-    }
 
     fun degreeToMercator(points: List<GeoPoint>): Result<List<GeoPointMercator>> {
         val crsFactory = CRSFactory()

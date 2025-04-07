@@ -21,8 +21,13 @@ import ru.maplyb.printmap.api.model.ObjectRes
 import ru.maplyb.printmap.impl.util.GeoCalculator.convertGeoToPixel
 import kotlin.math.sqrt
 import androidx.core.graphics.withSave
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
+import ru.maplyb.printmap.api.model.GeoPoint
+import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
+import kotlin.math.cos
 import kotlin.math.roundToInt
 
 class DrawOnBitmap {
@@ -46,42 +51,42 @@ class DrawOnBitmap {
                 } else it.updateStyle(it.style.copy(color = color))
             }
             .forEach { layerObject ->
-            when (layerObject) {
-                is LayerObject.Line -> drawLine(
-                    canvas = canvas,
-                    bitmap = bitmap,
-                    boundingBox = boundingBox,
-                    objects = layerObject,
-                    scaleFactor = scaleFactor,
-                )
+                when (layerObject) {
+                    is LayerObject.Line -> drawLine(
+                        canvas = canvas,
+                        bitmap = bitmap,
+                        boundingBox = boundingBox,
+                        objects = layerObject,
+                        scaleFactor = scaleFactor,
+                    )
 
-                is LayerObject.Polygon -> drawPolygon(
-                    bitmap = bitmap,
-                    boundingBox = boundingBox,
-                    objects = layerObject,
-                    scaleFactor = scaleFactor,
-                )
+                    is LayerObject.Polygon -> drawPolygon(
+                        bitmap = bitmap,
+                        boundingBox = boundingBox,
+                        objects = layerObject,
+                        scaleFactor = scaleFactor,
+                    )
 
-                is LayerObject.Radius -> Unit
-                is LayerObject.Text -> drawTextOnBitmap(
-                    canvas = canvas,
-                    bitmap = bitmap,
-                    boundingBox = boundingBox,
-                    text = layerObject,
-                    scaleFactor = scaleFactor,
-                    context = context
-                )
+                    is LayerObject.Radius -> Unit
+                    is LayerObject.Text -> drawTextOnBitmap(
+                        canvas = canvas,
+                        bitmap = bitmap,
+                        boundingBox = boundingBox,
+                        text = layerObject,
+                        scaleFactor = scaleFactor,
+                        context = context
+                    )
 
-                is LayerObject.Object -> drawObjects(
-                    bitmap = bitmap,
-                    canvas = canvas,
-                    boundingBox = boundingBox,
-                    context = context,
-                    objects = layerObject,
-                    scaleFactor = scaleFactor,
-                )
+                    is LayerObject.Object -> drawObjects(
+                        bitmap = bitmap,
+                        canvas = canvas,
+                        boundingBox = boundingBox,
+                        context = context,
+                        objects = layerObject,
+                        scaleFactor = scaleFactor,
+                    )
+                }
             }
-        }
         return bitmap
     }
 
@@ -148,7 +153,7 @@ class DrawOnBitmap {
             )
             val textLength = paint.measureText(objects.style.name)
             val nameX = centerX - (textLength / 2)
-            val nameY = centerY + (scaledHeight / 2) + (textHeight * 1.25f)
+            val nameY = centerY + (scaledHeight / 2) + (textHeight * 0.75f)
             canvas.withSave {
                 drawText(objects.style.name, nameX, nameY, paintStroke)
                 drawText(objects.style.name, nameX, nameY, paint)
@@ -214,6 +219,160 @@ class DrawOnBitmap {
         }
     }
 
+    suspend fun drawScaleLines(
+        stepMeters: Int = 1000,
+        context: Context,
+        bitmap: Bitmap,
+        boundingBox: BoundingBox,
+        width: Float,
+    ): Bitmap {
+        return coroutineScope {
+            withContext(Dispatchers.IO) {
+                val paint = defTextPaint(
+                    context = context,
+                    color = Color.RED,
+                    strokeWidth = width,
+                    textSize = 0f
+                )
+                val canvas = Canvas(bitmap)
+                val widthGeoMetr = distanceBetween(
+                    boundingBox.latNorth,
+                    boundingBox.lonWest,
+                    boundingBox.latNorth,
+                    boundingBox.lonEast
+                )
+                val heightGeoMetr = distanceBetween(
+                    boundingBox.latNorth,
+                    boundingBox.lonWest,
+                    boundingBox.latSouth,
+                    boundingBox.lonWest
+                )
+                val midLat = (boundingBox.latNorth + boundingBox.latSouth) / 2
+                val latLines = getLatLinesByDistance(
+                    boundingBox.latSouth,
+                    boundingBox.latNorth,
+                    heightGeoMetr,
+                    stepMeters
+                )
+                val lonLines = getLonLinesByDistance(
+                    boundingBox.lonWest,
+                    boundingBox.lonEast,
+                    midLat,
+                    widthGeoMetr,
+                    stepMeters
+                )
+                val startLatPoint = convertGeoToPixel(
+                    latLines.map {
+                        GeoPoint(
+                            latitude = it,
+                            longitude = boundingBox.lonWest
+                        )
+                    },
+                    boundingBox,
+                    bitmapWidth = bitmap.width,
+                    bitmapHeight = bitmap.height
+                ) ?: return@withContext bitmap
+                val endLatPoint = convertGeoToPixel(
+                    latLines.map {
+                        GeoPoint(
+                            latitude = it,
+                            longitude = boundingBox.lonEast
+                        )
+                    },
+                    boundingBox,
+                    bitmapWidth = bitmap.width,
+                    bitmapHeight = bitmap.height
+                ) ?: return@withContext bitmap
+                startLatPoint
+                    .zip(endLatPoint).forEach { (start, end) ->
+                        canvas.drawLine(
+                            start.first,
+                            start.second,
+                            end.first,
+                            end.second,
+                            paint
+                        )
+                    }
+
+                val startLonPoint = convertGeoToPixel(
+                    lonLines.map {
+                        GeoPoint(
+                            latitude = boundingBox.latNorth,
+                            longitude = it
+                        )
+                    },
+                    boundingBox,
+                    bitmapWidth = bitmap.width,
+                    bitmapHeight = bitmap.height
+                ) ?: return@withContext bitmap
+                val endLonPoint = convertGeoToPixel(
+                    lonLines.map {
+                        GeoPoint(
+                            latitude = boundingBox.latSouth,
+                            longitude = it
+                        )
+                    },
+                    boundingBox,
+                    bitmapWidth = bitmap.width,
+                    bitmapHeight = bitmap.height
+                ) ?: return@withContext bitmap
+                startLonPoint.zip(endLonPoint).forEach { (start, end) ->
+                    canvas.drawLine(
+                        start.first,
+                        start.second,
+                        end.first,
+                        end.second,
+                        paint
+                    )
+                }
+                bitmap
+            }
+        }
+    }
+
+    fun getLatLinesByDistance(
+        latSouth: Double,
+        latNorth: Double,
+        heightMeters: Double,
+        stepMeters: Int
+    ): List<Double> {
+        val metersPerDegreeLat = 111_000.0
+        val stepLat = stepMeters / metersPerDegreeLat
+        val count = (heightMeters / stepMeters).toInt()
+
+        return (1..count).map { latSouth + it * stepLat }
+    }
+
+    fun getLonLinesByDistance(
+        lonWest: Double,
+        lonEast: Double,
+        latAt: Double, // средняя широта
+        widthMeters: Double,
+        stepMeters: Int
+    ): List<Double> {
+        val metersPerDegreeLon = 111_320.0 * cos(Math.toRadians(latAt))
+        val stepLon = stepMeters / metersPerDegreeLon
+        val count = (widthMeters / stepMeters).toInt()
+
+        return (1..count).map { lonWest + it * stepLon }
+    }
+
+    private fun getInnerIntervals(
+        start: Double,
+        end: Double,
+        steps: Int
+    ): List<Double> {
+        check(start < end) { "start must by less than end" }
+        if (steps == 0) return emptyList()
+        val step = (end - start) / steps
+        val result = mutableListOf<Double>()
+        for (i in 1..steps) {
+            result.add(start + (step * i))
+        }
+        return result
+    }
+
+
     private suspend fun drawLine(
         canvas: Canvas,
         bitmap: Bitmap,
@@ -267,7 +426,7 @@ class DrawOnBitmap {
         }
     }
 
-    suspend fun drawTextOnBitmap(
+    private suspend fun drawTextOnBitmap(
         canvas: Canvas,
         bitmap: Bitmap,
         boundingBox: BoundingBox,

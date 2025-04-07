@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
-abstract class PrintMapViewModel<Event : PrintMapEvent, Effect : PrintMapEffect> : ViewModel() {
+internal abstract class PrintMapViewModel<Event : PrintMapEvent, Effect : PrintMapEffect> : ViewModel() {
 
     private val _eventChannel = Channel<Effect>(Channel.BUFFERED)
     val effect = _eventChannel.receiveAsFlow()

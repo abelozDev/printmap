@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="sample">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-04-02T14:32:34.496612Z">
+        <DropdownSelection timestamp="2025-04-04T12:04:10.110908Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=/Users/artemkolganov/.android/avd/Planshet.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=6cba13a3" />
             </handle>
           </Target>
         </DropdownSelection>

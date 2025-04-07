@@ -68,7 +68,6 @@ fun LayersExpandable(
                         )
                     )
                 },
-                actionIcon = Icons.Default.Edit,
                 onActionClick = { layer ->
                     editLayer(layer as Layer)
                 },

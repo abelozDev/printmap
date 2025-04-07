@@ -34,7 +34,7 @@ import ru.mapolib.printmap.gui.utils.scale.roundScale
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 
-class MapDownloadedViewModel(
+internal class MapDownloadedViewModel(
     private val path: String,
     boundingBox: BoundingBox,
     appName: String,
@@ -63,7 +63,7 @@ class MapDownloadedViewModel(
             layerObjectsColor = createLayerObjectsColor(layers)
         )
     )
-    val state = _state.asStateFlow()
+    internal val state = _state.asStateFlow()
 
     init {
         drawLayers()
@@ -121,9 +121,16 @@ class MapDownloadedViewModel(
                         )
                     } else bitmapWithDraw
                     val bitmapWithDefaults = setDefault(rotatedBitmap)
+                    val innerIntervals = if (currentState.showCoordinateGrid) DrawOnBitmap().drawScaleLines(
+                        stepMeters = currentState.coordinateGrid,
+                        context = context,
+                        bitmap = bitmapWithDefaults,
+                        boundingBox = currentState.boundingBox,
+                        width = currentState.coordinatesGridSliderInfo.value
+                    ) else bitmapWithDefaults
                     _state.update {
                         it.copy(
-                            bitmap = bitmapWithDefaults
+                            bitmap = innerIntervals
                         )
                     }
                 }
@@ -281,6 +288,41 @@ class MapDownloadedViewModel(
                     it.copy(
                         state = MapDownloadedState.Initial,
                         layerObjectsColor = updatedMap
+                    )
+                }
+                drawLayers()
+            }
+
+            is MapDownloadedEvent.ChangeCheckCoordinateGrid -> {
+                _state.update {
+                    it.copy(
+                        showCoordinateGrid = !it.showCoordinateGrid
+                    )
+                }
+                drawLayers()
+            }
+            is MapDownloadedEvent.CoordinateGridSliderValueChangeFinished -> {
+                _state.update {
+                    it.copy(
+                        coordinatesGridSliderInfo = it.coordinatesGridSliderInfo.copy(
+                         value = action.value
+                        )
+                    )
+                }
+                drawLayers()
+            }
+            is MapDownloadedEvent.SelectCoordinateGrid -> {
+                _state.update {
+                    it.copy(
+                        coordinateGrid = action.value
+                    )
+                }
+                drawLayers()
+            }
+            is MapDownloadedEvent.UpdateCoordinateGridColor -> {
+                _state.update {
+                    it.copy(
+                        coordinateGridColor = action.color
                     )
                 }
                 drawLayers()

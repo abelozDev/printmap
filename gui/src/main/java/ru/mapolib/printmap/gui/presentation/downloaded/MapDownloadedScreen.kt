@@ -67,6 +67,8 @@ import ru.maplib.palette.PalletScreen
 import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.maplyb.printmap.impl.domain.model.PageFormat
 import ru.mapolib.printmap.gui.presentation.components.ErrorDialog
+import ru.mapolib.printmap.gui.presentation.components.PrintmapPopup
+import ru.mapolib.printmap.gui.presentation.downloaded.expandable.CoordinateGrid
 import ru.mapolib.printmap.gui.presentation.downloaded.expandable.LayersExpandable
 import ru.mapolib.printmap.gui.presentation.downloaded.expandable.MapObjectsSettingExpandable
 
@@ -145,9 +147,11 @@ internal fun MapDownloadedScreen(
             }
         )
         Spacer(Modifier.height(16.dp))
-        ExportPopup(
-            selectedExportType = state.exportType,
-            updateExportType = {
+        PrintmapPopup(
+            name = "Формат экспорта",
+            items = ExportTypes.entries,
+            selected = state.exportType,
+            update = {
                 viewModel.sendEvent(MapDownloadedEvent.UpdateExportType(it))
             }
         )
@@ -159,9 +163,11 @@ internal fun MapDownloadedScreen(
                     viewModel.sendEvent(MapDownloadedEvent.UpdateExportType(it))
                 }
             )
-            DpiPopup(
-                selectedDpi = state.dpi,
-                updateDpi = {
+            PrintmapPopup(
+                name = "DPI",
+                items = dpiVariants,
+                selected = state.dpi,
+                update = {
                     viewModel.sendEvent(MapDownloadedEvent.SelectDpi(it))
                 }
             )
@@ -172,7 +178,26 @@ internal fun MapDownloadedScreen(
             image = state.bitmap,
             context = context,
         )
-
+        CoordinateGrid(
+            sliderInfo = state.coordinatesGridSliderInfo,
+            selectedCoordinateGrid = state.coordinateGrid,
+            checked = state.showCoordinateGrid,
+            selectedColor = state.coordinateGridColor.color,
+            onCheckedChanged = {
+                viewModel.sendEvent(MapDownloadedEvent.ChangeCheckCoordinateGrid())
+            },
+            onSliderValueChangedFinished = {
+                viewModel.sendEvent(MapDownloadedEvent.CoordinateGridSliderValueChangeFinished(it))
+            },
+            onColorChangeClicked = {
+                viewModel.sendEvent(
+                    MapDownloadedEvent.UpdateState(MapDownloadedState.ChangeCoordinatesGridColor())
+                )
+            },
+            selectCoordinateGrid = {
+                viewModel.sendEvent(MapDownloadedEvent.SelectCoordinateGrid(it))
+            }
+        )
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -228,7 +253,7 @@ internal fun MapDownloadedScreen(
             onColorChangeClicked = {
                 viewModel.sendEvent(
                     MapDownloadedEvent.UpdateState(
-                        MapDownloadedState.ChangeColor(
+                        MapDownloadedState.ChangeLayerColor(
                             it
                         )
                     )
@@ -265,8 +290,8 @@ internal fun MapDownloadedScreen(
             }
         }
 
-        is MapDownloadedState.ChangeColor -> {
-            val layerObject = (state.state as MapDownloadedState.ChangeColor).layerObject
+        is MapDownloadedState.ChangeLayerColor -> {
+            val layerObject = (state.state as MapDownloadedState.ChangeLayerColor).layerObject
             val currentColor = state.layerObjectsColor[layerObject::class.simpleName] ?: android.graphics.Color.WHITE
             Dialog(
                 onDismissRequest = {},
@@ -285,135 +310,26 @@ internal fun MapDownloadedScreen(
                 }
             )
         }
-    }
-}
-
-@Composable
-private fun ColumnScope.DpiPopup(
-    selectedDpi: Dpi,
-    updateDpi: (Dpi) -> Unit
-) {
-    var visibility by remember {
-        mutableStateOf(false)
-    }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.clickable {
-            visibility = !visibility
-        }
-    ) {
-        Text(
-            text = "DPI"
-        )
-        Spacer(Modifier.weight(1f))
-        Text(
-            text = selectedDpi.toString()
-        )
-        Icon(
-            imageVector = if (visibility) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-            contentDescription = null
-        )
-    }
-    Spacer(Modifier.height(8.dp))
-    if (visibility) {
-        Box(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Popup(
-                alignment = Alignment.TopEnd,
-                onDismissRequest = {
-                    visibility = !visibility
-                },
-                properties = PopupProperties()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .background(Color.DarkGray/*MaterialTheme.colorScheme.surface*/)
-                        .padding(8.dp)
-                ) {
-                    Column {
-                        dpiVariants.forEach {
-                            Text(
-                                modifier = Modifier
-                                    .clickable {
-                                        updateDpi(it)
-                                        visibility = false
-                                    }
-                                    .padding(8.dp),
-                                text = it.toString(),
-                                color = Color.White
+        is MapDownloadedState.ChangeCoordinatesGridColor -> {
+            Dialog(
+                onDismissRequest = {},
+                content = {
+                    PalletScreen(
+                        initialColor = state.coordinateGridColor.color.toColor(),
+                        dismiss = { color ->
+                            val selectedColor = if (color != null) CoordinateGridColor(color.toArgb()) else CoordinateGridColor.default
+                            viewModel.sendEvent(
+                                MapDownloadedEvent.UpdateCoordinateGridColor(
+                                    color = selectedColor
+                                )
                             )
                         }
-                    }
+                    )
                 }
-            }
+            )
         }
     }
 }
-
-@Composable
-private fun ColumnScope.ExportPopup(
-    selectedExportType: ExportTypes,
-    updateExportType: (ExportTypes) -> Unit
-) {
-    var exportIsVisible by remember {
-        mutableStateOf(false)
-    }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.clickable {
-            exportIsVisible = !exportIsVisible
-        }
-    ) {
-        Text(
-            text = "Формат экспорта"
-        )
-        Spacer(Modifier.weight(1f))
-        Text(
-            text = selectedExportType.name
-        )
-        Icon(
-            imageVector = if (exportIsVisible) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-            contentDescription = null
-        )
-    }
-    Spacer(Modifier.height(8.dp))
-    if (exportIsVisible) {
-        Box(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Popup(
-                alignment = Alignment.TopEnd,
-                onDismissRequest = {
-                    exportIsVisible = !exportIsVisible
-                },
-                properties = PopupProperties()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .background(Color.DarkGray/*MaterialTheme.colorScheme.surface*/)
-                        .padding(8.dp)
-                ) {
-                    Column {
-                        ExportTypes.entries.forEach {
-                            Text(
-                                modifier = Modifier
-                                    .clickable {
-                                        updateExportType(it)
-                                        exportIsVisible = false
-                                    }
-                                    .padding(8.dp),
-                                text = it.name,
-                                color = Color.White
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 @Composable
 private fun ColumnScope.FormatPopup(
     selectedExportType: ExportTypes.PDF,
