@@ -71,7 +71,7 @@ internal class DownloadMapService : Service() {
             if (args == null) {
                 prefs?.setError(
                     this@DownloadMapService,
-                    "Пустые аргументы"
+                    "Ошибка при скачивании карты.\n код ошибки: $EMPTY_ARGS_ERROR_CODE"
                 )
                 return@launch
             }
@@ -116,104 +116,113 @@ internal class DownloadMapService : Service() {
                             downloadedTiles.data,
                             args.zoom
                         ).onSuccess { bitmap ->
-                    prefs?.setProgress(
-                        context = this@DownloadMapService,
-                        progress = 100,
-                        message = "Сохранение файла"
-                    )
-                    FileUtil(this@DownloadMapService).saveBitmapToExternalStorage(
-                        bitmap = bitmap!!,
-                        fileName = "${System.currentTimeMillis()}"
-                    )
-                        ?.let {
-                            prefs?.setDownloaded(
+                            prefs?.setProgress(
                                 context = this@DownloadMapService,
-                                path = DownloadedState(
-                                    path = it,
-                                    layers = args.layers,
-                                    boundingBox = args.bound,
-                                    author = args.author,
-                                    appName = args.appName
-                                )
+                                progress = 100,
+                                message = "Сохранение файла"
+                            )
+                            FileUtil(this@DownloadMapService).saveBitmapToExternalStorage(
+                                bitmap = bitmap!!,
+                                fileName = "${System.currentTimeMillis()}"
+                            )
+                                ?.let {
+                                    prefs?.setDownloaded(
+                                        context = this@DownloadMapService,
+                                        path = DownloadedState(
+                                            path = it,
+                                            layers = args.layers,
+                                            boundingBox = args.bound,
+                                            author = args.author,
+                                            appName = args.appName
+                                        )
+                                    )
+                                }
+                        }
+
+                        .onFailure {
+                            prefs?.setError(
+                                this@DownloadMapService,
+                                "Ошибка при формировании конечного файла: ${it.message}"
                             )
                         }
-                }
 
-                    .onFailure {
-                    prefs?.setError(
-                        this@DownloadMapService,
-                        "Ошибка при формировании конечного файла: ${it.message}"
-                    )
+                    tileManager.deleteTiles(downloadedTiles.data.values.flatten())
                 }
-
-                tileManager.deleteTiles(downloadedTiles.data.values.flatten())
             }
+            stopForeground(true)
+            stopSelf()
         }
-        stopForeground(true)
-        stopSelf()
     }
-}
 
-private fun updateNotification(message: String, maxProgress: Int, progress: Int) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        if (ActivityCompat.checkSelfPermission(
-                this@DownloadMapService,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
+    private fun updateNotification(message: String, maxProgress: Int, progress: Int) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(
+                    this@DownloadMapService,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                notifyNewNotification(message, maxProgress, progress)
+            }
+        } else {
             notifyNewNotification(message, maxProgress, progress)
         }
-    } else {
-        notifyNewNotification(message, maxProgress, progress)
     }
-}
 
-@RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
-private fun notifyNewNotification(message: String, maxProgress: Int, progress: Int) {
-    val updatedNotification = createNotification(
-        progressText = message,
-        maxProgress = maxProgress,
-        progress = progress
-    )
-    NotificationManagerCompat.from(this@DownloadMapService)
-        .notify(DOWNLOAD_MAP_NOTIFICATION_ID, updatedNotification)
-}
-
-override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-    if (intent != null) {
-        val args = intent.serializable(FORMING_MAP_ARGS) as? FormingMapArgs
-        downloadMap(args)
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+    private fun notifyNewNotification(message: String, maxProgress: Int, progress: Int) {
+        val updatedNotification = createNotification(
+            progressText = message,
+            maxProgress = maxProgress,
+            progress = progress
+        )
+        NotificationManagerCompat.from(this@DownloadMapService)
+            .notify(DOWNLOAD_MAP_NOTIFICATION_ID, updatedNotification)
     }
-    return super.onStartCommand(intent, flags, startId)
-}
 
-private fun createNotification(
-    maxProgress: Int,
-    progress: Int,
-    progressText: String
-): Notification {
-    return NotificationCompat.Builder(this, NotificationChannel.DOWNLOAD_CHANNEL_ID)
-        .setContentTitle("Загрузка карты")
-        .setContentText(progressText)
-        .setProgress(maxProgress, progress, false)
-        .setSmallIcon(android.R.drawable.stat_sys_download)
-        .setOnlyAlertOnce(true)
-        .setOngoing(true)
-        .build()
-}
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent != null) {
+            val args = intent.serializable(FORMING_MAP_ARGS) as? FormingMapArgs
+            downloadMap(args)
+        } else {
+            coroutineScope.launch {
+                prefs?.setError(
+                    this@DownloadMapService,
+                    "Ошибка при скачивании карты.\n код ошибки: $INTENT_IS_NULL_ERROR_CODE"
+                )
+            }
+        }
+        return super.onStartCommand(intent, flags, startId)
+    }
 
-companion object {
-    const val MAP_LIST_ARG = "mapList"
-    const val BOUND_ARG = "bound"
-    const val ZOOM_ARG = "zoom"
-    const val OBJECTS_ARG = "objects"
-    const val AUTHOR_ARG = "author"
-    const val FORMING_MAP_ARGS = "FORMING_MAP_ARGS"
-    const val DOWNLOAD_MAP_NOTIFICATION_ID = 788843
-}
+    private fun createNotification(
+        maxProgress: Int,
+        progress: Int,
+        progressText: String
+    ): Notification {
+        return NotificationCompat.Builder(this, NotificationChannel.DOWNLOAD_CHANNEL_ID)
+            .setContentTitle("Загрузка карты")
+            .setContentText(progressText)
+            .setProgress(maxProgress, progress, false)
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setOnlyAlertOnce(true)
+            .setOngoing(true)
+            .build()
+    }
 
-override fun onDestroy() {
-    super.onDestroy()
-    coroutineScope.coroutineContext.cancelChildren()
-}
+    companion object {
+        const val MAP_LIST_ARG = "mapList"
+        const val BOUND_ARG = "bound"
+        const val ZOOM_ARG = "zoom"
+        const val OBJECTS_ARG = "objects"
+        const val AUTHOR_ARG = "author"
+        const val FORMING_MAP_ARGS = "FORMING_MAP_ARGS"
+        const val DOWNLOAD_MAP_NOTIFICATION_ID = 788843
+        const val INTENT_IS_NULL_ERROR_CODE = "[DMS-001]"
+        const val EMPTY_ARGS_ERROR_CODE = "[DMS-002]"
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        coroutineScope.coroutineContext.cancelChildren()
+    }
 }

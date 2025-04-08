@@ -29,7 +29,11 @@ import kotlin.math.tan
  * */
 object GeoCalculator {
     const val EARTH_RADIUS = 6_378_140.0
-
+    private val crsFactory = CRSFactory()
+    private val crsDegree = crsFactory.createFromName("EPSG:4326") // WGS 84 (широта/долгота)
+    private val crsMercator = crsFactory.createFromName("EPSG:3857") // Web Mercator
+    private val transformFactory = CoordinateTransformFactory()
+    private val transform: CoordinateTransform = transformFactory.createTransform(crsDegree, crsMercator)
 
     suspend fun calculateTotalSizeCount(
         boundingBox: BoundingBox, zoom: Int
@@ -155,18 +159,8 @@ object GeoCalculator {
         return pointPixelX to pointPixelY
     }
     fun degreeToMercator(point: GeoPoint): Result<GeoPointMercator> {
-        val crsFactory = CRSFactory()
-        val crsDegree = crsFactory.createFromName("EPSG:4326") // WGS 84 (широта/долгота)
-        val crsMercator = crsFactory.createFromName("EPSG:3857") // Web Mercator
-
-        val transformFactory = CoordinateTransformFactory()
-        val transform: CoordinateTransform =
-            transformFactory.createTransform(crsDegree, crsMercator)
-
-        val sourceCoord =
-            ProjCoordinate(point.longitude, point.latitude) // Порядок: долгота, широта
+        val sourceCoord = ProjCoordinate(point.longitude, point.latitude) // Порядок: долгота, широта
         val targetCoord = ProjCoordinate()
-
         return try {
             transform.transform(sourceCoord, targetCoord)
             Result.success(GeoPointMercator(targetCoord.x, targetCoord.y))
@@ -209,12 +203,6 @@ object GeoCalculator {
 
 
     fun degreeToMercator(points: List<GeoPoint>): Result<List<GeoPointMercator>> {
-        val crsFactory = CRSFactory()
-        val crsDegree = crsFactory.createFromName("EPSG:4326") // WGS 84 (широта/долгота)
-        val crsMercator = crsFactory.createFromName("EPSG:3857") // Web Mercator
-        val transformFactory = CoordinateTransformFactory()
-        val transform: CoordinateTransform =
-            transformFactory.createTransform(crsDegree, crsMercator)
         val result = mutableListOf<GeoPointMercator>()
         points.forEach {
             val sourceCoord = ProjCoordinate(it.longitude, it.latitude) // Порядок: долгота, широта

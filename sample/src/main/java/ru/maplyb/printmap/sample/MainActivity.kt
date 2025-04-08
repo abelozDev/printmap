@@ -56,8 +56,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
         val lats = generateSequence(51.655322, 46.976288, 5000).map {
             GeoPoint(it, 38.2526255)
         }
-        val lines3000 = (0..3000).map {
-        }
+
         val lines = listOf(
             GeoPoint(48.9454533, 38.2526255),
             GeoPoint(48.93221440000001, 38.2555645),
@@ -1144,16 +1143,16 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             GeoPoint(49.25965321366459, 23.85797202028449),
         )
 
-        val generatedObjects = (0..100).map {
+        val generatedObjects = lats.map {
             LayerObject.Object(
                 style = MapObjectStyle(
-                    color = android.graphics.Color.BLUE,
+                    color = null,
                     width = 25f,
-                    name = it.toString()
+                    name = "object"
                 ),
-                coords = GeoPoint(50.40243799500318 + (it * 0.0001), 30.07808115663772 * (it * 0.0001)),
+                coords = it,
                 angle = -450f,
-                res = ObjectRes.Local(R.drawable.ic_mkb)
+                res = ObjectRes.Local(R.drawable.ic_mkb)/*ObjectRes.Storage("/storage/emulated/0/Download/rls.png")*/
             )
         }
         val objects = listOf(
@@ -1220,32 +1219,12 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                 name = "textetxtetxtetxtetxtetxte"
             ),
             Layer(
-                objects = listOf(
-                    LayerObject.Object(
-                        style = MapObjectStyle(
-                            color = null,
-                            width = 25f,
-                            name = "object"
-                        ),
-                        coords = GeoPoint(50.40243799500318, 30.07808115663772),
-                        angle = -450f,
-                        res = ObjectRes.Local(R.drawable.ic_mkb)/*ObjectRes.Storage("/storage/emulated/0/Download/rls.png")*/
-                    ),
-                    LayerObject.Object(
-                        style = MapObjectStyle(
-                            color = android.graphics.Color.BLUE,
-                            width = 25f,
-                            name = "object"
-                        ),
-                        coords = GeoPoint(50.43953753566805, 29.217526239284794),
-                        angle = -450f,
-                        res = ObjectRes.Local(R.drawable.ic_mkb)/*ObjectRes.Storage("/storage/emulated/0/Download/rls.png")*/
-                    )
-                ),
+                objects = generatedObjects,
                 selected = true,
                 name = "object"
             )
         )
+
         val itemToADD = MapItem(
             name = "added map ${System.currentTimeMillis()}",
             type = MapType.Online("https://mt0.google.com//vt/lyrs=s"),
@@ -1267,6 +1246,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                             lonWest = 22.327316,
                             latSouth = 46.976288,
                             lonEast = 38.433272
+//                            latNorth = 55.815435965076425, lonWest = 37.51182379097406, latSouth = 55.750216032030885, lonEast = 37.664861616294765
                         ),
                         maps = list,
                         zoom = 10,

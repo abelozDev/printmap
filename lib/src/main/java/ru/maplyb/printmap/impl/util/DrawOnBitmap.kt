@@ -29,6 +29,7 @@ import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
 import kotlin.math.cos
 import kotlin.math.roundToInt
+import androidx.core.graphics.withTranslation
 
 class DrawOnBitmap {
 
@@ -126,18 +127,16 @@ class DrawOnBitmap {
             val scaledHeight = (realHeight * scaleFactor1).toInt()
             val centerX = linesInPixels.first
             val centerY = linesInPixels.second
-            canvas.save()
-            canvas.translate(centerX, centerY)
-
-            canvas.rotate(objects.angle)
-            drawable.setBounds(
-                -scaledWidth / 2,
-                -scaledHeight / 2,
-                scaledWidth / 2,
-                scaledHeight / 2
-            )
-            drawable.draw(canvas)
-            canvas.restore()
+            canvas.withTranslation(centerX, centerY) {
+                rotate(objects.angle)
+                drawable.setBounds(
+                    -scaledWidth / 2,
+                    -scaledHeight / 2,
+                    scaledWidth / 2,
+                    scaledHeight / 2
+                )
+                drawable.draw(this)
+            }
             val textHeight = (objects.style.width * scaleFactor)
             val paint = defTextPaint(
                 context = context,
