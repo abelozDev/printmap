@@ -30,6 +30,7 @@ import ru.maplyb.printmap.api.model.GeoPoint
 import kotlin.math.roundToInt
 import androidx.core.graphics.withTranslation
 import okhttp3.internal.format
+import ru.maplyb.printmap.LatLon
 import ru.maplyb.printmap.getGeodesicLine
 
 class DrawOnBitmap {
@@ -277,7 +278,7 @@ class DrawOnBitmap {
                     textSize = 20f
                 )
                 val allLons = getLonLinesByDistance(
-                    startLon = boundingBox.lonWest ,
+                    startLon = boundingBox.lonWest,
                     endLon = boundingBox.lonEast,
                     stepDegrees
                 ).map {
@@ -307,7 +308,7 @@ class DrawOnBitmap {
                     for (i in 0..<item.lastIndex) {
                         val coords = allLons[j][i]
                         val start = item[i]
-                        val end = item[i+1]
+                        val end = item[i + 1]
                         canvas.drawLine(
                             start.first,
                             start.second,
@@ -349,7 +350,7 @@ class DrawOnBitmap {
                     val item = latLinesToPixel[j]
                     for (i in 0..<item.lastIndex) {
                         val start = item[i]
-                        val end = item[i+1]
+                        val end = item[i + 1]
                         canvas.drawLine(
                             start.first,
                             start.second,
@@ -359,18 +360,38 @@ class DrawOnBitmap {
                         )
                     }
                 }
-                findXPoints(latLinesToPixel, lonLinesToPixel).forEach { point ->
-                    canvas.drawCircle(point.x, point.y, 10f, Paint().apply {
-                        color = Color.RED
-                    })
+                findXPoints(/*latLinesToPixel*/allLats, /*lonLinesToPixel*/
+                    allLons
+                ).forEach { coords ->
+                    val point = convertGeoToPixel(
+                        coords,
+                        boundingBox,
+                        bitmapWidth = bitmap.width,
+                        bitmapHeight = bitmap.height
+                    )?.let {
+                        canvas.drawCircle(it.first, it.second, 10f, Paint().apply {
+                            color = Color.RED
+                        }
+                        )
+                        canvas.drawText(
+                            "${coords.latitude}, ${coords.longitude}",
+                            it.first,
+                            it.second,
+                            textPaint
+                        )
+                    }
+
                 }
                 bitmap
             }
         }
     }
 
-    private fun findXPoints(vertical:  List<List<Pair<Float, Float>>>, horizontal:  List<List<Pair<Float, Float>>>): List<PointF> {
-        val points = mutableListOf<PointF>()
+    private fun findXPoints(
+        vertical: List<List<LatLon>>,
+        horizontal: List<List<LatLon>>
+    ): List<GeoPoint> {
+        val points = mutableListOf<GeoPoint>()
         for (i in 0..vertical.lastIndex) {
             for (j in 0..<vertical[i].lastIndex) {
                 //j - > точка вертикальной линии
@@ -380,20 +401,38 @@ class DrawOnBitmap {
                     for (w in 0..<horizontal[q].lastIndex) {
                         val q1 = horizontal[q][w]
                         val q2 = horizontal[q][w + 1]
-                        val intersection = findIntersection(p1.first, p1.second, p2.first, p2.second, q1.first, q1.second, q2.first, q2.second)
-                        intersection?.let { points.add(it) }
+                        findIntersection(
+                            p1.lat,
+                            p1.lon,
+                            p2.lat,
+                            p2.lon,
+                            q1.lat,
+                            q1.lon,
+                            q2.lat,
+                            q2.lon
+                        )?.let { points.add(it) }
                     }
                 }
             }
         }
         return points
     }
+
     //Точка пересечения
-    fun findIntersection(x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float, x4: Float, y4: Float): PointF? {
+    fun findIntersection(
+        x1: Double,
+        y1: Double,
+        x2: Double,
+        y2: Double,
+        x3: Double,
+        y3: Double,
+        x4: Double,
+        y4: Double
+    ): GeoPoint? {
         val denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
 
         // Если знаменатель равен нулю, отрезки параллельны
-        if (denom == 0f) return null
+        if (denom == 0.0) return null
 
         val t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
         val u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / denom
@@ -402,7 +441,7 @@ class DrawOnBitmap {
         if (t in 0f..1f && u in 0f..1f) {
             val ix = x1 + t * (x2 - x1)
             val iy = y1 + t * (y2 - y1)
-            return PointF(ix, iy)
+            return GeoPoint(ix, iy)
         }
         return null
     }
@@ -417,15 +456,17 @@ class DrawOnBitmap {
         val result = (1..count).map { endLat + it * step }
         return result
     }
+
     private fun getLonLinesByDistance(
         startLon: Double,
         endLon: Double,
         step: Double
     ): List<Double> {
-        val count = ((endLon - startLon)/step).toInt()
+        val count = ((endLon - startLon) / step).toInt()
         val result = (1..count).map { startLon + it * step }
         return result
     }
+
     private fun getLatLinesByDistance(
         latSouth: Double,
         heightMeters: Double,
@@ -436,7 +477,6 @@ class DrawOnBitmap {
         val count = (heightMeters / stepMeters).toInt()
         return (1..count).map { latSouth + it * stepLat }
     }
-
 
 
     private fun getInnerIntervals(
