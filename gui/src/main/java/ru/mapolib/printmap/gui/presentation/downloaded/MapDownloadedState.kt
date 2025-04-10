@@ -19,7 +19,7 @@ internal sealed interface MapDownloadedState {
 }
 
 typealias Dpi = Int
-typealias CoordinateGridModel = Int
+typealias CoordinateGridModel = Double
 
 internal data class MapDownloadedUiState(
     val state: MapDownloadedState = MapDownloadedState.Initial,
@@ -57,7 +57,7 @@ internal data class CoordinateGridColor(
     }
 }
 
-internal val coordinateGridVariants: List<CoordinateGridModel> = listOf(1_000, 2_000, 5_000, 10_000)
+internal val coordinateGridVariants: List<CoordinateGridModel> = listOf(1.0, 0.5, 0.25, 0.125, 0.075, 0.05, 0.025, 0.01, 0.005, 0.0025)
 internal val dpiVariants: List<Dpi> = listOf(72,300)
 
 sealed interface ExportTypes {
@@ -101,7 +101,7 @@ internal sealed interface MapDownloadedEvent: PrintMapEvent {
     /*CoordinateGrid*/
     class ChangeCheckCoordinateGrid: MapDownloadedEvent
     data class CoordinateGridSliderValueChangeFinished(val value: Float): MapDownloadedEvent
-    data class SelectCoordinateGrid(val value: Int): MapDownloadedEvent
+    data class SelectCoordinateGrid(val value: Double): MapDownloadedEvent
     class UpdateCoordinateGridColor(val color: CoordinateGridColor): MapDownloadedEvent
 
 }

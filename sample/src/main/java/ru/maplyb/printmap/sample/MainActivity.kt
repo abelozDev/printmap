@@ -1242,11 +1242,14 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                     downloadManager.prepareDownloading(
                         boundingBox = BoundingBox(
 //                            latNorth = 55.45021687930256, lonWest = 37.51531531165744, latSouth =  55.43207979637628, lonEast = 37.546198869620454
-                            latNorth = 51.655322,
+                            /*latNorth = 51.655322,
                             lonWest = 22.327316,
                             latSouth = 46.976288,
-                            lonEast = 38.433272
-//                            latNorth = 55.815435965076425, lonWest = 37.51182379097406, latSouth = 55.750216032030885, lonEast = 37.664861616294765
+                            lonEast = 38.433272*/
+                            //высокая ,
+//                            latNorth = 59.36805835073653, lonWest = 30.240028688049094, latSouth = 51.1522083099274, lonEast = 41.43918466716713
+//                            latNorth = 56.2465044223813, lonWest = 36.544779387896185, latSouth = 55.19410814700746, lonEast = 38.86651750066963
+                            latNorth = 55.815435965076425, lonWest = 37.51182379097406, latSouth = 55.750216032030885, lonEast = 37.664861616294765
                         ),
                         maps = list,
                         zoom = 10,

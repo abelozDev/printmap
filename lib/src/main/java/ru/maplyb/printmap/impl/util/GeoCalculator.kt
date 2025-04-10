@@ -1,5 +1,6 @@
 package ru.maplyb.printmap.impl.util
 
+import android.graphics.PointF
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.osgeo.proj4j.CRSFactory
@@ -158,7 +159,8 @@ object GeoCalculator {
         val pointPixelY = ((leftTopPoint.y - pointsMercator.y) / pixelSizeY).toFloat()
         return pointPixelX to pointPixelY
     }
-    fun degreeToMercator(point: GeoPoint): Result<GeoPointMercator> {
+
+    private fun degreeToMercator(point: GeoPoint): Result<GeoPointMercator> {
         val sourceCoord = ProjCoordinate(point.longitude, point.latitude) // Порядок: долгота, широта
         val targetCoord = ProjCoordinate()
         return try {

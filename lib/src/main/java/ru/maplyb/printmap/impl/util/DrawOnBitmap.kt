@@ -6,10 +6,13 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PointF
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -21,15 +24,13 @@ import ru.maplyb.printmap.api.model.ObjectRes
 import ru.maplyb.printmap.impl.util.GeoCalculator.convertGeoToPixel
 import kotlin.math.sqrt
 import androidx.core.graphics.withSave
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import ru.maplyb.printmap.api.model.GeoPoint
-import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
-import kotlin.math.cos
 import kotlin.math.roundToInt
 import androidx.core.graphics.withTranslation
+import okhttp3.internal.format
+import ru.maplyb.printmap.getGeodesicLine
 
 class DrawOnBitmap {
 
@@ -219,7 +220,7 @@ class DrawOnBitmap {
     }
 
     suspend fun drawScaleLines(
-        stepMeters: Int = 1000,
+        stepDegrees: Double,
         context: Context,
         bitmap: Bitmap,
         boundingBox: BoundingBox,
@@ -229,70 +230,16 @@ class DrawOnBitmap {
             withContext(Dispatchers.IO) {
                 val paint = defTextPaint(
                     context = context,
-                    color = Color.RED,
+                    color = Color.BLUE,
                     strokeWidth = width,
                     textSize = 0f
                 )
                 val canvas = Canvas(bitmap)
-                val widthGeoMetr = distanceBetween(
-                    boundingBox.latNorth,
-                    boundingBox.lonWest,
-                    boundingBox.latNorth,
-                    boundingBox.lonEast
-                )
-                val heightGeoMetr = distanceBetween(
-                    boundingBox.latNorth,
-                    boundingBox.lonWest,
-                    boundingBox.latSouth,
-                    boundingBox.lonWest
-                )
-                val midLat = (boundingBox.latNorth + boundingBox.latSouth) / 2
-                val latLines = getLatLinesByDistance(
-                    boundingBox.latSouth,
-                    boundingBox.latNorth,
-                    heightGeoMetr,
-                    stepMeters
-                )
-                val lonLines = getLonLinesByDistance(
+                /*val lonLines = getLonLinesByDistance(
                     boundingBox.lonWest,
                     boundingBox.lonEast,
-                    midLat,
-                    widthGeoMetr,
-                    stepMeters
+                    stepDegrees
                 )
-                val startLatPoint = convertGeoToPixel(
-                    latLines.map {
-                        GeoPoint(
-                            latitude = it,
-                            longitude = boundingBox.lonWest
-                        )
-                    },
-                    boundingBox,
-                    bitmapWidth = bitmap.width,
-                    bitmapHeight = bitmap.height
-                ) ?: return@withContext bitmap
-                val endLatPoint = convertGeoToPixel(
-                    latLines.map {
-                        GeoPoint(
-                            latitude = it,
-                            longitude = boundingBox.lonEast
-                        )
-                    },
-                    boundingBox,
-                    bitmapWidth = bitmap.width,
-                    bitmapHeight = bitmap.height
-                ) ?: return@withContext bitmap
-                startLatPoint
-                    .zip(endLatPoint).forEach { (start, end) ->
-                        canvas.drawLine(
-                            start.first,
-                            start.second,
-                            end.first,
-                            end.second,
-                            paint
-                        )
-                    }
-
                 val startLonPoint = convertGeoToPixel(
                     lonLines.map {
                         GeoPoint(
@@ -323,38 +270,174 @@ class DrawOnBitmap {
                         end.second,
                         paint
                     )
+                }*/
+                val textPaint = defTextPaint(
+                    context = context,
+                    color = Color.YELLOW,
+                    textSize = 20f
+                )
+                val allLons = getLonLinesByDistance(
+                    startLon = boundingBox.lonWest ,
+                    endLon = boundingBox.lonEast,
+                    stepDegrees
+                ).map {
+                    getGeodesicLine(
+                        startLat = boundingBox.latNorth,
+                        startLon = it,
+                        endLat = boundingBox.latSouth,
+                        endLon = it,
+                        stepMeters = 1000.0
+                    )
+                }
+                val lonLinesToPixel = allLons.map { lonLines ->
+                    convertGeoToPixel(
+                        lonLines.map {
+                            GeoPoint(
+                                latitude = it.lat,
+                                longitude = it.lon
+                            )
+                        },
+                        boundingBox,
+                        bitmapWidth = bitmap.width,
+                        bitmapHeight = bitmap.height
+                    )!!
+                }
+                for (j in 0..lonLinesToPixel.lastIndex) {
+                    val item = lonLinesToPixel[j]
+                    for (i in 0..<item.lastIndex) {
+                        val coords = allLons[j][i]
+                        val start = item[i]
+                        val end = item[i+1]
+                        canvas.drawLine(
+                            start.first,
+                            start.second,
+                            end.first,
+                            end.second,
+                            paint
+                        )
+//                        canvas.drawText("${coords.lat}, ${coords.lon}", end.first, end.second, textPaint)
+                    }
+                }
+                val allLats = latsList(
+                    startLat = boundingBox.latNorth,
+                    endLat = boundingBox.latSouth,
+                    stepDegrees
+                ).map {
+                    getGeodesicLine(
+                        startLat = it,
+                        startLon = boundingBox.lonWest,
+                        endLat = it,
+                        endLon = boundingBox.lonEast,
+                        stepMeters = 1000.0
+                    )
+                }
+                val latLinesToPixel = allLats.map { lonLines ->
+                    convertGeoToPixel(
+                        lonLines.map {
+                            GeoPoint(
+                                latitude = it.lat,
+                                longitude = it.lon
+                            )
+                        },
+                        boundingBox,
+                        bitmapWidth = bitmap.width,
+                        bitmapHeight = bitmap.height
+                    )!!
+                }
+                /*Вертикальные*/
+                for (j in 0..latLinesToPixel.lastIndex) {
+                    val item = latLinesToPixel[j]
+                    for (i in 0..<item.lastIndex) {
+                        val start = item[i]
+                        val end = item[i+1]
+                        canvas.drawLine(
+                            start.first,
+                            start.second,
+                            end.first,
+                            end.second,
+                            paint
+                        )
+                    }
+                }
+                findXPoints(latLinesToPixel, lonLinesToPixel).forEach { point ->
+                    canvas.drawCircle(point.x, point.y, 10f, Paint().apply {
+                        color = Color.RED
+                    })
                 }
                 bitmap
             }
         }
     }
 
-    fun getLatLinesByDistance(
+    private fun findXPoints(vertical:  List<List<Pair<Float, Float>>>, horizontal:  List<List<Pair<Float, Float>>>): List<PointF> {
+        val points = mutableListOf<PointF>()
+        for (i in 0..vertical.lastIndex) {
+            for (j in 0..<vertical[i].lastIndex) {
+                //j - > точка вертикальной линии
+                val p1 = vertical[i][i]
+                val p2 = vertical[i][i + 1]
+                for (q in 0..horizontal.lastIndex) {
+                    for (w in 0..<horizontal[q].lastIndex) {
+                        val q1 = horizontal[q][w]
+                        val q2 = horizontal[q][w + 1]
+                        val intersection = findIntersection(p1.first, p1.second, p2.first, p2.second, q1.first, q1.second, q2.first, q2.second)
+                        intersection?.let { points.add(it) }
+                    }
+                }
+            }
+        }
+        return points
+    }
+    //Точка пересечения
+    fun findIntersection(x1: Float, y1: Float, x2: Float, y2: Float, x3: Float, y3: Float, x4: Float, y4: Float): PointF? {
+        val denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+
+        // Если знаменатель равен нулю, отрезки параллельны
+        if (denom == 0f) return null
+
+        val t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+        val u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / denom
+
+        // Если t и u находятся в пределах отрезков (0 <= t <= 1 и 0 <= u <= 1), то отрезки пересекаются
+        if (t in 0f..1f && u in 0f..1f) {
+            val ix = x1 + t * (x2 - x1)
+            val iy = y1 + t * (y2 - y1)
+            return PointF(ix, iy)
+        }
+        return null
+    }
+
+
+    private fun latsList(
+        startLat: Double,
+        endLat: Double,
+        step: Double
+    ): List<Double> {
+        val count = ((startLat - endLat) / step).toInt()
+        val result = (1..count).map { endLat + it * step }
+        return result
+    }
+    private fun getLonLinesByDistance(
+        startLon: Double,
+        endLon: Double,
+        step: Double
+    ): List<Double> {
+        val count = ((endLon - startLon)/step).toInt()
+        val result = (1..count).map { startLon + it * step }
+        return result
+    }
+    private fun getLatLinesByDistance(
         latSouth: Double,
-        latNorth: Double,
         heightMeters: Double,
         stepMeters: Int
     ): List<Double> {
         val metersPerDegreeLat = 111_000.0
         val stepLat = stepMeters / metersPerDegreeLat
         val count = (heightMeters / stepMeters).toInt()
-
         return (1..count).map { latSouth + it * stepLat }
     }
 
-    fun getLonLinesByDistance(
-        lonWest: Double,
-        lonEast: Double,
-        latAt: Double, // средняя широта
-        widthMeters: Double,
-        stepMeters: Int
-    ): List<Double> {
-        val metersPerDegreeLon = 111_320.0 * cos(Math.toRadians(latAt))
-        val stepLon = stepMeters / metersPerDegreeLon
-        val count = (widthMeters / stepMeters).toInt()
 
-        return (1..count).map { lonWest + it * stepLon }
-    }
 
     private fun getInnerIntervals(
         start: Double,

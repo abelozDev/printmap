@@ -38,13 +38,13 @@ import kotlin.math.roundToInt
 @Composable
 internal fun CoordinateGrid(
     sliderInfo: MapObjectSliderInfo,
-    selectedCoordinateGrid: Int,
+    selectedCoordinateGrid: Double,
     checked: Boolean,
     selectedColor: Int?,
     onCheckedChanged: (Boolean) -> Unit,
     onSliderValueChangedFinished: (Float) -> Unit,
     onColorChangeClicked: () -> Unit,
-    selectCoordinateGrid: (Int) -> Unit
+    selectCoordinateGrid: (Double) -> Unit
 ) {
     var sliderState by remember {
         mutableFloatStateOf(sliderInfo.value)
