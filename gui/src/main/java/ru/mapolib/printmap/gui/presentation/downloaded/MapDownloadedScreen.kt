@@ -312,7 +312,9 @@ internal fun MapDownloadedScreen(
         }
         is MapDownloadedState.ChangeCoordinatesGridColor -> {
             Dialog(
-                onDismissRequest = {},
+                onDismissRequest = {
+
+                },
                 content = {
                     PalletScreen(
                         initialColor = state.coordinateGridColor.color.toColor(),

@@ -126,6 +126,7 @@ internal class MapDownloadedViewModel(
                         context = context,
                         bitmap = bitmapWithDefaults,
                         boundingBox = currentState.boundingBox,
+                        color = currentState.coordinateGridColor.color,
                         width = currentState.coordinatesGridSliderInfo.value
                     ) else bitmapWithDefaults
                     _state.update {
@@ -292,6 +293,15 @@ internal class MapDownloadedViewModel(
                 }
                 drawLayers()
             }
+            is MapDownloadedEvent.UpdateCoordinateGridColor -> {
+                _state.update {
+                    it.copy(
+                        state = MapDownloadedState.Initial,
+                        coordinateGridColor = action.color
+                    )
+                }
+                drawLayers()
+            }
 
             is MapDownloadedEvent.ChangeCheckCoordinateGrid -> {
                 _state.update {
@@ -319,14 +329,7 @@ internal class MapDownloadedViewModel(
                 }
                 drawLayers()
             }
-            is MapDownloadedEvent.UpdateCoordinateGridColor -> {
-                _state.update {
-                    it.copy(
-                        coordinateGridColor = action.color
-                    )
-                }
-                drawLayers()
-            }
+
         }
     }
 

@@ -1,18 +1,16 @@
 package ru.maplyb.printmap.impl.util
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.PointF
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -29,7 +27,6 @@ import kotlinx.coroutines.ensureActive
 import ru.maplyb.printmap.api.model.GeoPoint
 import kotlin.math.roundToInt
 import androidx.core.graphics.withTranslation
-import okhttp3.internal.format
 import ru.maplyb.printmap.LatLon
 import ru.maplyb.printmap.getGeodesicLine
 
@@ -223,6 +220,7 @@ class DrawOnBitmap {
     suspend fun drawScaleLines(
         stepDegrees: Double,
         context: Context,
+        color: Int,
         bitmap: Bitmap,
         boundingBox: BoundingBox,
         width: Float,
@@ -231,7 +229,7 @@ class DrawOnBitmap {
             withContext(Dispatchers.IO) {
                 val paint = defTextPaint(
                     context = context,
-                    color = Color.BLUE,
+                    color = color,
                     strokeWidth = width,
                     textSize = 0f
                 )
@@ -303,10 +301,13 @@ class DrawOnBitmap {
                         bitmapHeight = bitmap.height
                     )!!
                 }
+                /*Вертикальные*/
                 for (j in 0..lonLinesToPixel.lastIndex) {
                     val item = lonLinesToPixel[j]
+                    val coords = allLons[j][0]
+                    val formatted = String.format(null, "%.5f", coords.lon)
+                    canvas.drawText(formatted, item[0].first, item[0].second + 20f, textPaint)
                     for (i in 0..<item.lastIndex) {
-                        val coords = allLons[j][i]
                         val start = item[i]
                         val end = item[i + 1]
                         canvas.drawLine(
@@ -316,7 +317,6 @@ class DrawOnBitmap {
                             end.second,
                             paint
                         )
-//                        canvas.drawText("${coords.lat}, ${coords.lon}", end.first, end.second, textPaint)
                     }
                 }
                 val allLats = latsList(
@@ -345,9 +345,12 @@ class DrawOnBitmap {
                         bitmapHeight = bitmap.height
                     )!!
                 }
-                /*Вертикальные*/
+                /*Горизонтальные*/
                 for (j in 0..latLinesToPixel.lastIndex) {
                     val item = latLinesToPixel[j]
+                    val coords = allLats[j][0]
+                    val formatted = String.format(null, "%.5f", coords.lat)
+                    canvas.drawText(formatted, item[0].first, item[0].second, textPaint)
                     for (i in 0..<item.lastIndex) {
                         val start = item[i]
                         val end = item[i + 1]
@@ -360,7 +363,7 @@ class DrawOnBitmap {
                         )
                     }
                 }
-                findXPoints(/*latLinesToPixel*/allLats, /*lonLinesToPixel*/
+                /*findXPoints(*//*latLinesToPixel*//*allLats, *//*lonLinesToPixel*//*
                     allLons
                 ).forEach { coords ->
                     val point = convertGeoToPixel(
@@ -381,7 +384,7 @@ class DrawOnBitmap {
                         )
                     }
 
-                }
+                }*/
                 bitmap
             }
         }
@@ -446,25 +449,28 @@ class DrawOnBitmap {
         return null
     }
 
-
     private fun latsList(
         startLat: Double,
         endLat: Double,
         step: Double
     ): List<Double> {
-        val count = ((startLat - endLat) / step).toInt()
-        val result = (1..count).map { endLat + it * step }
-        return result
+        val roundedStartLat = roundCoordToNearestStep(startLat, /*step*/)
+        val count = ((roundedStartLat - endLat) / step).toInt()
+        return (1..count).map { roundedStartLat - it * step }
     }
-
     private fun getLonLinesByDistance(
         startLon: Double,
         endLon: Double,
         step: Double
     ): List<Double> {
-        val count = ((endLon - startLon) / step).toInt()
-        val result = (1..count).map { startLon + it * step }
+        val roundedStartLon = roundCoordToNearestStep(endLon, /*step*/)
+        val count = ((roundedStartLon - startLon) / step).toInt()
+        val result = (1..count).map { roundedStartLon - it * step }
         return result
+    }
+    private fun roundCoordToNearestStep(value: Double): Double {
+        val round = (value * 100).roundToInt() / 100.0
+        return round
     }
 
     private fun getLatLinesByDistance(
