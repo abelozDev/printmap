@@ -13,10 +13,16 @@ jobs:
       - name: Run lint
         run: ./gradlew lintDebug
 
-      - name: Upload html test report
+      - name: Prepare reports directory
+        run: |
+          mkdir -p lint-reports
+          cp lib/build/reports/lint-results-debug.html lint-reports/lib-lint.html
+          cp gui/build/reports/lint-results-debug.html lint-reports/gui-lint.html
+
+      - name: Upload html reports
         uses: actions/upload-artifact@v4
         with:
-          name: index.html
-          paths: lib/build/reports/lint-results-debug.html, gui/build/reports/lint-results-debug.html
+          name: lint-html-reports
+        path: lint-reports/
 
 
