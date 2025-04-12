@@ -120,18 +120,19 @@ internal class MapDownloadedViewModel(
                             bitmap = bitmapWithDraw
                         )
                     } else bitmapWithDraw
-                    val bitmapWithDefaults = setDefault(rotatedBitmap)
                     val innerIntervals = if (currentState.showCoordinateGrid) DrawOnBitmap().drawScaleLines(
                         stepDegrees = currentState.coordinateGrid,
                         context = context,
-                        bitmap = bitmapWithDefaults,
+                        bitmap = rotatedBitmap,
                         boundingBox = currentState.boundingBox,
                         color = currentState.coordinateGridColor.color,
                         width = currentState.coordinatesGridSliderInfo.value
-                    ) else bitmapWithDefaults
+                    ) else rotatedBitmap
+                    val bitmapWithDefaults = setDefault(innerIntervals)
+
                     _state.update {
                         it.copy(
-                            bitmap = innerIntervals
+                            bitmap = bitmapWithDefaults
                         )
                     }
                 }
