@@ -40,7 +40,7 @@ jobs:
 
       - name: Prepare reports directory
         run: |
-            mkdir -p unit-tests--reports
+            mkdir -p unit-tests-reports
             find . -type f -path "*/build/reports/tests/testDebugUnitTest/index.html" | while read file; do
               module_name=$(echo "$file" | cut -d'/' -f2)
               cp "$file" "unit-tests-reports/${module_name}-unit-tests.html"
