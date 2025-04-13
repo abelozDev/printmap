@@ -2,7 +2,6 @@ name: CI
 
 on: [push]
 
-
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -52,5 +51,31 @@ jobs:
         with:
           name: unit-tests-html-reports
           path: unit-tests-reports/
+
+  build_sample:
+    if: github.ref == 'refs/heads/master'
+    needs: [unit-test]
+    name: "Assemble Android Debug Build"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-disabled: false
+          cache-read-only: false
+          cache-write-only: false
+
+      - name: Build Android Debug App
+        run: ./gradlew :sample:assembleDebug
 
 
