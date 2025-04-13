@@ -24,12 +24,11 @@ import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.LayerObject
 import ru.maplyb.printmap.api.model.OperationResult
-import ru.maplyb.printmap.impl.util.DrawOnBitmap
+import ru.maplyb.printmap.impl.util.draw_on_bitmap.DrawOnBitmap
 import ru.maplyb.printmap.impl.files.FileUtil
 import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
 import ru.maplyb.printmap.impl.util.defTextPaint
 import ru.mapolib.printmap.gui.presentation.util.PrintMapViewModel
-import ru.mapolib.printmap.gui.utils.scale.pixelsPerCm
 import ru.mapolib.printmap.gui.utils.scale.roundScale
 import kotlin.math.hypot
 import kotlin.math.roundToInt

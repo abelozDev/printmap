@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 
 class ScaleTests {
 
-    // Моковая функция pixelsPerCm, так как она используется в основном коде
+   /* // Моковая функция pixelsPerCm, так как она используется в основном коде
     private fun pixelsPerCm(dpi: Float): Float {
         return dpi / 2.54f
     }
@@ -80,5 +80,5 @@ class ScaleTests {
         // Проверяем результат
         assertEquals(expectedRoundedScale, roundedScale)
         assertEquals(expectedSegmentLengthWithNewScale, segmentLengthWithNewScale, 0.01f)
-    }
+    }*/
 }

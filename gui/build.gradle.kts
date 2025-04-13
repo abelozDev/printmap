@@ -37,6 +37,9 @@ android {
         compose = true
     }
 }
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
 publishing {
     publications {
         register<MavenPublication>("release") {
@@ -67,6 +70,7 @@ dependencies {
     testImplementation(libs.junit.jupiter.api)
     testImplementation(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.jupiter.engine)
+    testImplementation(kotlin("test"))
     debugImplementation(libs.androidx.ui.tooling)
     implementation(libs.coil)
     implementation(libs.coil.compose)

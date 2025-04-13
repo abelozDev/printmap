@@ -47,7 +47,9 @@ publishing {
         }
     }
 }
-
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
 dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.window.manager)
@@ -55,6 +57,14 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.coil)
     implementation(libs.kotlinx.serialization.json)
+
+    //test
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testImplementation(kotlin("test"))
+    
     //network
     implementation(libs.retrofit)
     implementation(libs.moshi)

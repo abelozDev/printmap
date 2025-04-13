@@ -1,6 +1,5 @@
-package ru.maplyb.printmap.impl.util
+package ru.maplyb.printmap.impl.util.draw_on_bitmap
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -29,6 +28,7 @@ import kotlin.math.roundToInt
 import androidx.core.graphics.withTranslation
 import ru.maplyb.printmap.LatLon
 import ru.maplyb.printmap.getGeodesicLine
+import ru.maplyb.printmap.impl.util.defTextPaint
 
 class DrawOnBitmap {
 
@@ -468,10 +468,7 @@ class DrawOnBitmap {
         val result = (1..count).map { roundedStartLon - it * step }
         return result
     }
-    private fun roundCoordToNearestStep(value: Double): Double {
-        val round = (value * 100).roundToInt() / 100.0
-        return round
-    }
+
 
     private fun getLatLinesByDistance(
         latSouth: Double,

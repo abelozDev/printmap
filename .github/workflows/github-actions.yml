@@ -16,13 +16,41 @@ jobs:
       - name: Prepare reports directory
         run: |
           mkdir -p lint-reports
-          cp lib/build/reports/lint-results-debug.html lint-reports/lib-lint.html
-          cp gui/build/reports/lint-results-debug.html lint-reports/gui-lint.html
+          find . -type f -path "*/build/reports/lint-results-debug.html" | while read file; do
+            module_name=$(echo "$file" | cut -d'/' -f2)
+            cp "$file" "lint-reports/${module_name}-lint.html"
+          done
 
       - name: Upload html reports
         uses: actions/upload-artifact@v4
         with:
           name: lint-html-reports
           path: lint-reports/
+
+
+  unit-test:
+    needs: [lint]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+
+      - name: Run unit tests
+        run: ./gradlew test
+
+      - name: Prepare reports directory
+        run: |
+            mkdir -p unit-tests--reports
+            find . -type f -path "*/build/reports/tests/testDebugUnitTest/index.html" | while read file; do
+              module_name=$(echo "$file" | cut -d'/' -f2)
+              cp "$file" "unit-tests-reports/${module_name}-unit-tests.html"
+            done
+
+      - name: Upload html reports
+        uses: actions/upload-artifact@v4
+
+        with:
+          name: unit-tests-html-reports
+          path: unit-tests-reports/
 
 
