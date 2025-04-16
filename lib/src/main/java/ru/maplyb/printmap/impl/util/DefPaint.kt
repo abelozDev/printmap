@@ -14,10 +14,10 @@ fun defTextPaint(
     return Paint().apply {
         isAntiAlias = true
         textAlign = Paint.Align.LEFT
-//        typeface = gostTypeATypeface(context = context)
+        typeface = gostTypeATypeface(context = context)
         this.color = color
         this.textSize = textSize
-//        letterSpacing = -0.05f
+        letterSpacing = -0.05f
         this.style = style
         this.strokeWidth = strokeWidth
     }

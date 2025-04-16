@@ -28,6 +28,7 @@ import kotlin.math.roundToInt
 import androidx.core.graphics.withTranslation
 import ru.maplyb.printmap.LatLon
 import ru.maplyb.printmap.getGeodesicLine
+import ru.maplyb.printmap.impl.util.converters.WGSToSK42Converter
 import ru.maplyb.printmap.impl.util.defTextPaint
 
 class DrawOnBitmap {
@@ -225,6 +226,7 @@ class DrawOnBitmap {
         boundingBox: BoundingBox,
         width: Float,
     ): Bitmap {
+
         return coroutineScope {
             withContext(Dispatchers.IO) {
                 val paint = defTextPaint(
@@ -234,42 +236,7 @@ class DrawOnBitmap {
                     textSize = 0f
                 )
                 val canvas = Canvas(bitmap)
-                /*val lonLines = getLonLinesByDistance(
-                    boundingBox.lonWest,
-                    boundingBox.lonEast,
-                    stepDegrees
-                )
-                val startLonPoint = convertGeoToPixel(
-                    lonLines.map {
-                        GeoPoint(
-                            latitude = boundingBox.latNorth,
-                            longitude = it
-                        )
-                    },
-                    boundingBox,
-                    bitmapWidth = bitmap.width,
-                    bitmapHeight = bitmap.height
-                ) ?: return@withContext bitmap
-                val endLonPoint = convertGeoToPixel(
-                    lonLines.map {
-                        GeoPoint(
-                            latitude = boundingBox.latSouth,
-                            longitude = it
-                        )
-                    },
-                    boundingBox,
-                    bitmapWidth = bitmap.width,
-                    bitmapHeight = bitmap.height
-                ) ?: return@withContext bitmap
-                startLonPoint.zip(endLonPoint).forEach { (start, end) ->
-                    canvas.drawLine(
-                        start.first,
-                        start.second,
-                        end.first,
-                        end.second,
-                        paint
-                    )
-                }*/
+                val converterToSk = WGSToSK42Converter()
                 val textPaint = defTextPaint(
                     context = context,
                     color = Color.YELLOW,
@@ -305,8 +272,12 @@ class DrawOnBitmap {
                 for (j in 0..lonLinesToPixel.lastIndex) {
                     val item = lonLinesToPixel[j]
                     val coords = allLons[j][0]
-                    val formatted = String.format(null, "%.5f", coords.lon)
-                    canvas.drawText(formatted, item[0].first, item[0].second + 20f, textPaint)
+                    /*for wgs*/
+//                    val formatted = String.format(null, "%.5f", coords.lon)
+                    /*for sk42*/
+                    val (lat, lon) = converterToSk.wgs84ToSk42(coords.lat, coords.lon)
+
+                    canvas.drawText(lon.roundToInt().toString(), item[0].first, item[0].second + 20f, textPaint)
                     for (i in 0..<item.lastIndex) {
                         val start = item[i]
                         val end = item[i + 1]
@@ -349,8 +320,11 @@ class DrawOnBitmap {
                 for (j in 0..latLinesToPixel.lastIndex) {
                     val item = latLinesToPixel[j]
                     val coords = allLats[j][0]
+                    /*for wgs*/
                     val formatted = String.format(null, "%.5f", coords.lat)
-                    canvas.drawText(formatted, item[0].first, item[0].second, textPaint)
+                    /*for sk42*/
+                    val (lat, lon) = converterToSk.wgs84ToSk42(coords.lat, coords.lon)
+                    canvas.drawText(lat.roundToInt().toString(), item[0].first, item[0].second, textPaint)
                     for (i in 0..<item.lastIndex) {
                         val start = item[i]
                         val end = item[i + 1]
@@ -363,28 +337,6 @@ class DrawOnBitmap {
                         )
                     }
                 }
-                /*findXPoints(*//*latLinesToPixel*//*allLats, *//*lonLinesToPixel*//*
-                    allLons
-                ).forEach { coords ->
-                    val point = convertGeoToPixel(
-                        coords,
-                        boundingBox,
-                        bitmapWidth = bitmap.width,
-                        bitmapHeight = bitmap.height
-                    )?.let {
-                        canvas.drawCircle(it.first, it.second, 10f, Paint().apply {
-                            color = Color.RED
-                        }
-                        )
-                        canvas.drawText(
-                            "${coords.latitude}, ${coords.longitude}",
-                            it.first,
-                            it.second,
-                            textPaint
-                        )
-                    }
-
-                }*/
                 bitmap
             }
         }
@@ -421,8 +373,9 @@ class DrawOnBitmap {
         return points
     }
 
+
     //Точка пересечения
-    fun findIntersection(
+    private fun findIntersection(
         x1: Double,
         y1: Double,
         x2: Double,

@@ -76,6 +76,6 @@ jobs:
           cache-write-only: false
 
       - name: Build Android Debug App
-        run: ./gradlew :sample:assembleDebug
+        run: ./gradlew :sample:assembleDebug --stacktrace
 
 
