@@ -126,7 +126,8 @@ internal class MapDownloadedViewModel(
                         bitmap = bitmapWithDefaults,
                         boundingBox = currentState.boundingBox,
                         color = currentState.coordinateGridColor.color,
-                        width = currentState.coordinatesGridSliderInfo.value
+                        width = currentState.coordinatesGridSliderInfo.value,
+                        coordinateSystem = currentState.coordinateSystem,
                     ) else bitmapWithDefaults
                     _state.update {
                         it.copy(
@@ -324,6 +325,24 @@ internal class MapDownloadedViewModel(
                 _state.update {
                     it.copy(
                         coordinateGrid = action.value
+                    )
+                }
+                drawLayers()
+            }
+
+            is MapDownloadedEvent.SelectCoordinateSystem -> {
+                _state.update {
+                    it.copy(
+                        coordinateSystem = action.system
+                    )
+                }
+                drawLayers()
+            }
+            
+            is MapDownloadedEvent.SelectSK42Zone -> {
+                _state.update {
+                    it.copy(
+                        sk42Zone = action.zone
                     )
                 }
                 drawLayers()

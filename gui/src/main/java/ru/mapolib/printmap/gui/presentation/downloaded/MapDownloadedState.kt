@@ -6,6 +6,7 @@ import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.LayerObject
 import ru.maplyb.printmap.impl.domain.model.PageFormat
+import ru.maplyb.printmap.impl.util.draw_on_bitmap.CoordinateSystem
 import ru.mapolib.printmap.gui.domain.MapObjectSliderInfo
 import ru.mapolib.printmap.gui.presentation.util.PrintMapEffect
 import ru.mapolib.printmap.gui.presentation.util.PrintMapEvent
@@ -46,7 +47,9 @@ internal data class MapDownloadedUiState(
 
     val name: String = "",
     val layerObjectsColor: Map<String, Int?>,
-    val layers: List<Layer>
+    val layers: List<Layer>,
+    val coordinateSystem: CoordinateSystem = CoordinateSystem.SK42,
+    val sk42Zone: Int? = null
 )
 
 internal data class CoordinateGridColor(
@@ -104,6 +107,9 @@ internal sealed interface MapDownloadedEvent: PrintMapEvent {
     data class SelectCoordinateGrid(val value: Double): MapDownloadedEvent
     class UpdateCoordinateGridColor(val color: CoordinateGridColor): MapDownloadedEvent
 
+    /*CoordinateSystem*/
+    data class SelectCoordinateSystem(val system: CoordinateSystem): MapDownloadedEvent
+    data class SelectSK42Zone(val zone: Int): MapDownloadedEvent
 }
 internal sealed interface MapDownloadedEffect: PrintMapEffect {
     data class DeleteMap(val path: String): MapDownloadedEffect
@@ -117,3 +123,4 @@ internal enum class ImageOrientation(val description: String) {
         return if (this == PORTRAIT) LANDSCAPE else PORTRAIT
     }
 }
+
