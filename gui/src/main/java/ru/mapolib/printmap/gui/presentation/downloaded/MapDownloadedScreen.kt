@@ -196,6 +196,10 @@ internal fun MapDownloadedScreen(
             },
             selectCoordinateGrid = {
                 viewModel.sendEvent(MapDownloadedEvent.SelectCoordinateGrid(it))
+            },
+            selectedCoordSystem = state.coordinateSystem,
+            selectCoordinateSystem = {
+                viewModel.sendEvent(MapDownloadedEvent.SelectCoordinateSystem(it))
             }
         )
         Row(

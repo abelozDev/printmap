@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import ru.maplyb.printmap.impl.util.draw_on_bitmap.CoordinateSystem
 import ru.mapolib.printmap.gui.domain.MapObjectSliderInfo
 import ru.mapolib.printmap.gui.presentation.components.PrintmapPopup
 import ru.mapolib.printmap.gui.presentation.downloaded.coordinateGridVariants
@@ -39,12 +40,14 @@ import kotlin.math.roundToInt
 internal fun CoordinateGrid(
     sliderInfo: MapObjectSliderInfo,
     selectedCoordinateGrid: Double,
+    selectedCoordSystem: CoordinateSystem,
     checked: Boolean,
     selectedColor: Int?,
     onCheckedChanged: (Boolean) -> Unit,
     onSliderValueChangedFinished: (Float) -> Unit,
     onColorChangeClicked: () -> Unit,
-    selectCoordinateGrid: (Double) -> Unit
+    selectCoordinateGrid: (Double) -> Unit,
+    selectCoordinateSystem: (CoordinateSystem) -> Unit
 ) {
     var sliderState by remember {
         mutableFloatStateOf(sliderInfo.value)
@@ -68,6 +71,20 @@ internal fun CoordinateGrid(
             exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()
         ) {
             Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    PrintmapPopup(
+                        name = "Система координат",
+                        items = CoordinateSystem.entries.map { it.name },
+                        selected = selectedCoordSystem.name,
+                        update = {
+                            selectCoordinateSystem(CoordinateSystem.valueOf(it))
+                        }
+                    )
+
+                }
+                Spacer(Modifier.height(8.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -137,6 +154,8 @@ private fun PreviewCoordinateGrid() {
         onCheckedChanged = {},
         onSliderValueChangedFinished = {},
         onColorChangeClicked = {},
-        selectCoordinateGrid = {}
+        selectCoordinateGrid = {},
+        selectCoordinateSystem = {},
+        selectedCoordSystem = CoordinateSystem.SK42
     )
 }

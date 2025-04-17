@@ -519,7 +519,7 @@ class DrawOnBitmap {
         for (j in 0..linesToPixel.lastIndex) {
             val item = linesToPixel[j]
             val coords = allLons[j][0]
-            
+
             // Форматируем и отображаем координату
             val coordText = if (isVertical) {
                 String.format(null, "%.5f", coords.lon)

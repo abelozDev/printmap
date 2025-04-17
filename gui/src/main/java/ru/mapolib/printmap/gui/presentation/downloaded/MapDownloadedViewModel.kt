@@ -338,16 +338,6 @@ internal class MapDownloadedViewModel(
                 }
                 drawLayers()
             }
-            
-            is MapDownloadedEvent.SelectSK42Zone -> {
-                _state.update {
-                    it.copy(
-                        sk42Zone = action.zone
-                    )
-                }
-                drawLayers()
-            }
-
         }
     }
 

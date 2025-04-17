@@ -49,7 +49,6 @@ internal data class MapDownloadedUiState(
     val layerObjectsColor: Map<String, Int?>,
     val layers: List<Layer>,
     val coordinateSystem: CoordinateSystem = CoordinateSystem.SK42,
-    val sk42Zone: Int? = null
 )
 
 internal data class CoordinateGridColor(
@@ -88,28 +87,28 @@ sealed interface ExportTypes {
 }
 
 internal sealed interface MapDownloadedEvent: PrintMapEvent {
-    data object DeleteImage: MapDownloadedEvent
-    data object Share: MapDownloadedEvent
-    data class UpdateExportType(val type: ExportTypes): MapDownloadedEvent
-    data object ShowPolylineChanged: MapDownloadedEvent
-    data object ChangeOrientation: MapDownloadedEvent
-    data class UpdateLayer(val layer: Layer): MapDownloadedEvent
-    data class UpdateName(val name: String): MapDownloadedEvent
-    data class SelectDpi(val dpi: Dpi): MapDownloadedEvent
-    data class UpdateMapObjectStyle(val layerObject: LayerObject): MapDownloadedEvent
-    data object UpdateLayers: MapDownloadedEvent
-    data class UpdateState(val state: MapDownloadedState): MapDownloadedEvent
-    data class UpdateColorToObjects(val color: Color?, val layerObject: LayerObject): MapDownloadedEvent
+    data object DeleteImage : MapDownloadedEvent
+    data object Share : MapDownloadedEvent
+    data class UpdateExportType(val type: ExportTypes) : MapDownloadedEvent
+    data object ShowPolylineChanged : MapDownloadedEvent
+    data object ChangeOrientation : MapDownloadedEvent
+    data class UpdateLayer(val layer: Layer) : MapDownloadedEvent
+    data class UpdateName(val name: String) : MapDownloadedEvent
+    data class SelectDpi(val dpi: Dpi) : MapDownloadedEvent
+    data class UpdateMapObjectStyle(val layerObject: LayerObject) : MapDownloadedEvent
+    data object UpdateLayers : MapDownloadedEvent
+    data class UpdateState(val state: MapDownloadedState) : MapDownloadedEvent
+    data class UpdateColorToObjects(val color: Color?, val layerObject: LayerObject) :
+        MapDownloadedEvent
 
     /*CoordinateGrid*/
-    class ChangeCheckCoordinateGrid: MapDownloadedEvent
-    data class CoordinateGridSliderValueChangeFinished(val value: Float): MapDownloadedEvent
-    data class SelectCoordinateGrid(val value: Double): MapDownloadedEvent
-    class UpdateCoordinateGridColor(val color: CoordinateGridColor): MapDownloadedEvent
+    class ChangeCheckCoordinateGrid : MapDownloadedEvent
+    data class CoordinateGridSliderValueChangeFinished(val value: Float) : MapDownloadedEvent
+    data class SelectCoordinateGrid(val value: Double) : MapDownloadedEvent
+    class UpdateCoordinateGridColor(val color: CoordinateGridColor) : MapDownloadedEvent
 
     /*CoordinateSystem*/
     data class SelectCoordinateSystem(val system: CoordinateSystem): MapDownloadedEvent
-    data class SelectSK42Zone(val zone: Int): MapDownloadedEvent
 }
 internal sealed interface MapDownloadedEffect: PrintMapEffect {
     data class DeleteMap(val path: String): MapDownloadedEffect
@@ -123,4 +122,3 @@ internal enum class ImageOrientation(val description: String) {
         return if (this == PORTRAIT) LANDSCAPE else PORTRAIT
     }
 }
-
