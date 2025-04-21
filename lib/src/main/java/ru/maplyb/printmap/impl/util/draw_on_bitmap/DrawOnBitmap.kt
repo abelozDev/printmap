@@ -244,6 +244,7 @@ class DrawOnBitmap {
         width: Float,
         coordinateSystem: CoordinateSystem = CoordinateSystem.WGS84
     ): Bitmap {
+        val stepMeters = stepMeters * stepDegrees
         return coroutineScope {
             val paint = defTextPaint(
                 context = context,
@@ -256,7 +257,7 @@ class DrawOnBitmap {
             val textPaint = defTextPaint(
                 context = context,
                 color = Color.YELLOW,
-                textSize = 20f
+                textSize = 25f
             )
 
             when (coordinateSystem) {
@@ -312,9 +313,6 @@ class DrawOnBitmap {
                 }
 
                 CoordinateSystem.SK42 -> {
-                    // Создаем список для хранения точек пересечения
-                    val intersections = mutableListOf<GridIntersection>()
-
                     // Преобразуем границы карты в СК-42 для горизонтальных линий
                     val (northLat, _) = converterToSk.wgs84ToSk42(boundingBox.latNorth, boundingBox.lonWest)
                     val (southLat, _) = converterToSk.wgs84ToSk42(boundingBox.latSouth, boundingBox.lonWest)
@@ -331,13 +329,14 @@ class DrawOnBitmap {
                         // Берем точки с небольшим шагом по долготе
                         val lonStep = 0.1  // шаг в градусах
                         var currentLon = boundingBox.lonWest - 0.1
+                        var first: Int? = null
 
                         while (currentLon <= boundingBox.lonEast + 0.1) {
                             // Определяем зону для текущей точки
                             val zone = ((currentLon + 6.0) / 6.0).toInt()
 
                             // Преобразуем в СК-42
-                            val (_, sk42Lon) = converterToSk.wgs84ToSk42(0.0, currentLon)  // широта не важна
+                            val (sk42Lat, sk42Lon) = converterToSk.wgs84ToSk42(0.0, currentLon)  // широта не важна
 
                             // Преобразуем обратно в WGS84
                             val (wgsLat, wgsLon) = converterToSk.sk42ToWgs84(currentY, sk42Lon, zone)
@@ -345,6 +344,9 @@ class DrawOnBitmap {
                             // Добавляем точку, если она попадает в видимую область
                             if (wgsLon in (boundingBox.lonWest - 0.1)..(boundingBox.lonEast + 0.1)) {
                                 points.add(wgsLat to wgsLon)
+                                if (first == null) {
+                                    first = currentY.roundToInt()
+                                }
                             }
 
                             currentLon += lonStep
@@ -362,7 +364,8 @@ class DrawOnBitmap {
                             )
 
                             if (pixelPoints != null) {
-                                // Рисуем линию
+                                val coordText = "$first"
+                                canvas.drawText(coordText, pixelPoints[0].first, pixelPoints[0].second + 20f, textPaint)
                                 for (i in 0 until pixelPoints.lastIndex) {
                                     canvas.drawLine(
                                         pixelPoints[i].first,
@@ -372,25 +375,6 @@ class DrawOnBitmap {
                                         paint
                                     )
                                 }
-
-                                // Сохраняем точки для пересечений
-                                // Берем только начальную и конечную точки линии
-                                intersections.add(
-                                    GridIntersection(
-                                        pixelPoints.first().first,
-                                        pixelPoints.first().second,
-                                        0, // временно 0, заполним при отрисовке вертикальных линий
-                                        currentY.toInt()
-                                    )
-                                )
-                                intersections.add(
-                                    GridIntersection(
-                                        pixelPoints.last().first,
-                                        pixelPoints.last().second,
-                                        0, // временно 0, заполним при отрисовке вертикальных линий
-                                        currentY.toInt()
-                                    )
-                                )
                             }
                         }
                         currentY -= stepMeters
@@ -422,7 +406,7 @@ class DrawOnBitmap {
                             // Разбиваем линию на сегменты по широте
                             val latStep = (boundingBox.latNorth - boundingBox.latSouth) / 50.0
                             var currentLat = boundingBox.latNorth
-
+                            var first: String? = null
                             while (currentLat >= boundingBox.latSouth) {
                                 // Преобразуем текущую точку в СК-42 и обратно
                                 val (sk42Lat, sk42Lon) = converterToSk.wgs84ToSk42(currentLat, visibleWestLon)
@@ -431,6 +415,9 @@ class DrawOnBitmap {
                                 // Проверяем, что точка в нужной зоне
                                 if (wgsLon in zoneWestLon..zoneEastLon) {
                                     points.add(wgsLat to wgsLon)
+                                    if (first == null) {
+                                        first = "$currentX"
+                                    }
                                 }
 
                                 currentLat -= latStep
@@ -445,6 +432,10 @@ class DrawOnBitmap {
                                 )
 
                                 if (pixelPoints != null) {
+                                    val coordText = "$first"
+                                    println("first point coords: ${pixelPoints[1].first}, ${pixelPoints[1].second}")
+                                    println("first point coords: ${pixelPoints[2].first}, ${pixelPoints[2].second}")
+                                      canvas.drawText(coordText, pixelPoints[1].first, pixelPoints[1].second + 30f, textPaint)
                                     // Рисуем линию
                                     for (i in 0 until pixelPoints.lastIndex) {
                                         canvas.drawLine(
@@ -455,35 +446,9 @@ class DrawOnBitmap {
                                             paint
                                         )
                                     }
-
-                                    // Находим пересечения
-                                    for (intersection in intersections) {
-                                        // Если точка находится близко к текущей вертикальной линии
-                                        if (abs(intersection.x - pixelPoints[0].first) < 10) { // 10 пикселей погрешность
-                                            intersection.sk42X = currentX.toInt()
-                                        }
-                                    }
                                 }
                             }
                             currentX += stepMeters
-                        }
-                    }
-
-                    // Отрисовываем координаты на пересечениях
-                    val coordPaint = Paint(textPaint).apply {
-                        textSize = textPaint.textSize * 0.8f  // Делаем текст чуть меньше
-                    }
-
-                    for (intersection in intersections) {
-                        if (intersection.sk42X != 0) {  // Проверяем, что точка действительно является пересечением
-                            val text = "(${intersection.sk42X}, ${intersection.sk42Y})"
-                            // Смещаем текст немного вправо и вниз от точки пересечения
-                            canvas.drawText(
-                                text,
-                                intersection.x + 5f,
-                                intersection.y + 15f,
-                                coordPaint
-                            )
                         }
                     }
                 }

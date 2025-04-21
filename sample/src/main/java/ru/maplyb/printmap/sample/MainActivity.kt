@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
     private lateinit var ukraina: Button
 
     private lateinit var composeView: ComposeView
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -1298,30 +1299,46 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             )*/
         }
     }
+
     private fun initBtns(selectBb: (BoundingBox) -> Unit) {
         moscow.setBackgroundColor(Color.GRAY)
         moscow_oblast.setBackgroundColor(Color.GRAY)
         ukraina.setBackgroundColor(Color.GREEN)
         moscow.setOnClickListener {
-            selectBb(BoundingBox(
-                latNorth = 55.815435965076425, lonWest = 37.51182379097406, latSouth = 55.750216032030885, lonEast = 37.664861616294765
-            ))
+            selectBb(
+                BoundingBox(
+                    latNorth = 55.815435965076425,
+                    lonWest = 37.51182379097406,
+                    latSouth = 55.750216032030885,
+                    lonEast = 37.664861616294765
+                )
+            )
             moscow.setBackgroundColor(Color.GREEN)
             moscow_oblast.setBackgroundColor(Color.GRAY)
             ukraina.setBackgroundColor(Color.GRAY)
         }
         moscow_oblast.setOnClickListener {
-            selectBb(BoundingBox(
-                latNorth = 56.288990849810155, lonWest = 36.56275940461466, latSouth = 55.174063075936566, lonEast = 38.76066425183658
-            ))
+            selectBb(
+                BoundingBox(
+                    latNorth = 56.288990849810155,
+                    lonWest = 36.56275940461466,
+                    latSouth = 55.174063075936566,
+                    lonEast = 38.76066425183658
+                )
+            )
             moscow.setBackgroundColor(Color.GRAY)
             moscow_oblast.setBackgroundColor(Color.GREEN)
             ukraina.setBackgroundColor(Color.GRAY)
         }
         ukraina.setOnClickListener {
-            selectBb(BoundingBox(
-                latNorth = 56.288990849810155, lonWest = 36.56275940461466, latSouth = 55.174063075936566, lonEast = 38.76066425183658
-            ))
+            selectBb(
+                BoundingBox(
+                    latNorth = 51.655322,
+                    lonWest = 22.327316,
+                    latSouth = 46.976288,
+                    lonEast = 38.433272
+                )
+            )
             moscow.setBackgroundColor(Color.GRAY)
             moscow_oblast.setBackgroundColor(Color.GRAY)
             ukraina.setBackgroundColor(Color.GREEN)
