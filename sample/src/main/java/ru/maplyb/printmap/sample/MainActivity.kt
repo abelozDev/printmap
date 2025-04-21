@@ -1,5 +1,6 @@
 package ru.maplyb.printmap.sample
 
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
@@ -23,15 +24,19 @@ import ru.mapolib.printmap.gui.presentation.MainScreen
 class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main) {
 
     private lateinit var btn: Button
-    private lateinit var addMapBtn: Button
-    private lateinit var deleteMapBtn: Button
+    private lateinit var moscow: Button
+    private lateinit var moscow_oblast: Button
+    private lateinit var ukraina: Button
+
     private lateinit var composeView: ComposeView
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         btn = findViewById(ru.maplyb.printmap.R.id.get_map)
-        addMapBtn = findViewById(ru.maplyb.printmap.R.id.add_map)
-        deleteMapBtn = findViewById(ru.maplyb.printmap.R.id.delete_map)
+        moscow = findViewById(ru.maplyb.printmap.R.id.moscow_bb)
+        moscow_oblast = findViewById(ru.maplyb.printmap.R.id.moscow_oblast_bb)
+        ukraina = findViewById(ru.maplyb.printmap.R.id.ukraina_bb)
+
         composeView = findViewById(ru.maplyb.printmap.R.id.compose_view)
         getStoragePermission(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -1225,35 +1230,22 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             )
         )
 
-        val itemToADD = MapItem(
-            name = "added map ${System.currentTimeMillis()}",
-            type = MapType.Online("https://mt0.google.com//vt/lyrs=s"),
-            isVisible = true,
-            alpha = 1f,
-            position = 1,
-            zoomMin = 0,
-            zoomMax = 13
-
-        )
         var list = listOf(item, local)
+        var selectedBb = BoundingBox(
+            latNorth = 51.655322,
+            lonWest = 22.327316,
+            latSouth = 46.976288,
+            lonEast = 38.433272
+        )
+        initBtns {
+            selectedBb = it
+        }
+
         btn.setOnClickListener {
             when (downloadManager.state.value) {
                 DownloadMapState.Idle -> {
                     downloadManager.prepareDownloading(
-                        boundingBox = BoundingBox(
-//                            latNorth = 55.45021687930256, lonWest = 37.51531531165744, latSouth =  55.43207979637628, lonEast = 37.546198869620454
-                            /*latNorth = 51.655322,
-                            lonWest = 22.327316,
-                            latSouth = 46.976288,
-                            lonEast = 38.433272*/
-                            //высокая ,
-//                            latNorth = 59.36805835073653, lonWest = 30.240028688049094, latSouth = 51.1522083099274, lonEast = 41.43918466716713
-//                            latNorth = 56.2465044223813, lonWest = 36.544779387896185, latSouth = 55.19410814700746, lonEast = 38.86651750066963
-                            //московская область масштаб 10500
-                            latNorth = 56.288990849810155, lonWest = 36.56275940461466, latSouth = 55.174063075936566, lonEast = 38.76066425183658
-                            //масштаб 500
-//                            latNorth = 55.815435965076425, lonWest = 37.51182379097406, latSouth = 55.750216032030885, lonEast = 37.664861616294765
-                        ),
+                        boundingBox = selectedBb,
                         maps = list,
                         zoom = 10,
                         objects = objects,
@@ -1264,21 +1256,6 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
 
                 else -> downloadManager.open()
             }
-        }
-        addMapBtn.setOnClickListener {
-            list = list + MapItem(
-                name = "added map ${System.currentTimeMillis()}",
-                type = MapType.Online("https://mt0.google.com//vt/lyrs=s"),
-                isVisible = true,
-                alpha = 1f,
-                position = 1,
-                zoomMin = 0,
-                zoomMax = 13
-
-            )
-        }
-        deleteMapBtn.setOnClickListener {
-            list = list.filter { it != itemToADD }
         }
         val map = listOf(
             MapItem(
@@ -1321,7 +1298,37 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             )*/
         }
     }
+    private fun initBtns(selectBb: (BoundingBox) -> Unit) {
+        moscow.setBackgroundColor(Color.GRAY)
+        moscow_oblast.setBackgroundColor(Color.GRAY)
+        ukraina.setBackgroundColor(Color.GREEN)
+        moscow.setOnClickListener {
+            selectBb(BoundingBox(
+                latNorth = 55.815435965076425, lonWest = 37.51182379097406, latSouth = 55.750216032030885, lonEast = 37.664861616294765
+            ))
+            moscow.setBackgroundColor(Color.GREEN)
+            moscow_oblast.setBackgroundColor(Color.GRAY)
+            ukraina.setBackgroundColor(Color.GRAY)
+        }
+        moscow_oblast.setOnClickListener {
+            selectBb(BoundingBox(
+                latNorth = 56.288990849810155, lonWest = 36.56275940461466, latSouth = 55.174063075936566, lonEast = 38.76066425183658
+            ))
+            moscow.setBackgroundColor(Color.GRAY)
+            moscow_oblast.setBackgroundColor(Color.GREEN)
+            ukraina.setBackgroundColor(Color.GRAY)
+        }
+        ukraina.setOnClickListener {
+            selectBb(BoundingBox(
+                latNorth = 56.288990849810155, lonWest = 36.56275940461466, latSouth = 55.174063075936566, lonEast = 38.76066425183658
+            ))
+            moscow.setBackgroundColor(Color.GRAY)
+            moscow_oblast.setBackgroundColor(Color.GRAY)
+            ukraina.setBackgroundColor(Color.GREEN)
+        }
+    }
 }
+
 
 fun generateSequence(start: Double, end: Double, count: Int): List<Double> {
     if (count <= 0) return emptyList()
