@@ -32,6 +32,8 @@ import ru.maplyb.printmap.impl.util.converters.WGSToSK42Converter
 import ru.maplyb.printmap.impl.util.defTextPaint
 import kotlin.math.cos
 import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.floor
 
 // Добавляем enum для систем координат
 enum class CoordinateSystem {
@@ -313,24 +315,25 @@ class DrawOnBitmap {
 
                 CoordinateSystem.SK42 -> {
                     // Преобразуем границы карты в СК-42 для горизонтальных линий
-                    val (northLat, _) = converterToSk.wgs84ToSk42(boundingBox.latNorth, boundingBox.lonWest)
-                    val (southLat, _) = converterToSk.wgs84ToSk42(boundingBox.latSouth, boundingBox.lonWest)
+                    // Добавляем буфер к границам для гарантии полного покрытия
+                    val bufferDegrees = 0.5  // Буфер в градусах
+                    val (northLat, _) = converterToSk.wgs84ToSk42(boundingBox.latNorth + bufferDegrees, boundingBox.lonWest)
+                    val (southLat, _) = converterToSk.wgs84ToSk42(boundingBox.latSouth - bufferDegrees, boundingBox.lonWest)
 
                     // Округляем координаты до ближайшей сетки для широты
-                    val startY = (northLat / stepMeters).toInt() * stepMeters
-                    val endY = (southLat / stepMeters).toInt() * stepMeters
-
+                    val startY = ceil(northLat / stepMeters).toInt() * stepMeters
+                    val endY = floor(southLat / stepMeters).toInt() * stepMeters
                     // Сначала рисуем горизонтальные линии
                     var currentY = startY
                     while (currentY >= endY) {
                         val points = mutableListOf<Pair<Double, Double>>()
 
-                        // Берем точки с небольшим шагом по долготе
-                        val lonStep = 0.1  // шаг в градусах
-                        var currentLon = boundingBox.lonWest - 0.1
+                        // Увеличиваем частоту точек для более плавных линий
+                        val lonStep = 0.05  // уменьшенный шаг в градусах
+                        var currentLon = boundingBox.lonWest - bufferDegrees
                         var first: Int? = null
 
-                        while (currentLon <= boundingBox.lonEast + 0.1) {
+                        while (currentLon <= boundingBox.lonEast + bufferDegrees) {
                             // Определяем зону для текущей точки
                             val zone = ((currentLon + 6.0) / 6.0).toInt()
 
@@ -340,8 +343,9 @@ class DrawOnBitmap {
                             // Преобразуем обратно в WGS84
                             val (wgsLat, wgsLon) = converterToSk.sk42ToWgs84(currentY, sk42Lon, zone)
 
-                            // Добавляем точку, если она попадает в видимую область
-                            if (wgsLon in (boundingBox.lonWest - 0.1)..(boundingBox.lonEast + 0.1)) {
+                            // Добавляем точку с расширенными границами
+                            if (wgsLon >= (boundingBox.lonWest - bufferDegrees) &&
+                                wgsLon <= (boundingBox.lonEast + bufferDegrees)) {
                                 points.add(wgsLat to wgsLon)
                                 if (first == null) {
                                     first = (currentY + 1000).roundToInt()
@@ -380,20 +384,20 @@ class DrawOnBitmap {
                     }
 
                     // Теперь рисуем вертикальные линии
-                    val westZone = ((boundingBox.lonWest + 6.0) / 6.0).toInt()
-                    val eastZone = ((boundingBox.lonEast + 6.0) / 6.0).toInt()
+                    val westZone = ((boundingBox.lonWest - bufferDegrees + 6.0) / 6.0).toInt()
+                    val eastZone = ((boundingBox.lonEast + bufferDegrees + 6.0) / 6.0).toInt()
 
                     for (zone in westZone..eastZone) {
                         val zoneCentralMeridian = zone * 6 - 3
                         val zoneWestLon = zoneCentralMeridian - 3.0
                         val zoneEastLon = zoneCentralMeridian + 3.0
-                        val visibleWestLon = boundingBox.lonWest.coerceIn(zoneWestLon, zoneEastLon)
-                        val visibleEastLon = boundingBox.lonEast.coerceIn(zoneWestLon, zoneEastLon)
+                        val visibleWestLon = (boundingBox.lonWest - bufferDegrees).coerceIn(zoneWestLon, zoneEastLon)
+                        val visibleEastLon = (boundingBox.lonEast + bufferDegrees).coerceIn(zoneWestLon, zoneEastLon)
 
                         if (visibleWestLon >= visibleEastLon) continue
 
-                        val (_, northLon) = converterToSk.wgs84ToSk42(boundingBox.latNorth, visibleWestLon)
-                        val (_, southLon) = converterToSk.wgs84ToSk42(boundingBox.latSouth, visibleEastLon)
+                        val (_, northLon) = converterToSk.wgs84ToSk42(boundingBox.latNorth + bufferDegrees, visibleWestLon)
+                        val (_, southLon) = converterToSk.wgs84ToSk42(boundingBox.latSouth - bufferDegrees, visibleEastLon)
 
                         val startX = (northLon / stepMeters).toInt() * stepMeters
                         val endX = (southLon / stepMeters).toInt() * stepMeters
@@ -402,23 +406,29 @@ class DrawOnBitmap {
                         while (currentX <= endX) {
                             val points = mutableListOf<Pair<Double, Double>>()
 
-                            // Разбиваем линию на сегменты по широте
-                            val latStep = (boundingBox.latNorth - boundingBox.latSouth) / 50.0
-                            var currentLat = boundingBox.latNorth
+                            // Увеличиваем количество точек для более плавных линий
+                            val latStep = (boundingBox.latNorth - boundingBox.latSouth) / 100.0
+                            var currentLat = boundingBox.latNorth + bufferDegrees
                             var first: String? = null
-                            while (currentLat >= boundingBox.latSouth) {
+                            while (currentLat >= boundingBox.latSouth - bufferDegrees) {
                                 // Преобразуем текущую точку в СК-42 и обратно
                                 val (sk42Lat, _) = converterToSk.wgs84ToSk42(currentLat, visibleWestLon)
                                 val (wgsLat, wgsLon) = converterToSk.sk42ToWgs84(sk42Lat, currentX, zone)
 
-                                // Проверяем, что точка в нужной зоне
+                                // Проверяем, что точка в нужной зоне с учетом буфера
+                                /*if (wgsLon >= (zoneWestLon - bufferDegrees) &&
+                                    wgsLon <= (zoneEastLon + bufferDegrees)) {
+                                    points.add(wgsLat to wgsLon)
+                                    if (first == null) {
+                                        first = "${currentX.roundToInt()}"
+                                    }
+                                }*/
                                 if (wgsLon in zoneWestLon..zoneEastLon) {
                                     points.add(wgsLat to wgsLon)
                                     if (first == null) {
                                         first = "${currentX.roundToInt()}"
                                     }
                                 }
-
                                 currentLat -= latStep
                             }
 
@@ -432,9 +442,8 @@ class DrawOnBitmap {
 
                                 if (pixelPoints != null) {
                                     val coordText = "$first"
-                                    println("first point coords: ${pixelPoints[1].first}, ${pixelPoints[1].second}")
-                                    println("first point coords: ${pixelPoints[2].first}, ${pixelPoints[2].second}")
-                                      canvas.drawText(coordText, pixelPoints[1].first, pixelPoints[1].second + 30f, textPaint)
+                                    canvas.drawText(coordText, pixelPoints[1].first, pixelPoints[1].second + 30f, textPaint)
+                                    canvas.drawText(coordText, pixelPoints[pixelPoints.lastIndex].first, pixelPoints[pixelPoints.lastIndex].second + 30f, textPaint)
                                     // Рисуем линию
                                     for (i in 0 until pixelPoints.lastIndex) {
                                         canvas.drawLine(
@@ -457,7 +466,7 @@ class DrawOnBitmap {
     }
 
     // Вспомогательная функция для отрисовки линий WGS84
-    private suspend fun drawWGS84Lines(
+    private fun drawWGS84Lines(
         canvas: Canvas,
         allLons: List<List<LatLon>>,
         boundingBox: BoundingBox,
@@ -512,38 +521,6 @@ class DrawOnBitmap {
             }
         }
     }
-
-    private fun findXPoints(
-        vertical: List<List<LatLon>>,
-        horizontal: List<List<LatLon>>
-    ): List<GeoPoint> {
-        val points = mutableListOf<GeoPoint>()
-        for (i in 0..vertical.lastIndex) {
-            for (j in 0..<vertical[i].lastIndex) {
-                //j - > точка вертикальной линии
-                val p1 = vertical[i][i]
-                val p2 = vertical[i][i + 1]
-                for (q in 0..horizontal.lastIndex) {
-                    for (w in 0..<horizontal[q].lastIndex) {
-                        val q1 = horizontal[q][w]
-                        val q2 = horizontal[q][w + 1]
-                        findIntersection(
-                            p1.lat,
-                            p1.lon,
-                            p2.lat,
-                            p2.lon,
-                            q1.lat,
-                            q1.lon,
-                            q2.lat,
-                            q2.lon
-                        )?.let { points.add(it) }
-                    }
-                }
-            }
-        }
-        return points
-    }
-
 
     //Точка пересечения
     private fun findIntersection(

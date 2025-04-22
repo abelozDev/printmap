@@ -161,7 +161,7 @@ internal class DownloadMapService : Service() {
         }.invokeOnCompletion { cause ->
             if (cause != null && cause !is CancellationException) {
                 coroutineScope.launch {
-                    prefs?.setError(this@DownloadMapService, "Ошибка скачивания ${cause.message}")
+                    prefs?.setError(this@DownloadMapService, "Ошибка скачивания ${cause.message}, код ошибки: $COROUTINE_CANCELED_ERROR_CODE")
                 }
             }
             stopForeground(true)
@@ -234,6 +234,7 @@ internal class DownloadMapService : Service() {
         const val DOWNLOAD_MAP_NOTIFICATION_ID = 788843
         const val INTENT_IS_NULL_ERROR_CODE = "[DMS-001]"
         const val EMPTY_ARGS_ERROR_CODE = "[DMS-002]"
+        const val COROUTINE_CANCELED_ERROR_CODE = "[DMS-003]"
     }
 
     override fun onDestroy() {

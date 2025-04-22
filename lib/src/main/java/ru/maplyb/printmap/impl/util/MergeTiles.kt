@@ -102,7 +102,7 @@ internal class MergeTiles {
                     zoom = zoom,
                     boundingBox = boundingBox
                 )
-                croppedBitmap
+                resultBitmap
             }
         }
     }
