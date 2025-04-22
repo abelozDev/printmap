@@ -30,6 +30,24 @@ import ru.maplyb.printmap.LatLon
 import ru.maplyb.printmap.getGeodesicLine
 import ru.maplyb.printmap.impl.util.converters.WGSToSK42Converter
 import ru.maplyb.printmap.impl.util.defTextPaint
+import kotlin.math.cos
+import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.floor
+
+// Добавляем enum для систем координат
+enum class CoordinateSystem {
+    WGS84,
+    SK42
+}
+
+// В начале метода drawScaleLines добавим структуру для хранения точек пересечения
+data class GridIntersection(
+    val x: Float,  // координата X на экране
+    val y: Float,  // координата Y на экране
+    var sk42X: Int,  // координата X в СК-42
+    var sk42Y: Int   // координата Y в СК-42
+)
 
 class DrawOnBitmap {
 
@@ -220,92 +238,244 @@ class DrawOnBitmap {
 
     suspend fun drawScaleLines(
         stepDegrees: Double,
+        stepMeters: Double,
         context: Context,
         color: Int,
         bitmap: Bitmap,
         boundingBox: BoundingBox,
         width: Float,
+        coordinateSystem: CoordinateSystem = CoordinateSystem.WGS84
     ): Bitmap {
-
         return coroutineScope {
-            withContext(Dispatchers.IO) {
-                val paint = defTextPaint(
-                    context = context,
-                    color = color,
-                    strokeWidth = width,
-                    textSize = 0f
-                )
-                val canvas = Canvas(bitmap)
-                val converterToSk = WGSToSK42Converter()
-                val textPaint = defTextPaint(
-                    context = context,
-                    color = Color.YELLOW,
-                    textSize = 20f
-                )
-                val allLons = getLonLinesByDistance(
-                    startLon = boundingBox.lonWest,
-                    endLon = boundingBox.lonEast,
-                    stepDegrees
-                ).map {
-                    getGeodesicLine(
-                        startLat = boundingBox.latNorth,
-                        startLon = it,
-                        endLat = boundingBox.latSouth,
-                        endLon = it,
-                        stepMeters = 1000.0
-                    )
-                }
-                val lonLinesToPixel = allLons.map { lonLines ->
-                    convertGeoToPixel(
-                        lonLines.map {
-                            GeoPoint(
-                                latitude = it.lat,
-                                longitude = it.lon
-                            )
-                        },
-                        boundingBox,
-                        bitmapWidth = bitmap.width,
-                        bitmapHeight = bitmap.height
-                    )!!
-                }
-                /*Вертикальные*/
-                for (j in 0..lonLinesToPixel.lastIndex) {
-                    val item = lonLinesToPixel[j]
-                    val coords = allLons[j][0]
-                    /*for wgs*/
-//                    val formatted = String.format(null, "%.5f", coords.lon)
-                    /*for sk42*/
-                    val (lat, lon) = converterToSk.wgs84ToSk42(coords.lat, coords.lon)
+            val paint = defTextPaint(
+                context = context,
+                color = color,
+                strokeWidth = width,
+                textSize = 0f
+            )
+            val canvas = Canvas(bitmap)
+            val converterToSk = WGSToSK42Converter()
+            val textPaint = defTextPaint(
+                context = context,
+                color = Color.YELLOW,
+                textSize = 25f
+            )
 
-                    canvas.drawText(lon.roundToInt().toString(), item[0].first, item[0].second + 20f, textPaint)
-                    for (i in 0..<item.lastIndex) {
-                        val start = item[i]
-                        val end = item[i + 1]
-                        canvas.drawLine(
-                            start.first,
-                            start.second,
-                            end.first,
-                            end.second,
-                            paint
-                        )
-                    }
-                }
-                val allLats = latsList(
-                    startLat = boundingBox.latNorth,
-                    endLat = boundingBox.latSouth,
-                    stepDegrees
-                ).map {
-                    getGeodesicLine(
-                        startLat = it,
+            when (coordinateSystem) {
+                CoordinateSystem.WGS84 -> {
+                    // Существующая логика для WGS84
+                    val allLons = getLonLinesByDistance(
                         startLon = boundingBox.lonWest,
-                        endLat = it,
                         endLon = boundingBox.lonEast,
-                        stepMeters = 1000.0
+                        stepDegrees
+                    ).map {
+                        getGeodesicLine(
+                            startLat = boundingBox.latNorth,
+                            startLon = it,
+                            endLat = boundingBox.latSouth,
+                            endLon = it,
+                            stepMeters = 1000.0
+                        )
+                    }
+
+                    drawWGS84Lines(
+                        canvas = canvas,
+                        allLons = allLons,
+                        boundingBox = boundingBox,
+                        bitmap = bitmap,
+                        paint = paint,
+                        textPaint = textPaint,
+                        isVertical = true
+                    )
+
+                    val allLats = latsList(
+                        startLat = boundingBox.latNorth,
+                        endLat = boundingBox.latSouth,
+                        stepDegrees
+                    ).map {
+                        getGeodesicLine(
+                            startLat = it,
+                            startLon = boundingBox.lonWest,
+                            endLat = it,
+                            endLon = boundingBox.lonEast,
+                            stepMeters = 1000.0
+                        )
+                    }
+
+                    drawWGS84Lines(
+                        canvas = canvas,
+                        allLons = allLats,
+                        boundingBox = boundingBox,
+                        bitmap = bitmap,
+                        paint = paint,
+                        textPaint = textPaint,
+                        isVertical = false
                     )
                 }
-                val latLinesToPixel = allLats.map { lonLines ->
+
+                CoordinateSystem.SK42 -> {
+                    // Преобразуем границы карты в СК-42 для горизонтальных линий
+                    // Добавляем буфер к границам для гарантии полного покрытия
+                    val bufferDegrees = 0.5  // Буфер в градусах
+                    val (northLat, _) = converterToSk.wgs84ToSk42(boundingBox.latNorth + bufferDegrees, boundingBox.lonWest)
+                    val (southLat, _) = converterToSk.wgs84ToSk42(boundingBox.latSouth - bufferDegrees, boundingBox.lonWest)
+
+                    // Округляем координаты до ближайшей сетки для широты
+                    val startY = ceil(northLat / stepMeters).toInt() * stepMeters
+                    val endY = floor(southLat / stepMeters).toInt() * stepMeters
+                    // Сначала рисуем горизонтальные линии
+                    var currentY = startY
+                    while (currentY >= endY) {
+                        val points = mutableListOf<Pair<Double, Double>>()
+
+                        // Увеличиваем частоту точек для более плавных линий
+                        val lonStep = 0.05  // уменьшенный шаг в градусах
+                        var currentLon = boundingBox.lonWest - bufferDegrees
+                        var first: Int? = null
+
+                        while (currentLon <= boundingBox.lonEast + bufferDegrees) {
+                            // Определяем зону для текущей точки
+                            val zone = ((currentLon + 6.0) / 6.0).toInt()
+
+                            // Преобразуем в СК-42
+                            val (_, sk42Lon) = converterToSk.wgs84ToSk42(0.0, currentLon)  // широта не важна
+
+                            // Преобразуем обратно в WGS84
+                            val (wgsLat, wgsLon) = converterToSk.sk42ToWgs84(currentY, sk42Lon, zone)
+
+                            // Добавляем точку с расширенными границами
+                            if (wgsLon >= (boundingBox.lonWest - bufferDegrees) &&
+                                wgsLon <= (boundingBox.lonEast + bufferDegrees)) {
+                                points.add(wgsLat to wgsLon)
+                                if (first == null) {
+                                    first = (currentY + 1000).roundToInt()
+                                }
+                            }
+
+                            currentLon += lonStep
+                        }
+
+                        // Сортируем точки по долготе для правильного порядка отрисовки
+                        val sortedPoints = points.sortedBy { it.second }
+
+                        if (sortedPoints.size >= 2) {
+                            val pixelPoints = convertGeoToPixel(
+                                sortedPoints.map { GeoPoint(it.first, it.second) },
+                                boundingBox,
+                                bitmapWidth = bitmap.width,
+                                bitmapHeight = bitmap.height
+                            )
+
+                            if (pixelPoints != null) {
+                                val coordText = "$first"
+                                pixelPoints.firstOrNull {
+                                    it.first > 0f && it.second > 0f
+                                }?.let {
+                                    canvas.drawText(coordText, it.first, it.second + 20f, textPaint)
+                                }
+                                for (i in 0 until pixelPoints.lastIndex) {
+                                    canvas.drawLine(
+                                        pixelPoints[i].first,
+                                        pixelPoints[i].second,
+                                        pixelPoints[i + 1].first,
+                                        pixelPoints[i + 1].second,
+                                        paint
+                                    )
+                                }
+                            }
+                        }
+                        currentY -= stepMeters
+                    }
+
+                    // Теперь рисуем вертикальные линии
+                    val westZone = ((boundingBox.lonWest - bufferDegrees + 6.0) / 6.0).toInt()
+                    val eastZone = ((boundingBox.lonEast + bufferDegrees + 6.0) / 6.0).toInt()
+
+                    for (zone in westZone..eastZone) {
+                        val zoneCentralMeridian = zone * 6 - 3
+                        val zoneWestLon = zoneCentralMeridian - 3.0
+                        val zoneEastLon = zoneCentralMeridian + 3.0
+                        val visibleWestLon = (boundingBox.lonWest - bufferDegrees).coerceIn(zoneWestLon, zoneEastLon)
+                        val visibleEastLon = (boundingBox.lonEast + bufferDegrees).coerceIn(zoneWestLon, zoneEastLon)
+
+                        if (visibleWestLon >= visibleEastLon) continue
+
+                        val (_, northLon) = converterToSk.wgs84ToSk42(boundingBox.latNorth + bufferDegrees, visibleWestLon)
+                        val (_, southLon) = converterToSk.wgs84ToSk42(boundingBox.latSouth - bufferDegrees, visibleEastLon)
+
+                        val startX = (northLon / stepMeters).toInt() * stepMeters
+                        val endX = (southLon / stepMeters).toInt() * stepMeters
+
+                        var currentX = startX
+                        while (currentX <= endX) {
+                            val points = mutableListOf<Pair<Double, Double>>()
+
+                            // Увеличиваем количество точек для более плавных линий
+                            val latStep = (boundingBox.latNorth - boundingBox.latSouth) / 100.0
+                            var currentLat = boundingBox.latNorth + bufferDegrees
+                            var first: String? = null
+                            while (currentLat >= boundingBox.latSouth - bufferDegrees) {
+                                // Преобразуем текущую точку в СК-42 и обратно
+                                val (sk42Lat, _) = converterToSk.wgs84ToSk42(currentLat, visibleWestLon)
+                                val (wgsLat, wgsLon) = converterToSk.sk42ToWgs84(sk42Lat, currentX, zone)
+                                if (wgsLon in zoneWestLon..zoneEastLon) {
+                                    points.add(wgsLat to wgsLon)
+                                    if (first == null) {
+                                        first = "${currentX.roundToInt()}"
+                                    }
+                                }
+                                currentLat -= latStep
+                            }
+
+                            if (points.size >= 2) {
+                                val pixelPoints = convertGeoToPixel(
+                                    points.map { GeoPoint(it.first, it.second) },
+                                    boundingBox,
+                                    bitmapWidth = bitmap.width,
+                                    bitmapHeight = bitmap.height
+                                )
+
+                                if (pixelPoints != null) {
+                                    val coordText = "$first"
+                                    pixelPoints.firstOrNull {
+                                        it.first > 0f && it.second > 0f
+                                    }?.let {
+                                        canvas.drawText(coordText, it.first + 5f, it.second + 30f, textPaint)
+                                    }
+                                    // Рисуем линию
+                                    for (i in 0 until pixelPoints.lastIndex) {
+                                        canvas.drawLine(
+                                            pixelPoints[i].first,
+                                            pixelPoints[i].second,
+                                            pixelPoints[i + 1].first,
+                                            pixelPoints[i + 1].second,
+                                            paint
+                                        )
+                                    }
+                                }
+                            }
+                            currentX += stepMeters
+                        }
+                    }
+                }
+            }
+            bitmap
+        }
+    }
+
+    // Вспомогательная функция для отрисовки линий WGS84
+    private fun drawWGS84Lines(
+        canvas: Canvas,
+        allLons: List<List<LatLon>>,
+        boundingBox: BoundingBox,
+        bitmap: Bitmap,
+        paint: Paint,
+        textPaint: Paint,
+        isVertical: Boolean
+    ) {
+        val linesToPixel = allLons.map { lines ->
                     convertGeoToPixel(
-                        lonLines.map {
+                lines.map {
                             GeoPoint(
                                 latitude = it.lat,
                                 longitude = it.lon
@@ -316,15 +486,26 @@ class DrawOnBitmap {
                         bitmapHeight = bitmap.height
                     )!!
                 }
-                /*Горизонтальные*/
-                for (j in 0..latLinesToPixel.lastIndex) {
-                    val item = latLinesToPixel[j]
-                    val coords = allLats[j][0]
-                    /*for wgs*/
-                    val formatted = String.format(null, "%.5f", coords.lat)
-                    /*for sk42*/
-                    val (lat, lon) = converterToSk.wgs84ToSk42(coords.lat, coords.lon)
-                    canvas.drawText(lat.roundToInt().toString(), item[0].first, item[0].second, textPaint)
+
+        for (j in 0..linesToPixel.lastIndex) {
+            val item = linesToPixel[j]
+            val coords = allLons[j][0]
+
+            // Форматируем и отображаем координату
+            val coordText = if (isVertical) {
+                String.format(null, "%.5f", coords.lon)
+            } else {
+                String.format(null, "%.5f", coords.lat)
+            }
+
+            // Отрисовываем текст
+            if (isVertical) {
+                canvas.drawText(coordText, item[0].first, item[0].second + 20f, textPaint)
+            } else {
+                canvas.drawText(coordText, item[0].first, item[0].second, textPaint)
+            }
+
+            // Рисуем линии
                     for (i in 0..<item.lastIndex) {
                         val start = item[i]
                         val end = item[i + 1]
@@ -335,44 +516,9 @@ class DrawOnBitmap {
                             end.second,
                             paint
                         )
-                    }
-                }
-                bitmap
             }
         }
     }
-
-    private fun findXPoints(
-        vertical: List<List<LatLon>>,
-        horizontal: List<List<LatLon>>
-    ): List<GeoPoint> {
-        val points = mutableListOf<GeoPoint>()
-        for (i in 0..vertical.lastIndex) {
-            for (j in 0..<vertical[i].lastIndex) {
-                //j - > точка вертикальной линии
-                val p1 = vertical[i][i]
-                val p2 = vertical[i][i + 1]
-                for (q in 0..horizontal.lastIndex) {
-                    for (w in 0..<horizontal[q].lastIndex) {
-                        val q1 = horizontal[q][w]
-                        val q2 = horizontal[q][w + 1]
-                        findIntersection(
-                            p1.lat,
-                            p1.lon,
-                            p2.lat,
-                            p2.lon,
-                            q1.lat,
-                            q1.lon,
-                            q2.lat,
-                            q2.lon
-                        )?.let { points.add(it) }
-                    }
-                }
-            }
-        }
-        return points
-    }
-
 
     //Точка пересечения
     private fun findIntersection(

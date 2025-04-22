@@ -14,8 +14,10 @@ import androidx.annotation.RequiresPermission
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
@@ -75,6 +77,11 @@ internal class DownloadMapService : Service() {
                 )
                 return@launch
             }
+            prefs?.setProgress(
+                context = this@DownloadMapService,
+                progress = 0,
+                message = "Подготовка к скачиванию"
+            )
             val tiles =
                 GeoCalculator.calculateTotalTiles(args.bound, args.zoom).successDataOrNull()
                     ?: return@launch
@@ -151,6 +158,14 @@ internal class DownloadMapService : Service() {
             }
             stopForeground(true)
             stopSelf()
+        }.invokeOnCompletion { cause ->
+            if (cause != null && cause !is CancellationException) {
+                coroutineScope.launch {
+                    prefs?.setError(this@DownloadMapService, "Ошибка скачивания ${cause.message}, код ошибки: $COROUTINE_CANCELED_ERROR_CODE")
+                }
+            }
+            stopForeground(true)
+            stopSelf()
         }
     }
 
@@ -219,6 +234,7 @@ internal class DownloadMapService : Service() {
         const val DOWNLOAD_MAP_NOTIFICATION_ID = 788843
         const val INTENT_IS_NULL_ERROR_CODE = "[DMS-001]"
         const val EMPTY_ARGS_ERROR_CODE = "[DMS-002]"
+        const val COROUTINE_CANCELED_ERROR_CODE = "[DMS-003]"
     }
 
     override fun onDestroy() {

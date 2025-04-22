@@ -6,6 +6,7 @@ import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.LayerObject
 import ru.maplyb.printmap.impl.domain.model.PageFormat
+import ru.maplyb.printmap.impl.util.draw_on_bitmap.CoordinateSystem
 import ru.mapolib.printmap.gui.domain.MapObjectSliderInfo
 import ru.mapolib.printmap.gui.presentation.util.PrintMapEffect
 import ru.mapolib.printmap.gui.presentation.util.PrintMapEvent
@@ -33,8 +34,6 @@ internal data class MapDownloadedUiState(
     val exportType: ExportTypes = ExportTypes.PNG(),
     val orientation: ImageOrientation = ImageOrientation.PORTRAIT,
     val dpi: Dpi = dpiVariants.first(),
-
-    val coordinateGrid: CoordinateGridModel = coordinateGridVariants.first(),
     val showCoordinateGrid: Boolean = false,
     val coordinateGridColor: CoordinateGridColor = CoordinateGridColor.default,
     val coordinatesGridSliderInfo: MapObjectSliderInfo = MapObjectSliderInfo(
@@ -46,7 +45,9 @@ internal data class MapDownloadedUiState(
 
     val name: String = "",
     val layerObjectsColor: Map<String, Int?>,
-    val layers: List<Layer>
+    val layers: List<Layer>,
+    val coordinateSystem: CoordinateSystem = CoordinateSystem.SK42,
+    val coordinateGrid: CoordinateGridModel = coordinateGridVariants[coordinateSystem]!!.first(),
 )
 
 internal data class CoordinateGridColor(
@@ -57,7 +58,10 @@ internal data class CoordinateGridColor(
     }
 }
 
-internal val coordinateGridVariants: List<CoordinateGridModel> = listOf(1.0, 0.5, 0.25, 0.125, 0.075, 0.05, 0.025, 0.01, 0.005, 0.0025)
+internal val coordinateGridVariants: Map<CoordinateSystem, List<CoordinateGridModel>> = mapOf(
+    CoordinateSystem.WGS84 to listOf(1.0, 0.5, 0.25, 0.125, 0.075, 0.05, 0.025, 0.01, 0.005, 0.0025),
+    CoordinateSystem.SK42 to listOf(1000.0, 2000.0, 5000.0, 10000.0, 50000.0, 100000.0)
+)
 internal val dpiVariants: List<Dpi> = listOf(72,300)
 
 sealed interface ExportTypes {
@@ -85,25 +89,28 @@ sealed interface ExportTypes {
 }
 
 internal sealed interface MapDownloadedEvent: PrintMapEvent {
-    data object DeleteImage: MapDownloadedEvent
-    data object Share: MapDownloadedEvent
-    data class UpdateExportType(val type: ExportTypes): MapDownloadedEvent
-    data object ShowPolylineChanged: MapDownloadedEvent
-    data object ChangeOrientation: MapDownloadedEvent
-    data class UpdateLayer(val layer: Layer): MapDownloadedEvent
-    data class UpdateName(val name: String): MapDownloadedEvent
-    data class SelectDpi(val dpi: Dpi): MapDownloadedEvent
-    data class UpdateMapObjectStyle(val layerObject: LayerObject): MapDownloadedEvent
-    data object UpdateLayers: MapDownloadedEvent
-    data class UpdateState(val state: MapDownloadedState): MapDownloadedEvent
-    data class UpdateColorToObjects(val color: Color?, val layerObject: LayerObject): MapDownloadedEvent
+    data object DeleteImage : MapDownloadedEvent
+    data object Share : MapDownloadedEvent
+    data class UpdateExportType(val type: ExportTypes) : MapDownloadedEvent
+    data object ShowPolylineChanged : MapDownloadedEvent
+    data object ChangeOrientation : MapDownloadedEvent
+    data class UpdateLayer(val layer: Layer) : MapDownloadedEvent
+    data class UpdateName(val name: String) : MapDownloadedEvent
+    data class SelectDpi(val dpi: Dpi) : MapDownloadedEvent
+    data class UpdateMapObjectStyle(val layerObject: LayerObject) : MapDownloadedEvent
+    data object UpdateLayers : MapDownloadedEvent
+    data class UpdateState(val state: MapDownloadedState) : MapDownloadedEvent
+    data class UpdateColorToObjects(val color: Color?, val layerObject: LayerObject) :
+        MapDownloadedEvent
 
     /*CoordinateGrid*/
-    class ChangeCheckCoordinateGrid: MapDownloadedEvent
-    data class CoordinateGridSliderValueChangeFinished(val value: Float): MapDownloadedEvent
-    data class SelectCoordinateGrid(val value: Double): MapDownloadedEvent
-    class UpdateCoordinateGridColor(val color: CoordinateGridColor): MapDownloadedEvent
+    class ChangeCheckCoordinateGrid : MapDownloadedEvent
+    data class CoordinateGridSliderValueChangeFinished(val value: Float) : MapDownloadedEvent
+    data class SelectCoordinateGrid(val value: Double) : MapDownloadedEvent
+    class UpdateCoordinateGridColor(val color: CoordinateGridColor) : MapDownloadedEvent
 
+    /*CoordinateSystem*/
+    data class SelectCoordinateSystem(val system: CoordinateSystem): MapDownloadedEvent
 }
 internal sealed interface MapDownloadedEffect: PrintMapEffect {
     data class DeleteMap(val path: String): MapDownloadedEffect

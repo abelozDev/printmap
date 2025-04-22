@@ -120,13 +120,15 @@ internal class MapDownloadedViewModel(
                         )
                     } else bitmapWithDraw
                     val bitmapWithDefaults = setDefault(rotatedBitmap)
-                    val innerIntervals = if (currentState.showCoordinateGrid) DrawOnBitmap().drawScaleLines(
+                    val innerIntervals = if (currentState.showCoordinateGrid) DrawOnBitmap().drawScaleLines (
                         stepDegrees = currentState.coordinateGrid,
                         context = context,
                         bitmap = bitmapWithDefaults,
                         boundingBox = currentState.boundingBox,
                         color = currentState.coordinateGridColor.color,
-                        width = currentState.coordinatesGridSliderInfo.value
+                        width = currentState.coordinatesGridSliderInfo.value,
+                        coordinateSystem = currentState.coordinateSystem,
+                        stepMeters = currentState.coordinateGrid
                     ) else bitmapWithDefaults
                     _state.update {
                         it.copy(
@@ -329,6 +331,15 @@ internal class MapDownloadedViewModel(
                 drawLayers()
             }
 
+            is MapDownloadedEvent.SelectCoordinateSystem -> {
+                _state.update {
+                    it.copy(
+                        coordinateSystem = action.system,
+                        coordinateGrid = coordinateGridVariants[action.system]!!.first()
+                    )
+                }
+                drawLayers()
+            }
         }
     }
 
@@ -638,24 +649,6 @@ internal class MapDownloadedViewModel(
                         }
                     }
                 }
-            )
-        }
-    }
-
-    private fun updateBitmap(
-        bitmap: Bitmap,
-    ) {
-        val scale = calculateMapScale(
-            widthBitmap = bitmap.width,
-            heightBitmap = bitmap.height,
-            boundingBox = _state.value.boundingBox,
-            dpi = _state.value.dpi
-        )
-        val bitmapWithScale = drawScale(bitmap, scale)
-        val bitmapWithName = drawName(bitmapWithScale, _state.value.name)
-        _state.update {
-            it.copy(
-                bitmap = bitmapWithName
             )
         }
     }
