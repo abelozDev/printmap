@@ -368,7 +368,11 @@ class DrawOnBitmap {
 
                             if (pixelPoints != null) {
                                 val coordText = "$first"
-                                canvas.drawText(coordText, pixelPoints[0].first, pixelPoints[0].second + 20f, textPaint)
+                                pixelPoints.firstOrNull {
+                                    it.first > 0f && it.second > 0f
+                                }?.let {
+                                    canvas.drawText(coordText, it.first, it.second + 20f, textPaint)
+                                }
                                 for (i in 0 until pixelPoints.lastIndex) {
                                     canvas.drawLine(
                                         pixelPoints[i].first,
@@ -414,15 +418,6 @@ class DrawOnBitmap {
                                 // Преобразуем текущую точку в СК-42 и обратно
                                 val (sk42Lat, _) = converterToSk.wgs84ToSk42(currentLat, visibleWestLon)
                                 val (wgsLat, wgsLon) = converterToSk.sk42ToWgs84(sk42Lat, currentX, zone)
-
-                                // Проверяем, что точка в нужной зоне с учетом буфера
-                                /*if (wgsLon >= (zoneWestLon - bufferDegrees) &&
-                                    wgsLon <= (zoneEastLon + bufferDegrees)) {
-                                    points.add(wgsLat to wgsLon)
-                                    if (first == null) {
-                                        first = "${currentX.roundToInt()}"
-                                    }
-                                }*/
                                 if (wgsLon in zoneWestLon..zoneEastLon) {
                                     points.add(wgsLat to wgsLon)
                                     if (first == null) {
@@ -442,8 +437,11 @@ class DrawOnBitmap {
 
                                 if (pixelPoints != null) {
                                     val coordText = "$first"
-                                    canvas.drawText(coordText, pixelPoints[1].first, pixelPoints[1].second + 30f, textPaint)
-                                    canvas.drawText(coordText, pixelPoints[pixelPoints.lastIndex].first, pixelPoints[pixelPoints.lastIndex].second + 30f, textPaint)
+                                    pixelPoints.firstOrNull {
+                                        it.first > 0f && it.second > 0f
+                                    }?.let {
+                                        canvas.drawText(coordText, it.first + 5f, it.second + 30f, textPaint)
+                                    }
                                     // Рисуем линию
                                     for (i in 0 until pixelPoints.lastIndex) {
                                         canvas.drawLine(
