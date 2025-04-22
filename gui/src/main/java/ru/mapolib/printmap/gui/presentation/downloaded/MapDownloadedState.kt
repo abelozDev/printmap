@@ -34,8 +34,6 @@ internal data class MapDownloadedUiState(
     val exportType: ExportTypes = ExportTypes.PNG(),
     val orientation: ImageOrientation = ImageOrientation.PORTRAIT,
     val dpi: Dpi = dpiVariants.first(),
-
-    val coordinateGrid: CoordinateGridModel = coordinateGridVariants.first(),
     val showCoordinateGrid: Boolean = false,
     val coordinateGridColor: CoordinateGridColor = CoordinateGridColor.default,
     val coordinatesGridSliderInfo: MapObjectSliderInfo = MapObjectSliderInfo(
@@ -49,6 +47,7 @@ internal data class MapDownloadedUiState(
     val layerObjectsColor: Map<String, Int?>,
     val layers: List<Layer>,
     val coordinateSystem: CoordinateSystem = CoordinateSystem.SK42,
+    val coordinateGrid: CoordinateGridModel = coordinateGridVariants[coordinateSystem]!!.first(),
 )
 
 internal data class CoordinateGridColor(
@@ -59,7 +58,10 @@ internal data class CoordinateGridColor(
     }
 }
 
-internal val coordinateGridVariants: List<CoordinateGridModel> = listOf(1.0, 0.5, 0.25, 0.125, 0.075, 0.05, 0.025, 0.01, 0.005, 0.0025)
+internal val coordinateGridVariants: Map<CoordinateSystem, List<CoordinateGridModel>> = mapOf(
+    CoordinateSystem.WGS84 to listOf(1.0, 0.5, 0.25, 0.125, 0.075, 0.05, 0.025, 0.01, 0.005, 0.0025),
+    CoordinateSystem.SK42 to listOf(1000.0, 2000.0, 5000.0, 10000.0, 50000.0, 100000.0)
+)
 internal val dpiVariants: List<Dpi> = listOf(72,300)
 
 sealed interface ExportTypes {

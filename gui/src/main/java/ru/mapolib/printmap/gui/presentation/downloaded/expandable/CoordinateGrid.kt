@@ -90,7 +90,7 @@ internal fun CoordinateGrid(
                 ) {
                     PrintmapPopup(
                         name = "Масштаб",
-                        items = coordinateGridVariants,
+                        items = coordinateGridVariants[selectedCoordSystem]!!,
                         selected = selectedCoordinateGrid,
                         update = {
                             selectCoordinateGrid(it)
@@ -150,7 +150,7 @@ private fun PreviewCoordinateGrid() {
             valueRange = 0f..10f,
             name = "Координатная сетка"
         ),
-        selectedCoordinateGrid = coordinateGridVariants[0],
+        selectedCoordinateGrid = 0.0,
         onCheckedChanged = {},
         onSliderValueChangedFinished = {},
         onColorChangeClicked = {},

@@ -236,7 +236,7 @@ class DrawOnBitmap {
 
     suspend fun drawScaleLines(
         stepDegrees: Double,
-        stepMeters: Double = 10000.0,
+        stepMeters: Double,
         context: Context,
         color: Int,
         bitmap: Bitmap,
@@ -244,7 +244,6 @@ class DrawOnBitmap {
         width: Float,
         coordinateSystem: CoordinateSystem = CoordinateSystem.WGS84
     ): Bitmap {
-        val stepMeters = stepMeters * stepDegrees
         return coroutineScope {
             val paint = defTextPaint(
                 context = context,
@@ -336,7 +335,7 @@ class DrawOnBitmap {
                             val zone = ((currentLon + 6.0) / 6.0).toInt()
 
                             // Преобразуем в СК-42
-                            val (sk42Lat, sk42Lon) = converterToSk.wgs84ToSk42(0.0, currentLon)  // широта не важна
+                            val (_, sk42Lon) = converterToSk.wgs84ToSk42(0.0, currentLon)  // широта не важна
 
                             // Преобразуем обратно в WGS84
                             val (wgsLat, wgsLon) = converterToSk.sk42ToWgs84(currentY, sk42Lon, zone)
@@ -345,7 +344,7 @@ class DrawOnBitmap {
                             if (wgsLon in (boundingBox.lonWest - 0.1)..(boundingBox.lonEast + 0.1)) {
                                 points.add(wgsLat to wgsLon)
                                 if (first == null) {
-                                    first = currentY.roundToInt()
+                                    first = (currentY + 1000).roundToInt()
                                 }
                             }
 
@@ -409,14 +408,14 @@ class DrawOnBitmap {
                             var first: String? = null
                             while (currentLat >= boundingBox.latSouth) {
                                 // Преобразуем текущую точку в СК-42 и обратно
-                                val (sk42Lat, sk42Lon) = converterToSk.wgs84ToSk42(currentLat, visibleWestLon)
+                                val (sk42Lat, _) = converterToSk.wgs84ToSk42(currentLat, visibleWestLon)
                                 val (wgsLat, wgsLon) = converterToSk.sk42ToWgs84(sk42Lat, currentX, zone)
 
                                 // Проверяем, что точка в нужной зоне
                                 if (wgsLon in zoneWestLon..zoneEastLon) {
                                     points.add(wgsLat to wgsLon)
                                     if (first == null) {
-                                        first = "$currentX"
+                                        first = "${currentX.roundToInt()}"
                                     }
                                 }
 
