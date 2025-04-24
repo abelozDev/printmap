@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.LayerObject
@@ -30,6 +32,7 @@ import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
 import ru.maplyb.printmap.impl.util.defTextPaint
 import ru.mapolib.printmap.gui.presentation.util.PrintMapViewModel
 import ru.mapolib.printmap.gui.utils.scale.roundScale
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 
@@ -93,50 +96,75 @@ internal class MapDownloadedViewModel(
     }
 
     private var drawJob: Job? = null
+    private val drawMutex = Mutex() // защищает от наложений
+
     private fun drawLayers() {
         drawJob?.cancel()
         drawJob = viewModelScope.launch(Dispatchers.Default) {
-            doWork {
-                val currentState = _state.value
-                val currentBitmap = BitmapFactory.decodeFile(path)
-                val bitmapWithDraw = if (!currentState.showLayers) {
-                    currentBitmap
-                } else {
-                    val bitmap = currentBitmap.copy(Bitmap.Config.ARGB_8888, true)
+            try {
+                drawMutex.withLock {
+                    doWork {
+                        if (!isActive) return@doWork
 
-                    val innerIntervals = if (currentState.showCoordinateGrid) DrawOnBitmap().drawScaleLines (
-                        stepDegrees = currentState.coordinateGrid,
-                        context = context,
-                        bitmap = bitmap,
-                        boundingBox = currentState.boundingBox,
-                        color = currentState.coordinateGridColor.color,
-                        width = currentState.coordinatesGridSliderInfo.value,
-                        coordinateSystem = currentState.coordinateSystem,
-                        stepMeters = currentState.coordinateGrid
-                    ) else bitmap
-                    val drawLayers = DrawOnBitmap()
-                    drawLayers.drawLayers(
-                        bitmap = innerIntervals,
-                        boundingBox = currentState.boundingBox,
-                        layers = currentState.layers.filter { it.selected },
-                        context = context,
-                        layerObjectsColor = currentState.layerObjectsColor
-                    )
-                    bitmap
-                }
-                if (isActive) {
-                    val rotatedBitmap = if (currentState.orientation != ImageOrientation.PORTRAIT) {
-                        rotateBitmap(
-                            bitmap = bitmapWithDraw
-                        )
-                    } else bitmapWithDraw
-                    val bitmapWithDefaults = setDefault(rotatedBitmap)
-                    _state.update {
-                        it.copy(
-                            bitmap = bitmapWithDefaults
-                        )
+                        val currentState = _state.value
+                        val currentBitmap = BitmapFactory.decodeFile(path)
+                            ?: return@doWork
+
+                        val bitmap = try {
+                            currentBitmap.copy(Bitmap.Config.ARGB_8888, true)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            return@doWork
+                        }
+
+                        if (!isActive) return@doWork
+
+
+                        if (currentState.showCoordinateGrid) {
+                            DrawOnBitmap().drawScaleLines(
+                                stepDegrees = currentState.coordinateGrid,
+                                context = context,
+                                bitmap = bitmap,
+                                boundingBox = currentState.boundingBox,
+                                color = currentState.coordinateGridColor.color,
+                                width = currentState.coordinatesGridSliderInfo.value,
+                                coordinateSystem = currentState.coordinateSystem,
+                                stepMeters = currentState.coordinateGrid
+                            )
+                        }
+
+                        if (!isActive) return@doWork
+
+                        val bitmapWithDraw = if (!currentState.showLayers) {
+                            bitmap
+                        } else {
+                            DrawOnBitmap().drawLayers(
+                                bitmap = bitmap,
+                                boundingBox = currentState.boundingBox,
+                                layers = currentState.layers.filter { it.selected },
+                                context = context,
+                                layerObjectsColor = currentState.layerObjectsColor
+                            )
+                            bitmap
+                        }
+
+                        if (!isActive) return@doWork
+
+                        val rotatedBitmap = if (currentState.orientation != ImageOrientation.PORTRAIT) {
+                            rotateBitmap(bitmap = bitmapWithDraw)
+                        } else bitmapWithDraw
+
+                        val bitmapWithDefaults = setDefault(rotatedBitmap)
+
+                        _state.update {
+                            it.copy(bitmap = bitmapWithDefaults)
+                        }
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                e.printStackTrace() // для других исключений
             }
         }
     }
@@ -294,6 +322,7 @@ internal class MapDownloadedViewModel(
                 }
                 drawLayers()
             }
+
             is MapDownloadedEvent.UpdateCoordinateGridColor -> {
                 _state.update {
                     it.copy(
@@ -312,16 +341,18 @@ internal class MapDownloadedViewModel(
                 }
                 drawLayers()
             }
+
             is MapDownloadedEvent.CoordinateGridSliderValueChangeFinished -> {
                 _state.update {
                     it.copy(
                         coordinatesGridSliderInfo = it.coordinatesGridSliderInfo.copy(
-                         value = action.value
+                            value = action.value
                         )
                     )
                 }
                 drawLayers()
             }
+
             is MapDownloadedEvent.SelectCoordinateGrid -> {
                 _state.update {
                     it.copy(
