@@ -103,9 +103,20 @@ internal class MapDownloadedViewModel(
                     currentBitmap
                 } else {
                     val bitmap = currentBitmap.copy(Bitmap.Config.ARGB_8888, true)
+
+                    val innerIntervals = if (currentState.showCoordinateGrid) DrawOnBitmap().drawScaleLines (
+                        stepDegrees = currentState.coordinateGrid,
+                        context = context,
+                        bitmap = bitmap,
+                        boundingBox = currentState.boundingBox,
+                        color = currentState.coordinateGridColor.color,
+                        width = currentState.coordinatesGridSliderInfo.value,
+                        coordinateSystem = currentState.coordinateSystem,
+                        stepMeters = currentState.coordinateGrid
+                    ) else bitmap
                     val drawLayers = DrawOnBitmap()
                     drawLayers.drawLayers(
-                        bitmap = bitmap,
+                        bitmap = innerIntervals,
                         boundingBox = currentState.boundingBox,
                         layers = currentState.layers.filter { it.selected },
                         context = context,
@@ -120,19 +131,9 @@ internal class MapDownloadedViewModel(
                         )
                     } else bitmapWithDraw
                     val bitmapWithDefaults = setDefault(rotatedBitmap)
-                    val innerIntervals = if (currentState.showCoordinateGrid) DrawOnBitmap().drawScaleLines (
-                        stepDegrees = currentState.coordinateGrid,
-                        context = context,
-                        bitmap = bitmapWithDefaults,
-                        boundingBox = currentState.boundingBox,
-                        color = currentState.coordinateGridColor.color,
-                        width = currentState.coordinatesGridSliderInfo.value,
-                        coordinateSystem = currentState.coordinateSystem,
-                        stepMeters = currentState.coordinateGrid
-                    ) else bitmapWithDefaults
                     _state.update {
                         it.copy(
-                            bitmap = innerIntervals
+                            bitmap = bitmapWithDefaults
                         )
                     }
                 }
@@ -167,7 +168,6 @@ internal class MapDownloadedViewModel(
     ): Bitmap {
         val mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(mutableBitmap)
-
 
         val textSize = (mutableBitmap.width + mutableBitmap.height) / 2 * 0.025f
         val paintStroke = defTextPaint(
