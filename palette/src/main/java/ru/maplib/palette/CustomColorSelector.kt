@@ -90,7 +90,7 @@ internal fun CustomColorSelector(
     }
 }
 
-private fun getContrastColor(color: Color): Color {
+fun getContrastColor(color: Color): Color {
 
     val r = color.toArgb().red / 255.0
     val g = color.toArgb().green / 255.0

@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import ru.maplib.palette.getContrastColor
 
 @Composable
 internal fun ColorItem(
@@ -41,7 +42,7 @@ internal fun ColorItem(
                 modifier = Modifier.size(48.dp),
                 imageVector = Icons.Default.Check,
                 contentDescription = null,
-                tint = Color.White
+                tint = getContrastColor(Color(color))
             )
         }
     }
