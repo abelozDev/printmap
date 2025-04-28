@@ -89,6 +89,7 @@ sealed interface ExportTypes {
 }
 
 internal sealed interface MapDownloadedEvent: PrintMapEvent {
+    data object Startup: MapDownloadedEvent
     data object DeleteImage : MapDownloadedEvent
     data object Share : MapDownloadedEvent
     data class UpdateExportType(val type: ExportTypes) : MapDownloadedEvent

@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Refresh
@@ -60,12 +61,12 @@ import androidx.core.graphics.toColor
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import ru.maplib.palette.PalletScreen
 import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.maplyb.printmap.impl.domain.model.PageFormat
+import ru.mapolib.printmap.gui.core.ui.PrintMapTextFieldColors
 import ru.mapolib.printmap.gui.presentation.components.ErrorDialog
 import ru.mapolib.printmap.gui.presentation.components.PrintmapPopup
 import ru.mapolib.printmap.gui.presentation.downloaded.expandable.CoordinateGrid
@@ -130,22 +131,43 @@ internal fun MapDownloadedScreen(
         var name by remember {
             mutableStateOf(state.name)
         }
-        LaunchedEffect(name) {
-            delay(300)
-            viewModel.sendEvent(MapDownloadedEvent.UpdateName(name = name))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.Gray),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextField(
+                modifier = Modifier.weight(1f),
+                value = name,
+                colors = PrintMapTextFieldColors(),
+                onValueChange = {
+                    name = it
+                },
+                singleLine = true,
+                placeholder = {
+                    Text(
+                        text = "Название карты",
+                        color = Color(0xffdfdede),
+                    )
+                },
+            )
+            IconButton(
+                onClick = {
+                    viewModel.sendEvent(MapDownloadedEvent.UpdateName(name = name))
+                },
+                content = {
+                    Icon(
+                        imageVector = Icons.Default.Done,
+                        tint = Color.White,
+                        contentDescription = null
+                    )
+                }
+
+            )
         }
-        TextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = name,
-            onValueChange = {
-                name = it
-            },
-            label = {
-                Text(
-                    text = "Название карты"
-                )
-            }
-        )
+
         Spacer(Modifier.height(16.dp))
         PrintmapPopup(
             name = "Формат экспорта",

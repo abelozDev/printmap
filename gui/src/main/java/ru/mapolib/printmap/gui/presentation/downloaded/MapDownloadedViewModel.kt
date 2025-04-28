@@ -68,19 +68,6 @@ internal class MapDownloadedViewModel(
     internal val state = _state.asStateFlow()
 
     init {
-        drawLayers()
-        if (_state.value.exportType is ExportTypes.PDF) {
-            _state.update {
-                it.copy(
-                    exportType = (_state.value.exportType as ExportTypes.PDF).copy(
-                        pagesSize = fileUtil.calculatePagesSize(
-                            _state.value.bitmap,
-                            (_state.value.exportType as ExportTypes.PDF).format
-                        )
-                    )
-                )
-            }
-        }
         activeRequestCount
             .map {
                 it > 0
@@ -93,6 +80,7 @@ internal class MapDownloadedViewModel(
                 }
             }
             .launchIn(viewModelScope)
+        sendEvent(MapDownloadedEvent.Startup)
     }
 
     private var drawJob: Job? = null
@@ -226,6 +214,21 @@ internal class MapDownloadedViewModel(
 
     override fun consumeEvent(action: MapDownloadedEvent) {
         when (action) {
+            MapDownloadedEvent.Startup -> {
+                if (_state.value.exportType is ExportTypes.PDF) {
+                    _state.update {
+                        it.copy(
+                            exportType = (_state.value.exportType as ExportTypes.PDF).copy(
+                                pagesSize = fileUtil.calculatePagesSize(
+                                    _state.value.bitmap,
+                                    (_state.value.exportType as ExportTypes.PDF).format
+                                )
+                            )
+                        )
+                    }
+                }
+                drawLayers()
+            }
             MapDownloadedEvent.DeleteImage -> {
                 deleteExistedMap()
             }
