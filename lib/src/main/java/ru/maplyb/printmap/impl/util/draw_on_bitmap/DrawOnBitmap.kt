@@ -253,14 +253,21 @@ class DrawOnBitmap {
                 strokeWidth = width,
                 textSize = 0f
             )
+
             val canvas = Canvas(bitmap)
             val converterToSk = WGSToSK42Converter()
             val textPaint = defTextPaint(
                 context = context,
-                color = Color.YELLOW,
+                color = Color.BLACK,
                 textSize = 25f
             )
-
+            val paintStroke = defTextPaint(
+                context = context,
+                color = Color.WHITE,
+                textSize = 25f,
+                strokeWidth = 25f / 10f,
+                style = Paint.Style.STROKE
+            )
             when (coordinateSystem) {
                 CoordinateSystem.WGS84 -> {
                     // Существующая логика для WGS84
@@ -380,6 +387,7 @@ class DrawOnBitmap {
                                     pixelPoints.firstOrNull {
                                         it.first > 0f && it.second > 0f
                                     }?.let {
+                                        canvas.drawText(coordText, it.first + 5f, it.second + 30f, paintStroke)
                                         canvas.drawText(coordText, it.first + 5f, it.second + 30f, textPaint)
                                     }
                                 }
@@ -450,6 +458,7 @@ class DrawOnBitmap {
                                 pixelPoints.firstOrNull {
                                     it.first > 0f && it.second > 0f
                                 }?.let {
+                                    canvas.drawText(coordText, it.first, it.second + 20f, paintStroke)
                                     canvas.drawText(coordText, it.first, it.second + 20f, textPaint)
                                 }
                             }
@@ -518,34 +527,6 @@ class DrawOnBitmap {
         }
     }
 
-    //Точка пересечения
-    private fun findIntersection(
-        x1: Double,
-        y1: Double,
-        x2: Double,
-        y2: Double,
-        x3: Double,
-        y3: Double,
-        x4: Double,
-        y4: Double
-    ): GeoPoint? {
-        val denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-
-        // Если знаменатель равен нулю, отрезки параллельны
-        if (denom == 0.0) return null
-
-        val t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
-        val u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / denom
-
-        // Если t и u находятся в пределах отрезков (0 <= t <= 1 и 0 <= u <= 1), то отрезки пересекаются
-        if (t in 0f..1f && u in 0f..1f) {
-            val ix = x1 + t * (x2 - x1)
-            val iy = y1 + t * (y2 - y1)
-            return GeoPoint(ix, iy)
-        }
-        return null
-    }
-
     private fun latsList(
         startLat: Double,
         endLat: Double,
@@ -565,35 +546,6 @@ class DrawOnBitmap {
         val result = (1..count).map { roundedStartLon - it * step }
         return result
     }
-
-
-    private fun getLatLinesByDistance(
-        latSouth: Double,
-        heightMeters: Double,
-        stepMeters: Int
-    ): List<Double> {
-        val metersPerDegreeLat = 111_000.0
-        val stepLat = stepMeters / metersPerDegreeLat
-        val count = (heightMeters / stepMeters).toInt()
-        return (1..count).map { latSouth + it * stepLat }
-    }
-
-
-    private fun getInnerIntervals(
-        start: Double,
-        end: Double,
-        steps: Int
-    ): List<Double> {
-        check(start < end) { "start must by less than end" }
-        if (steps == 0) return emptyList()
-        val step = (end - start) / steps
-        val result = mutableListOf<Double>()
-        for (i in 1..steps) {
-            result.add(start + (step * i))
-        }
-        return result
-    }
-
 
     private suspend fun drawLine(
         canvas: Canvas,
