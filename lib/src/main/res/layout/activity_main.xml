@@ -29,6 +29,12 @@
         android:layout_height="wrap_content"
         android:text="Украина"/>
     <Button
+        android:padding="8dp"
+        android:id="@+id/belarus_bb"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Беларусь"/>
+    <Button
         android:id="@+id/dif_zone"
         android:text="пересечение зон"
         android:padding="8dp"

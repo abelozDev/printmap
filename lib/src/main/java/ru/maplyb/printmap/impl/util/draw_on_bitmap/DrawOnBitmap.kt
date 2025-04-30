@@ -453,14 +453,14 @@ class DrawOnBitmap {
                             )
 
                             // Добавляем точку с расширенными границами
-                            if (wgsLon >= (boundingBox.lonWest - bufferDegrees) &&
+                            /*if (wgsLon >= (boundingBox.lonWest - bufferDegrees) &&
                                 wgsLon <= (boundingBox.lonEast + bufferDegrees)
-                            ) {
+                            ) {*/
                                 points.add(wgsLat to wgsLon)
                                 if (first == null) {
                                     first = (currentY + 1000).roundToInt()
                                 }
-                            }
+//                            }
 
                             currentLon += lonStep
                         }

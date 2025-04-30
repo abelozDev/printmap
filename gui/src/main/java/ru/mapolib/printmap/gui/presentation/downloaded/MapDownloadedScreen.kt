@@ -145,7 +145,6 @@ internal fun MapDownloadedScreen(
                 onValueChange = {
                     name = it
                 },
-                singleLine = true,
                 placeholder = {
                     Text(
                         text = "Название карты",

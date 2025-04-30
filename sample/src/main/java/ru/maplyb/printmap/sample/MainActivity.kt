@@ -27,6 +27,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
     private lateinit var moscow: Button
     private lateinit var moscow_oblast: Button
     private lateinit var ukraina: Button
+    private lateinit var belarus: Button
     private lateinit var dif_zone: Button
     private lateinit var composeView: ComposeView
 
@@ -37,6 +38,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
         moscow = findViewById(ru.maplyb.printmap.R.id.moscow_bb)
         moscow_oblast = findViewById(ru.maplyb.printmap.R.id.moscow_oblast_bb)
         ukraina = findViewById(ru.maplyb.printmap.R.id.ukraina_bb)
+        belarus = findViewById(ru.maplyb.printmap.R.id.belarus_bb)
         dif_zone = findViewById(ru.maplyb.printmap.R.id.dif_zone)
         composeView = findViewById(ru.maplyb.printmap.R.id.compose_view)
         getStoragePermission(this)
@@ -1233,10 +1235,10 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
 
         var list = listOf(item, local)
         var selectedBb = BoundingBox(
-            latNorth = 51.655322,
-            lonWest = 22.327316,
-            latSouth = 46.976288,
-            lonEast = 38.433272
+            latNorth = 56.288990849810155,
+            lonWest = 36.56275940461466,
+            latSouth = 55.174063075936566,
+            lonEast = 38.76066425183658
         )
         initBtns {
             selectedBb = it
@@ -1305,6 +1307,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
         moscow.setBackgroundColor(Color.GRAY)
         moscow_oblast.setBackgroundColor(Color.GRAY)
         ukraina.setBackgroundColor(Color.GREEN)
+        belarus.setBackgroundColor(Color.GRAY)
         moscow.setOnClickListener {
             selectBb(
                 BoundingBox(
@@ -1316,6 +1319,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             )
             dif_zone.setBackgroundColor(Color.GRAY)
             moscow.setBackgroundColor(Color.GREEN)
+            belarus.setBackgroundColor(Color.GRAY)
             moscow_oblast.setBackgroundColor(Color.GRAY)
             ukraina.setBackgroundColor(Color.GRAY)
         }
@@ -1330,6 +1334,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             )
             dif_zone.setBackgroundColor(Color.GRAY)
             moscow.setBackgroundColor(Color.GRAY)
+            belarus.setBackgroundColor(Color.GRAY)
             moscow_oblast.setBackgroundColor(Color.GREEN)
             ukraina.setBackgroundColor(Color.GRAY)
         }
@@ -1345,6 +1350,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             dif_zone.setBackgroundColor(Color.GREEN)
             moscow.setBackgroundColor(Color.GRAY)
             moscow_oblast.setBackgroundColor(Color.GRAY)
+            belarus.setBackgroundColor(Color.GRAY)
             ukraina.setBackgroundColor(Color.GRAY)
         }
         ukraina.setOnClickListener {
@@ -1356,10 +1362,27 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                     lonEast = 38.433272
                 )
             )
+            //, 24.763435134398158, 52.86889278920229, 31.755632543331444
             dif_zone.setBackgroundColor(Color.GRAY)
+            belarus.setBackgroundColor(Color.GRAY)
             moscow.setBackgroundColor(Color.GRAY)
             moscow_oblast.setBackgroundColor(Color.GRAY)
             ukraina.setBackgroundColor(Color.GREEN)
+        }
+        belarus.setOnClickListener {
+            selectBb(
+                BoundingBox(
+                    latNorth = 52.208138774554556,
+                    lonWest = 23.992532565058088,
+                    latSouth = 52.11668421481724,
+                    lonEast = 24.10050841191057
+                )
+            )
+            dif_zone.setBackgroundColor(Color.GRAY)
+            belarus.setBackgroundColor(Color.GREEN)
+            moscow.setBackgroundColor(Color.GRAY)
+            moscow_oblast.setBackgroundColor(Color.GRAY)
+            ukraina.setBackgroundColor(Color.GRAY)
         }
     }
 }
