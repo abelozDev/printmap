@@ -456,10 +456,10 @@ class DrawOnBitmap {
                             /*if (wgsLon >= (boundingBox.lonWest - bufferDegrees) &&
                                 wgsLon <= (boundingBox.lonEast + bufferDegrees)
                             ) {*/
-                                points.add(wgsLat to wgsLon)
-                                if (first == null) {
-                                    first = (currentY + 1000).roundToInt()
-                                }
+                            points.add(wgsLat to wgsLon)
+                            if (first == null) {
+                                first = (currentY + 1000).roundToInt()
+                            }
 //                            }
 
                             currentLon += lonStep
@@ -505,14 +505,14 @@ class DrawOnBitmap {
                 }
             }
             val ramka = Path().apply {
-                moveTo(0f,0f)
+                moveTo(0f, 0f)
                 lineTo(bitmap.width.toFloat(), 0f)
                 lineTo(bitmap.width.toFloat(), bitmap.height.toFloat())
                 lineTo(0f, bitmap.height.toFloat())
                 close()
             }
             canvas.drawPath(ramka, paint.apply {
-                strokeWidth = 4*width
+                strokeWidth = 4 * width
             })
         }
     }
