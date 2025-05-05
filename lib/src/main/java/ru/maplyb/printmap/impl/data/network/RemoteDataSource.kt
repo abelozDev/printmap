@@ -36,7 +36,7 @@ internal class RemoteDataSource: DataSource {
             val tile = api.getMap(currentPath)
             return tile.bytes()
         } catch (e: Exception) {
-            println("FATAL EXCEPTION = ${e.message}")
+            println("FATAL EXCEPTION = ${e.stackTrace.joinToString("\n")}")
             byteArrayOf()
         }
     }

@@ -57,10 +57,18 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             zoomMin = 0,
             zoomMax = 13
         )
-        //latNorth = 51.655322,
-        //                            lonWest = 22.327316,
-        //                            latSouth = 46.976288,
-        //                            lonEast = 38.433272
+        val topoType = MapType.Online(
+            path = "http://88.99.52.155/tmg/{z}/{x}/{y}"
+        )
+        val topoMap = MapItem(
+            name = "Topo",
+            type = topoType,
+            isVisible = true,
+            alpha = 1f,
+            position = 2,
+            zoomMax = 24,
+            zoomMin = 0
+        )
         val lats = generateSequence(51.655322, 46.976288, 5000).map {
             GeoPoint(it, 38.2526255)
         }
@@ -1233,7 +1241,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             )
         )
 
-        var list = listOf(item, local)
+        val list = listOf(item, local, topoMap)
         var selectedBb = BoundingBox(
             latNorth = 56.288990849810155,
             lonWest = 36.56275940461466,
