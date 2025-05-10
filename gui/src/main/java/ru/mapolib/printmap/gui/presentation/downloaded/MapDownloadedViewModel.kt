@@ -396,8 +396,14 @@ internal class MapDownloadedViewModel(
         val textLength = paintFill.measureText(name)
         val x = (mutableBitmap.width / 2f) - (textLength / 2)
         val textHeight = paintFill.descent() - paintFill.ascent()
-        canvas.drawText(name, x, textHeight, paintStroke)
-        canvas.drawText(name, x, textHeight, paintFill)
+        val lines = name.split('\n')
+        val lineSpacing = paintFill.fontSpacing // или можно задать вручную
+
+        lines.forEachIndexed { index, line ->
+            val y = textHeight + index * lineSpacing
+            canvas.drawText(line, x, y, paintStroke)
+            canvas.drawText(line, x, y, paintFill)
+        }
         return mutableBitmap
     }
 
