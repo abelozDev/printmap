@@ -317,7 +317,7 @@ class DrawOnBitmap {
                     // Преобразуем границы карты в СК-42 для горизонтальных линий
                     // Добавляем буфер к границам для гарантии полного покрытия
                     val bufferDegrees = 0.5  // Буфер в градусах
-                    // рисуем вертикальные линии
+                    /**рисуем вертикальные линии*/
                     val westZone = ((boundingBox.lonWest - bufferDegrees + 6.0) / 6.0).toInt()
                     val eastZone = ((boundingBox.lonEast + bufferDegrees + 6.0) / 6.0).toInt()
 
@@ -425,44 +425,32 @@ class DrawOnBitmap {
                     // Округляем координаты до ближайшей сетки для широты
                     val startY = ceil(northLat / stepMeters).toInt() * stepMeters
                     val endY = floor(southLat / stepMeters).toInt() * stepMeters
-                    // рисуем горизонтальные линии
+
+                    /**рисуем горизонтальные линии*/
                     var currentY = startY
                     while (currentY >= endY) {
                         val points = mutableListOf<Pair<Double, Double>>()
-
-                        // Увеличиваем частоту точек для более плавных линий
-                        val lonStep = 0.05  // уменьшенный шаг в градусах
-                        var currentLon = boundingBox.lonWest - bufferDegrees
                         var first: Int? = null
 
-                        while (currentLon <= boundingBox.lonEast + bufferDegrees) {
-                            // Определяем зону для текущей точки
-                            val zone = ((currentLon + 6.0) / 6.0).toInt()
+                        // Получаем диапазон ск42-долгот для этой линии
+                        val (sk42LatWest, sk42LonWest) = converterToSk.wgs84ToSk42(
+                            converterToSk.sk42ToWgs84(currentY, 0.0, ((boundingBox.lonWest + 6.0) / 6.0).toInt()).first,
+                            boundingBox.lonWest - bufferDegrees
+                        )
+                        val (sk42LatEast, sk42LonEast) = converterToSk.wgs84ToSk42(
+                            converterToSk.sk42ToWgs84(currentY, 0.0, ((boundingBox.lonEast + 6.0) / 6.0).toInt()).first,
+                            boundingBox.lonEast + bufferDegrees
+                        )
 
-                            // Преобразуем в СК-42
-                            val (_, sk42Lon) = converterToSk.wgs84ToSk42(
-                                0.0,
-                                currentLon
-                            )  // широта не важна
-
-                            // Преобразуем обратно в WGS84
-                            val (wgsLat, wgsLon) = converterToSk.sk42ToWgs84(
-                                currentY,
-                                sk42Lon,
-                                zone
-                            )
-
-                            // Добавляем точку с расширенными границами
-                            /*if (wgsLon >= (boundingBox.lonWest - bufferDegrees) &&
-                                wgsLon <= (boundingBox.lonEast + bufferDegrees)
-                            ) {*/
+                        val sk42LonStep = (sk42LonEast - sk42LonWest) / 200.0
+                        var sk42Lon = sk42LonWest
+                        while (sk42Lon <= sk42LonEast) {
+                            // Определяем зону по долготе
+                            val zone = ((boundingBox.lonWest + 6.0) / 6.0).toInt()
+                            val (wgsLat, wgsLon) = converterToSk.sk42ToWgs84(currentY, sk42Lon, zone)
                             points.add(wgsLat to wgsLon)
-                            if (first == null) {
-                                first = (currentY + 1000).roundToInt()
-                            }
-//                            }
-
-                            currentLon += lonStep
+                            if (first == null) first = (currentY + 1000).roundToInt()
+                            sk42Lon += sk42LonStep
                         }
 
                         // Сортируем точки по долготе для правильного порядка отрисовки
