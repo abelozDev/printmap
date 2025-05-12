@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.toColor
 import ru.maplib.palette.components.ColorItem
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun PallerColorSelector(
     initialColor: android.graphics.Color,

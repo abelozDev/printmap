@@ -317,7 +317,7 @@ internal fun MapDownloadedScreen(
 
         is MapDownloadedState.ChangeLayerColor -> {
             val layerObject = (state.state as MapDownloadedState.ChangeLayerColor).layerObject
-            val currentColor = state.layerObjectsColor[layerObject::class.simpleName] ?: android.graphics.Color.WHITE
+            val currentColor = state.layerObjectsColor[layerObject::class.simpleName] ?: android.graphics.Color.GRAY
             Dialog(
                 onDismissRequest = {},
                 content = {
