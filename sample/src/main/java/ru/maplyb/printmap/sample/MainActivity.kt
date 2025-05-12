@@ -1347,12 +1347,13 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             ukraina.setBackgroundColor(Color.GRAY)
         }
         dif_zone.setOnClickListener {
+            //48.5161047761417, 35.18711552957413, 47.393866545904984, 38.45360194924245
             selectBb(
                 BoundingBox(
-                    latNorth = 47.29879454145002,
-                    lonWest = 35.22176998816128,
-                    latSouth = 46.5894169237539,
-                    lonEast = 36.42106171671472
+                    latNorth = 48.5161047761417,
+                    lonWest = 35.18711552957413,
+                    latSouth = 47.393866545904984,
+                    lonEast = 38.45360194924245
                 )
             )
             dif_zone.setBackgroundColor(Color.GREEN)
@@ -1380,10 +1381,10 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
         belarus.setOnClickListener {
             selectBb(
                 BoundingBox(
-                    latNorth = 52.208138774554556,
-                    lonWest = 23.992532565058088,
-                    latSouth = 52.11668421481724,
-                    lonEast = 24.10050841191057
+                    latNorth = 52.758111272063594,
+                    lonWest = 24.579482146131223,
+                    latSouth = 52.421228437452136,
+                    lonEast = 25.06219033910322
                 )
             )
             dif_zone.setBackgroundColor(Color.GRAY)
