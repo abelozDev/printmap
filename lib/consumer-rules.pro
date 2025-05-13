@@ -1,1 +1,3 @@
 -keep class org.osgeo.proj4j.** { *; }
+-keep class ru.maplyb.printmap.api.model.** { *;}
+-keep class ru.maplyb.printmap.impl.domain.model.** { *;}
