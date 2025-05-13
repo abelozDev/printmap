@@ -1,0 +1,1 @@
+-keep class org.osgeo.proj4j.** { *; }
