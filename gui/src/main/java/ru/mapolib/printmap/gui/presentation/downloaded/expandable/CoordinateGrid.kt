@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,6 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import ru.maplib.printmap.core.theme.colors.PrintMapCheckbox
+import ru.maplib.printmap.core.theme.colors.PrintMapColorSchema
+import ru.maplib.printmap.core.theme.colors.PrintMapSliderColor
 import ru.maplyb.printmap.impl.util.draw_on_bitmap.CoordinateSystem
 import ru.mapolib.printmap.gui.domain.MapObjectSliderInfo
 import ru.mapolib.printmap.gui.presentation.components.PrintmapPopup
@@ -57,10 +61,11 @@ internal fun CoordinateGrid(
             verticalAlignment = Alignment.CenterVertically
         ){
             Text(
+                color = PrintMapColorSchema.colors.textColor,
                 text = "Координатная сетка"
             )
             Spacer(Modifier.weight(1f))
-            Checkbox(
+            PrintMapCheckbox(
                 checked = checked,
                 onCheckedChange = onCheckedChanged
             )
@@ -120,6 +125,7 @@ internal fun CoordinateGrid(
                         onValueChange = {
                             sliderState = it
                         },
+                        colors = PrintMapSliderColor(),
                         steps = sliderInfo.steps,
                         valueRange = sliderInfo.valueRange,
                         onValueChangeFinished = {
@@ -127,6 +133,7 @@ internal fun CoordinateGrid(
                         }
                     )
                     Text(
+                        color = PrintMapColorSchema.colors.textColor,
                         text = "${sliderState.roundToInt()}/${sliderInfo.valueRange.endInclusive.toInt()}",
                     )
                 }

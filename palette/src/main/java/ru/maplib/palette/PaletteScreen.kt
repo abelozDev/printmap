@@ -32,6 +32,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import ru.maplib.printmap.core.theme.colors.PrintMapButtonColors
+import ru.maplib.printmap.core.theme.colors.PrintMapColorSchema
 
 @Composable
 fun PalletScreen(
@@ -43,7 +45,7 @@ fun PalletScreen(
     }
     Column(
         modifier = Modifier
-            .background(Color.White)
+            .background(PrintMapColorSchema.colors.backgroundColor)
             .padding(16.dp)
     ) {
         Box(
@@ -51,6 +53,7 @@ fun PalletScreen(
             contentAlignment = Alignment.Center
         ) {
             Text(
+                color = PrintMapColorSchema.colors.textColor,
                 modifier = Modifier
                     .align(Alignment.Center),
                 text = "Выбор цвета",
@@ -106,12 +109,15 @@ fun PalletScreen(
         }
         Spacer(Modifier.height(16.dp))
         Button(
-            modifier = Modifier.align(Alignment.CenterHorizontally),
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally),
+            colors = PrintMapButtonColors(),
             onClick = {
                 dismiss(null)
             },
             content = {
                 Text(
+                    color = PrintMapColorSchema.colors.textColor,
                     text = "ПО УМОЛЧАНИЮ"
                 )
             }

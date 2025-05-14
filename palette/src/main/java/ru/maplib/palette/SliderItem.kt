@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import ru.maplib.printmap.core.theme.colors.PrintMapColorSchema
 import kotlin.math.roundToInt
 
 internal enum class RGBItems(val color: Color) {
@@ -38,6 +39,7 @@ internal fun SliderItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
+            color = PrintMapColorSchema.colors.textColor,
             text = item.name
         )
         Slider(
@@ -61,6 +63,7 @@ internal fun SliderItem(
             )
         )
         Text(
+            color = PrintMapColorSchema.colors.textColor,
             text = sliderValue.roundToInt().toString()
         )
     }

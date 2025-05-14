@@ -1,17 +1,17 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.compose)
     id("maven-publish")
-    alias(libs.plugins.jetbrains.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
-    namespace = "ru.mapolib.printmap.gui"
+    namespace = "ru.maplib.printmap.core"
     compileSdk = libs.versions.compile.sdk.get().toInt()
 
     defaultConfig {
         minSdk = libs.versions.min.sdk.version.get().toInt()
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -24,7 +24,6 @@ android {
                 "proguard-rules.pro"
             )
         }
-        debug {  }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -37,16 +36,13 @@ android {
         compose = true
     }
 }
-tasks.withType<Test> {
-    useJUnitPlatform()
-}
 publishing {
     publications {
         register<MavenPublication>("release") {
             afterEvaluate {
                 from(components["release"])
                 groupId = "com.github.abelozDev"
-                artifactId = "gui"
+                artifactId = "palette"
                 version = libs.versions.lib.version
             }
         }
@@ -54,25 +50,11 @@ publishing {
 }
 
 dependencies {
-    api(project(":lib"))
-    implementation(project(":palette"))
-    implementation(project(":core"))
-    implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.material3)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    testImplementation(libs.junit.jupiter.api)
-    testImplementation(libs.junit.jupiter.engine)
-    testRuntimeOnly(libs.junit.jupiter.engine)
-    testImplementation(kotlin("test"))
-    debugImplementation(libs.androidx.ui.tooling)
-    implementation(libs.coil)
-    implementation(libs.coil.compose)
-    implementation(libs.kotlinx.serialization.json)
+    implementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }

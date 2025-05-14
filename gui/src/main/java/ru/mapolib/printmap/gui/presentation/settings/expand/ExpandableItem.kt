@@ -26,6 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ru.maplib.printmap.core.theme.colors.PrintMapCheckbox
+import ru.maplib.printmap.core.theme.colors.PrintMapColorSchema
 import ru.maplyb.printmap.api.model.Expandable
 import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapType
@@ -54,6 +56,7 @@ fun ColumnScope.ExpandableItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
+                color = PrintMapColorSchema.colors.textColor,
                 modifier = Modifier.padding(
                     start = 8.dp,
                 ),
@@ -61,7 +64,7 @@ fun ColumnScope.ExpandableItem(
                 fontSize = 16.sp,
                 text = items.first().header!!,
             )
-            Checkbox(
+            PrintMapCheckbox(
                 checked = headerChecked,
                 onCheckedChange = {
                     onHeaderChange(!headerChecked)
@@ -81,6 +84,7 @@ fun ColumnScope.ExpandableItem(
                 contentAlignment = Alignment.CenterStart
             ) {
                 Text(
+                    color = PrintMapColorSchema.colors.textColor,
                     text = map.name
                 )
             }
@@ -94,7 +98,7 @@ fun ColumnScope.ExpandableItem(
                 )
                 Spacer(Modifier.width(4.dp))
             }
-            Checkbox(
+            PrintMapCheckbox(
                 checked = map.selected,
                 onCheckedChange = {
                     onChange(map)

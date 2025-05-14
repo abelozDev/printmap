@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import ru.maplib.printmap.core.theme.colors.PrintMapButtonColors
+import ru.maplib.printmap.core.theme.colors.PrintMapColorSchema
 
 @Composable
 internal fun ErrorDialog(
@@ -37,6 +39,7 @@ internal fun ErrorDialog(
                 .padding(16.dp)
         ) {
             Text(
+                color = PrintMapColorSchema.colors.textColor,
                 text = title,
                 fontWeight = FontWeight.Normal,
                 fontSize = 16.sp,
@@ -45,6 +48,7 @@ internal fun ErrorDialog(
             )
             Spacer(Modifier.height(16.dp))
             Text(
+                color = PrintMapColorSchema.colors.textColor,
                 text = message,
                 fontWeight = FontWeight.Medium,
                 fontSize = 12.sp,
@@ -53,9 +57,11 @@ internal fun ErrorDialog(
             )
             Spacer(Modifier.height(16.dp))
             Button(
+                colors = PrintMapButtonColors(),
                 onClick =onDismiss,
                 content = {
                     Text(
+                        color = PrintMapColorSchema.colors.textColor,
                         text = "ОК"
                     )
                 }

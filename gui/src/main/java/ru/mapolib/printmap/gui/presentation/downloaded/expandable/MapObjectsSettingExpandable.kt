@@ -34,6 +34,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import ru.maplib.printmap.core.theme.colors.PrintMapColorSchema
+import ru.maplib.printmap.core.theme.colors.PrintMapSliderColor
 import ru.maplyb.printmap.R
 import ru.maplyb.printmap.api.model.LayerObject
 import ru.mapolib.printmap.gui.domain.MapObjectSliderInfo
@@ -58,6 +60,7 @@ fun MapObjectsSettingExpandable(
             }
     ) {
         Text(
+            color = PrintMapColorSchema.colors.textColor,
             text = stringResource(R.string.map_objects_settings)
         )
         Spacer(Modifier.weight(1f))
@@ -117,6 +120,7 @@ private fun MapObjectsSettingSlider(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
+                color = PrintMapColorSchema.colors.textColor,
                 text = slideInfo.name
             )
             Spacer(Modifier.width(8.dp))
@@ -135,6 +139,7 @@ private fun MapObjectsSettingSlider(
             )
             Spacer(Modifier.weight(1f))
             Text(
+                color = PrintMapColorSchema.colors.textColor,
                 text = "Размер: ${ slideInfo.value.roundToInt() }/${ slideInfo.valueRange.endInclusive.roundToInt() }"
             )
         }
@@ -144,6 +149,7 @@ private fun MapObjectsSettingSlider(
             onValueChange = {
                 onValueChanged(it.roundToInt())
             },
+            colors = PrintMapSliderColor(),
             steps = slideInfo.steps,
             valueRange = slideInfo.valueRange,
             onValueChangeFinished = {

@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import ru.maplib.printmap.core.theme.colors.PrintMapColorSchema
 import ru.maplyb.printmap.R
 import ru.maplyb.printmap.api.model.Layer
 import ru.mapolib.printmap.gui.presentation.settings.expand.ExpandableItem
@@ -44,6 +45,7 @@ fun LayersExpandable(
             }
     ) {
         Text(
+            color = PrintMapColorSchema.colors.textColor,
             text = stringResource(R.string.selected_layers)
         )
         Spacer(Modifier.weight(1f))

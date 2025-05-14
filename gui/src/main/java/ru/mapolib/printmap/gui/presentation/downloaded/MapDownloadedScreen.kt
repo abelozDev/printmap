@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,6 +65,9 @@ import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import ru.maplib.palette.PalletScreen
+import ru.maplib.printmap.core.theme.colors.PrintMapCheckbox
+import ru.maplib.printmap.core.theme.colors.PrintMapColorSchema
+import ru.maplib.printmap.core.theme.colors.PrintMapProgressIndicator
 import ru.maplyb.printmap.api.model.DownloadedImage
 import ru.maplyb.printmap.impl.domain.model.PageFormat
 import ru.mapolib.printmap.gui.core.ui.PrintMapTextFieldColors
@@ -227,6 +231,7 @@ internal fun MapDownloadedScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
+                color = PrintMapColorSchema.colors.textColor,
                 text = state.orientation.description
             )
             Spacer(Modifier.weight(1f))
@@ -246,10 +251,11 @@ internal fun MapDownloadedScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
+                color = PrintMapColorSchema.colors.textColor,
                 text = stringResource(ru.mapolib.printmap.gui.R.string.printmap_show_polyline)
             )
             Spacer(Modifier.weight(1f))
-            Checkbox(
+            PrintMapCheckbox(
                 checked = state.showLayers,
                 onCheckedChange = {
                     viewModel.sendEvent(MapDownloadedEvent.ShowPolylineChanged)
@@ -310,7 +316,7 @@ internal fun MapDownloadedScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    PrintMapProgressIndicator()
                 }
             }
         }
@@ -372,10 +378,12 @@ private fun ColumnScope.FormatPopup(
         }
     ) {
         Text(
+            color = PrintMapColorSchema.colors.textColor,
             text = "Формат листа. \nКоличество листов: ${selectedExportType.pagesSize}"
         )
         Spacer(Modifier.weight(1f))
         Text(
+            color = PrintMapColorSchema.colors.textColor,
             text = selectedExportType.format.name
         )
         Icon(
@@ -468,6 +476,7 @@ private fun ImageItem(
             )
         }
         Text(
+            color = PrintMapColorSchema.colors.textColor,
             text = "Размер файла: ${formatSize(image.byteCount.toLong())}"
         )
         Spacer(Modifier.height(16.dp))
@@ -483,7 +492,7 @@ private fun ImageItem(
                 contentDescription = null
             )
             if (progress) {
-                CircularProgressIndicator()
+                PrintMapProgressIndicator()
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -516,7 +525,7 @@ private fun RowScope.ImageType(
     ) {
         Text(
             modifier = Modifier.align(Alignment.Center),
-            color = textColor,
+            color = PrintMapColorSchema.colors.textColor,
             textAlign = TextAlign.Center,
             text = description,
         )

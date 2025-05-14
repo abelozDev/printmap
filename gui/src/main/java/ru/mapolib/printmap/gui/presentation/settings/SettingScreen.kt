@@ -1,5 +1,6 @@
 package ru.mapolib.printmap.gui.presentation.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,6 +30,10 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import ru.maplib.printmap.core.theme.colors.PrintMapButtonColors
+import ru.maplib.printmap.core.theme.colors.PrintMapColorSchema
+import ru.maplib.printmap.core.theme.colors.PrintMapProgressIndicator
+import ru.maplib.printmap.core.theme.colors.PrintMapSliderColor
 import ru.maplyb.printmap.R
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.Layer
@@ -97,15 +102,17 @@ internal fun DownloadMapSettingsScreen(
             .verticalScroll(rememberScrollState())
     ) {
         Text(
+            color = PrintMapColorSchema.colors.textColor,
             text = stringResource(R.string.settings_header),
             fontWeight = FontWeight.Bold
         )
         Spacer(Modifier.height(16.dp))
         if (state.progress) {
-            CircularProgressIndicator(
+            PrintMapProgressIndicator(
                 modifier = Modifier
                     .height(32.dp)
                     .padding(horizontal = 16.dp),
+
             )
         } else {
             if (state.state is SettingState.Error) {
@@ -115,11 +122,13 @@ internal fun DownloadMapSettingsScreen(
                 )
             } else {
                 Text(
+                    color = PrintMapColorSchema.colors.textColor,
                     text = stringResource(R.string.tiles_count, state.tilesCount)
                 )
                 Spacer(Modifier.height(16.dp))
                 state.fileSize?.let {
                     Text(
+                        color = PrintMapColorSchema.colors.textColor,
                         text = stringResource(R.string.file_size, formatSize(it))
                     )
                 }
@@ -131,10 +140,12 @@ internal fun DownloadMapSettingsScreen(
                 .fillMaxWidth()
         ) {
             Text(
+                color = PrintMapColorSchema.colors.textColor,
                 text = stringResource(ru.mapolib.printmap.gui.R.string.printmap_zoom)
             )
             Spacer(Modifier.weight(1f))
             Text(
+                color = PrintMapColorSchema.colors.textColor,
                 text = state.zoom.toString()
             )
         }
@@ -144,6 +155,7 @@ internal fun DownloadMapSettingsScreen(
                 viewModel.sendEvent(SettingEvent.UpdateZoom(it.roundToInt()))
             },
             steps = 27,
+            colors = PrintMapSliderColor(),
             valueRange = 0f..28f,
             onValueChangeFinished = {
                 viewModel.sendEvent(SettingEvent.GetTilesCount)
@@ -155,10 +167,12 @@ internal fun DownloadMapSettingsScreen(
                 .fillMaxWidth()
         ) {
             Text(
+                color = PrintMapColorSchema.colors.textColor,
                 text = stringResource(ru.mapolib.printmap.gui.R.string.printmap_quality)
             )
             Spacer(Modifier.weight(1f))
             Text(
+                color = PrintMapColorSchema.colors.textColor,
                 text = state.quality.toString()
             )
         }
@@ -168,6 +182,7 @@ internal fun DownloadMapSettingsScreen(
             onValueChange = {
                 viewModel.sendEvent(SettingEvent.UpdateQuality(it.roundToInt()))
             },
+            colors = PrintMapSliderColor(),
             steps = 100,
             valueRange = 0f..100f,
             onValueChangeFinished = {
@@ -188,6 +203,7 @@ internal fun DownloadMapSettingsScreen(
         Spacer(Modifier.height(16.dp))
         Button(
             modifier = Modifier.fillMaxWidth(),
+            colors = PrintMapButtonColors(),
             content = {
                 Text(text = stringResource(R.string.download))
             },
@@ -217,9 +233,6 @@ internal fun DownloadMapSettingsScreen(
 //                contentDescription = null
 //            )
 //        }
-
-
-
 
 @Preview
 @Composable

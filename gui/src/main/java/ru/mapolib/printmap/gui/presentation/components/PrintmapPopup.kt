@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import ru.maplib.printmap.core.theme.colors.PrintMapColorSchema
 
 @Composable
 internal fun <T> PrintmapPopup(
@@ -43,10 +44,12 @@ internal fun <T> PrintmapPopup(
         }
     ) {
         Text(
+            color = PrintMapColorSchema.colors.textColor,
             text = name
         )
         Spacer(Modifier.weight(1f))
         Text(
+            color = PrintMapColorSchema.colors.textColor,
             text = selected.toString()
         )
         Icon(
