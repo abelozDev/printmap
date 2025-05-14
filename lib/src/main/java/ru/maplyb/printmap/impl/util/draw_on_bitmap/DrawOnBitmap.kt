@@ -10,6 +10,7 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -27,11 +28,10 @@ import ru.maplyb.printmap.api.model.GeoPoint
 import kotlin.math.roundToInt
 import androidx.core.graphics.withTranslation
 import ru.maplyb.printmap.LatLon
+import ru.maplyb.printmap.R
 import ru.maplyb.printmap.getGeodesicLine
 import ru.maplyb.printmap.impl.util.converters.WGSToSK42Converter
 import ru.maplyb.printmap.impl.util.defTextPaint
-import kotlin.math.cos
-import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -120,7 +120,7 @@ class DrawOnBitmap {
             val drawable = when (objects.res) {
                 is ObjectRes.Local -> ContextCompat.getDrawable(context, objects.res.res)
                 is ObjectRes.Storage -> Drawable.createFromPath(objects.res.res)
-            } ?: return@coroutineScope
+            } ?: AppCompatResources.getDrawable(context, R.drawable.printmap_ic_point)
 
             val bitmapDrawable = objects.style.color?.let {
                 val colorFilter = PorterDuffColorFilter(it, PorterDuff.Mode.SRC_IN)
@@ -130,8 +130,8 @@ class DrawOnBitmap {
             } ?: drawable as? BitmapDrawable
 
 
-            val realWidth = bitmapDrawable?.bitmap?.width ?: drawable.intrinsicWidth
-            val realHeight = bitmapDrawable?.bitmap?.height ?: drawable.intrinsicHeight
+            val realWidth = bitmapDrawable?.bitmap?.width ?: drawable!!.intrinsicWidth
+            val realHeight = bitmapDrawable?.bitmap?.height ?: drawable!!.intrinsicHeight
             val scaleFactor1 = (objects.style.width / 25f) * scaleFactor
             val scaledWidth = (realWidth * scaleFactor1).toInt()
             val scaledHeight = (realHeight * scaleFactor1).toInt()
@@ -139,7 +139,7 @@ class DrawOnBitmap {
             val centerY = linesInPixels.second
             canvas.withTranslation(centerX, centerY) {
                 rotate(objects.angle)
-                drawable.setBounds(
+                drawable!!.setBounds(
                     -scaledWidth / 2,
                     -scaledHeight / 2,
                     scaledWidth / 2,
