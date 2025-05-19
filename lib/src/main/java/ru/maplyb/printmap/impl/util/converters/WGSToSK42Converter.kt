@@ -104,12 +104,4 @@ class WGSToSK42Converter {
         
         return Pair(phi, lon)
     }
-
-    // Вспомогательный метод для преобразования координат из СК-42 в WGS84 с автоматическим определением зоны
-    fun sk42ToWgs84(lat: Double, lon: Double): Pair<Double, Double> {
-        // Определяем зону по долготе
-        val zone = (lon / 6).toInt() + 1
-        return sk42ToWgs84(lat, lon, zone)
-    }
-
 }

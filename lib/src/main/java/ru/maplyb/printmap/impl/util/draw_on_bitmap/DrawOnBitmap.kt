@@ -32,6 +32,7 @@ import ru.maplyb.printmap.R
 import ru.maplyb.printmap.getGeodesicLine
 import ru.maplyb.printmap.impl.util.converters.WGSToSK42Converter
 import ru.maplyb.printmap.impl.util.defTextPaint
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -446,7 +447,7 @@ class DrawOnBitmap {
                         var sk42Lon = sk42LonWest
                         while (sk42Lon <= sk42LonEast) {
                             // Определяем зону по долготе
-                            val zone = ((boundingBox.lonWest + 6.0) / 6.0).toInt()
+                            val zone = bestGuessZoneForSk42Coord(currentY, sk42Lon, converterToSk)
                             val (wgsLat, wgsLon) = converterToSk.sk42ToWgs84(currentY, sk42Lon, zone)
                             points.add(wgsLat to wgsLon)
                             if (first == null) first = (currentY + 1000).roundToInt()
@@ -504,7 +505,20 @@ class DrawOnBitmap {
             })
         }
     }
-
+    private fun bestGuessZoneForSk42Coord(y: Double, x: Double, converter: WGSToSK42Converter): Int {
+        var bestZone = 1
+        var minDiff = Double.MAX_VALUE
+        for (zone in 1..30) {
+            val (_, lon) = converter.sk42ToWgs84(y, x, zone)
+            val centralMeridian = zone * 6 - 3
+            val diff = abs(lon - centralMeridian)
+            if (diff < minDiff) {
+                minDiff = diff
+                bestZone = zone
+            }
+        }
+        return bestZone
+    }
     // Вспомогательная функция для отрисовки линий WGS84
     private fun drawWGS84Lines(
         canvas: Canvas,
