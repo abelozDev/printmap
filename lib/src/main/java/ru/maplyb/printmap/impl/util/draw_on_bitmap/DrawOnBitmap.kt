@@ -508,7 +508,7 @@ class DrawOnBitmap {
     private fun bestGuessZoneForSk42Coord(y: Double, x: Double, converter: WGSToSK42Converter): Int {
         var bestZone = 1
         var minDiff = Double.MAX_VALUE
-        for (zone in 1..30) {
+        for (zone in 1..60) {
             val (_, lon) = converter.sk42ToWgs84(y, x, zone)
             val centralMeridian = zone * 6 - 3
             val diff = abs(lon - centralMeridian)
