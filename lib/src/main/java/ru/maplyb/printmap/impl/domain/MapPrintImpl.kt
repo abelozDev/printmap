@@ -54,10 +54,6 @@ internal class MapPrintImpl(
             }
         }
         )
-        if (isServiceRunning(activity, DownloadMapService::class.java)) {
-            val intent = Intent(activity.applicationContext, DownloadMapService::class.java)
-            activity.bindService(intent, connection, Context.BIND_AUTO_CREATE)
-        }
     }
 
     override fun onMapReady(result: (MapPath?) -> Unit) {
@@ -108,18 +104,11 @@ internal class MapPrintImpl(
         val intent = Intent(activity.applicationContext, DownloadMapService::class.java).run {
             putExtra(DownloadMapService.FORMING_MAP_ARGS, args)
         }
-        if (!isServiceRunning(activity, DownloadMapService::class.java)) {
-            activity.startService(intent)
-        }
+        activity.startService(intent)
+
         if (!mBound) {
             activity.bindService(intent, connection, Context.BIND_AUTO_CREATE)
         }
-    }
-
-    fun isServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
-        val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        return manager.getRunningServices(Int.MAX_VALUE)
-            .any { it.service.className == serviceClass.name }
     }
 
     /** Считаем тестовый размер файла*/
