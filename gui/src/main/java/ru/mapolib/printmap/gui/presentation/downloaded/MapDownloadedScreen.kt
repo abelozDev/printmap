@@ -115,18 +115,20 @@ internal fun MapDownloadedScreen(
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
-            Image(
+            Icon(
                 modifier = Modifier.clickable {
                     viewModel.sendEvent(MapDownloadedEvent.DeleteImage)
                 },
+                tint = PrintMapColorSchema.colors.textColor,
                 imageVector = Icons.Default.Delete,
                 contentDescription = null
             )
             Spacer(Modifier.width(16.dp))
-            Image(
+            Icon(
                 modifier = Modifier.clickable {
                     viewModel.sendEvent(MapDownloadedEvent.Share)
                 },
+                tint = PrintMapColorSchema.colors.textColor,
                 imageVector = Icons.Default.Share,
                 contentDescription = null
             )
@@ -163,7 +165,7 @@ internal fun MapDownloadedScreen(
                 content = {
                     Icon(
                         imageVector = Icons.Default.Done,
-                        tint = Color.White,
+                        tint = PrintMapColorSchema.colors.textColor,
                         contentDescription = null
                     )
                 }
@@ -242,7 +244,8 @@ internal fun MapDownloadedScreen(
                 content = {
                     Icon(
                         Icons.Default.Refresh,
-                        null
+                        tint = PrintMapColorSchema.colors.textColor,
+                        contentDescription = null
                     )
                 }
             )
@@ -388,6 +391,7 @@ private fun ColumnScope.FormatPopup(
         )
         Icon(
             imageVector = if (formatsVisibility) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            tint = PrintMapColorSchema.colors.textColor,
             contentDescription = null
         )
     }

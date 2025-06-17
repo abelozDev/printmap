@@ -93,6 +93,7 @@ fun ColumnScope.ExpandableItem(
                     modifier = Modifier.clickable {
                         onActionClick(map)
                     },
+                    tint = PrintMapColorSchema.colors.textColor,
                     imageVector = actionIcon,
                     contentDescription = null,
                 )

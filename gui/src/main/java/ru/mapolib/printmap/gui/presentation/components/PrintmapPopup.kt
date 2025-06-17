@@ -54,6 +54,7 @@ internal fun <T> PrintmapPopup(
         )
         Icon(
             imageVector = if (visibility) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            tint = PrintMapColorSchema.colors.textColor,
             contentDescription = null
         )
     }

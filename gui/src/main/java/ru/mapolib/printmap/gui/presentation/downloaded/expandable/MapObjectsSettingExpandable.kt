@@ -66,6 +66,7 @@ fun MapObjectsSettingExpandable(
         Spacer(Modifier.weight(1f))
         Icon(
             imageVector = if (isOpen) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            tint = PrintMapColorSchema.colors.textColor,
             contentDescription = null
         )
     }
@@ -119,11 +120,6 @@ private fun MapObjectsSettingSlider(
             modifier = Modifier.padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                color = PrintMapColorSchema.colors.textColor,
-                text = slideInfo.name
-            )
-            Spacer(Modifier.width(8.dp))
             Box(
                 modifier = Modifier
                     .padding(vertical = 2.dp)
@@ -136,6 +132,11 @@ private fun MapObjectsSettingSlider(
                     .clickable {
                         onColorChangeClicked()
                     }
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                color = PrintMapColorSchema.colors.textColor,
+                text = slideInfo.name
             )
             Spacer(Modifier.weight(1f))
             Text(

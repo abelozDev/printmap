@@ -52,6 +52,7 @@ fun MapsExpandable(
         Spacer(Modifier.weight(1f))
         Icon(
             imageVector = if (isOpen) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+            tint = PrintMapColorSchema.colors.textColor,
             contentDescription = null
         )
     }
