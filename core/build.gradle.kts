@@ -42,7 +42,7 @@ publishing {
             afterEvaluate {
                 from(components["release"])
                 groupId = "com.github.abelozDev"
-                artifactId = "palette"
+                artifactId = "core"
                 version = libs.versions.lib.version
             }
         }

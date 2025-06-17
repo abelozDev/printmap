@@ -44,7 +44,7 @@ android {
 
 dependencies {
 //    implementation("com.github.abelozDev.printmap:lib:1.0.22-alpha2")
-//    implementation("com.github.abelozDev.printmap:gui:1.0.22-alpha2")
+//    implementation("com.github.abelozDev.printmap:gui:1.0.23")
     implementation(project(":gui"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
