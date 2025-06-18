@@ -1,7 +1,7 @@
 package ru.maplib.printmap.core.theme.colors
 
-import androidx.compose.material3.SliderColors
-import androidx.compose.material3.SliderDefaults
+import androidx.compose.material.SliderColors
+import androidx.compose.material.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
