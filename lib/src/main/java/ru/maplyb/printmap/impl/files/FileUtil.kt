@@ -207,12 +207,7 @@ class FileUtil(private val context: Context) {
         val file = File(path)
         try {
             if (file.exists()) {
-                val uri =
-                    FileProvider.getUriForFile(
-                        context,
-                        "ru.mapolib.printmap.gui.fileprovider",
-                        file
-                    )
+                val uri = FileProvider.getUriForFile(context, "${context.packageName}.printmap.fileprovider", file)
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "*/*" // Указываем, что это файл
                     putExtra(Intent.EXTRA_STREAM, uri) // Прикрепляем URI файла
