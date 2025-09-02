@@ -4,7 +4,7 @@
     <application>
         <provider
             android:name=".utils.PrintmapFileProvider"
-            android:authorities="ru.mapolib.printmap.gui.fileprovider"
+            android:authorities="${applicationId}.printmap.fileprovider"
             android:grantUriPermissions="true"
             android:exported="false">
             <meta-data
