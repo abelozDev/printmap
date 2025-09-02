@@ -97,7 +97,7 @@ internal class MapPrintImpl(
     }
 
     override suspend fun startFormingAMap(
-        args: FormingMapArgs,
+        args: FormingMapArgs ,
     ) {
         cancelDownloading()
         NotificationChannel.create(activity)

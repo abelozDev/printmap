@@ -10,6 +10,7 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.graphics.Matrix
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
@@ -29,9 +30,11 @@ import kotlin.math.roundToInt
 import androidx.core.graphics.withTranslation
 import ru.maplyb.printmap.LatLon
 import ru.maplyb.printmap.R
+import ru.maplyb.printmap.api.model.RectangularCoordinates
 import ru.maplyb.printmap.getGeodesicLine
 import ru.maplyb.printmap.impl.util.converters.WGSToSK42Converter
 import ru.maplyb.printmap.impl.util.defTextPaint
+import ru.maplyb.printmap.impl.util.getBitmapFromAssets
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -97,9 +100,84 @@ class DrawOnBitmap {
                         objects = layerObject,
                         scaleFactor = scaleFactor,
                     )
+
+                    is LayerObject.Image -> {
+                        val image = getBitmapFromAssets(
+                            context = context,
+                            fileName = layerObject.path
+                        ) ?: return@forEach
+
+                        drawImage(
+                            bitmap = bitmap,
+                            canvas = canvas,
+                            coords = layerObject.coords,
+                            boundingBox = boundingBox,
+                            image = image
+                        )
+
+                    }
                 }
             }
         return bitmap
+    }
+
+    private fun drawImage(
+        bitmap: Bitmap,
+        canvas: Canvas,
+        coords: RectangularCoordinates,
+        boundingBox: BoundingBox,
+        image: Bitmap
+    ) {
+        val geoCorners = listOf(
+            coords.topLeft,
+            coords.topRight,
+            coords.bottomRight,
+            coords.bottomLeft
+        )
+        val pixelCorners = convertGeoToPixel(
+            geoCorners,
+            boundingBox,
+            bitmapWidth = bitmap.width,
+            bitmapHeight = bitmap.height
+        ) ?: return
+
+        if (pixelCorners.size < 4) return
+
+        val src = floatArrayOf(
+            0f, 0f,
+            image.width.toFloat(), 0f,
+            image.width.toFloat(), image.height.toFloat(),
+            0f, image.height.toFloat()
+        )
+        val dst = floatArrayOf(
+            pixelCorners[0].first, pixelCorners[0].second,
+            pixelCorners[1].first, pixelCorners[1].second,
+            pixelCorners[2].first, pixelCorners[2].second,
+            pixelCorners[3].first, pixelCorners[3].second
+        )
+
+        val matrix = Matrix()
+        matrix.setPolyToPoly(src, 0, dst, 0, 4)
+
+        val clipPath = Path().apply {
+            moveTo(dst[0], dst[1])
+            lineTo(dst[2], dst[3])
+            lineTo(dst[4], dst[5])
+            lineTo(dst[6], dst[7])
+            close()
+        }
+
+        // Нарисуем контур целевого четырёхугольника для диагностики
+        val debugPaint = Paint().apply {
+            color = Color.MAGENTA
+            style = Paint.Style.STROKE
+            strokeWidth = 2f
+            isAntiAlias = true
+        }
+        canvas.drawPath(clipPath, debugPaint)
+
+        // Рисуем без принудительного клиппинга — Canvas сам обрежет по границам
+        canvas.drawBitmap(image, matrix, null)
     }
 
     private suspend fun drawObjects(

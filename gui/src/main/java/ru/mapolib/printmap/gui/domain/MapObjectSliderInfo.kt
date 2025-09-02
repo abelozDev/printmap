@@ -9,7 +9,7 @@ internal data class MapObjectSliderInfo(
     val valueRange: ClosedFloatingPointRange<Float>,
 )
 
-internal fun LayerObject.toSliderInfo(value: Float): MapObjectSliderInfo {
+internal fun LayerObject.toSliderInfo(value: Float): MapObjectSliderInfo? {
    return when(this) {
         is LayerObject.Line -> {
             MapObjectSliderInfo(
@@ -51,5 +51,7 @@ internal fun LayerObject.toSliderInfo(value: Float): MapObjectSliderInfo {
                 name = "Текст"
             )
         }
-    }
+
+       is LayerObject.Image -> null
+   }
 }

@@ -15,6 +15,7 @@ import ru.maplyb.printmap.api.model.MapItem
 import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.api.model.MapType
 import ru.maplyb.printmap.api.model.ObjectRes
+import ru.maplyb.printmap.api.model.RectangularCoordinates
 import ru.mapolib.printmap.gui.api.DownloadMapManager
 import ru.mapolib.printmap.gui.api.DownloadMapState
 import ru.mapolib.printmap.gui.halpers.permission.getStoragePermission
@@ -159,6 +160,26 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                 objects = generatedObjects,
                 selected = true,
                 name = "object"
+            ),
+            Layer(
+                objects = listOf(
+                    LayerObject.Image(
+                        style = MapObjectStyle(
+                            color = null,
+                            width = 25f,
+                            name = "Image"
+                        ),
+                        path = "UGRA.png",
+                        coords = RectangularCoordinates(
+                            topLeft = GeoPoint(55.76898642771224, 37.579804187921255),
+                            topRight = GeoPoint(55.77303248057991, 37.66059654098449),
+                            bottomLeft = GeoPoint(55.73149533538331, 37.59576269971548),
+                            bottomRight = GeoPoint(55.737286245963794, 37.66082294136311)
+                        )
+                    )
+                ),
+                selected = true,
+                name = "Image"
             )
         )
 

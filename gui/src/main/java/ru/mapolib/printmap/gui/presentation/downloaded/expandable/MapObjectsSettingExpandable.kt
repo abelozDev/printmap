@@ -89,18 +89,21 @@ fun MapObjectsSettingExpandable(
             groupedObjects
                 .asSequence()
                 .mapNotNull { it.firstOrNull() }
-                .forEach {
-                    MapObjectsSettingSlider(
-                        slideInfo = it.toSliderInfo(it.style.width),
-                        onValueChanged = { newValue ->
-                            changeObjectStyle(it.updateStyle(it.style.copy(width = newValue.toFloat())))
-                        },
-                        onValueChangedFinished = changeStyleFinished,
-                        selectedColor = layerObjectsColors[it::class.simpleName!!],
-                        onColorChangeClicked = {
-                            onColorChangeClicked(it)
-                        }
-                    )
+                .forEach { layerObject ->
+                    layerObject.toSliderInfo(layerObject.style.width)?.let { sliderInfo ->
+                        MapObjectsSettingSlider(
+                            slideInfo = sliderInfo,
+                            onValueChanged = { newValue ->
+                                changeObjectStyle(layerObject.updateStyle(layerObject.style.copy(width = newValue.toFloat())))
+                            },
+                            onValueChangedFinished = changeStyleFinished,
+                            selectedColor = layerObjectsColors[layerObject::class.simpleName!!],
+                            onColorChangeClicked = {
+                                onColorChangeClicked(layerObject)
+                            }
+                        )
+                    }
+
                 }
         }
     }
