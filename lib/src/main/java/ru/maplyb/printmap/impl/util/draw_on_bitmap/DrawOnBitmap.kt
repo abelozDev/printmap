@@ -34,7 +34,7 @@ import ru.maplyb.printmap.api.model.RectangularCoordinates
 import ru.maplyb.printmap.getGeodesicLine
 import ru.maplyb.printmap.impl.util.converters.WGSToSK42Converter
 import ru.maplyb.printmap.impl.util.defTextPaint
-import ru.maplyb.printmap.impl.util.getBitmapFromAssets
+import ru.maplyb.printmap.impl.util.loadBitmap
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -102,15 +102,19 @@ class DrawOnBitmap {
                     )
 
                     is LayerObject.Image -> {
-                        val image = getBitmapFromAssets(
+                        val image = loadBitmap(
                             context = context,
-                            fileName = layerObject.path
-                        ) ?: return@forEach
-
+                            path = layerObject.path
+                        )
+                        if (image == null) {
+                          println("PRINTMAPLOG image is $image")
+                          return@forEach
+                        }
                         drawImage(
                             bitmap = bitmap,
                             canvas = canvas,
                             coords = layerObject.coords,
+                            alpha = layerObject.alpha,
                             boundingBox = boundingBox,
                             image = image
                         )
@@ -124,6 +128,7 @@ class DrawOnBitmap {
     private fun drawImage(
         bitmap: Bitmap,
         canvas: Canvas,
+        alpha: Float,
         coords: RectangularCoordinates,
         boundingBox: BoundingBox,
         image: Bitmap
@@ -176,8 +181,12 @@ class DrawOnBitmap {
         }
         canvas.drawPath(clipPath, debugPaint)
 
-        // Рисуем без принудительного клиппинга — Canvas сам обрежет по границам
-        canvas.drawBitmap(image, matrix, null)
+        val coercedAlpha = alpha.coerceIn(0f, 255f).roundToInt()
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.alpha = coercedAlpha
+            isFilterBitmap = true
+        }
+        canvas.drawBitmap(image, matrix, paint)
     }
 
     private suspend fun drawObjects(

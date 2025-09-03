@@ -169,6 +169,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                             width = 25f,
                             name = "Image"
                         ),
+                        alpha = 256f,
                         path = "UGRA.png",
                         coords = RectangularCoordinates(
                             topLeft = GeoPoint(55.76898642771224, 37.579804187921255),
