@@ -164,26 +164,9 @@ class DrawOnBitmap {
         val matrix = Matrix()
         matrix.setPolyToPoly(src, 0, dst, 0, 4)
 
-        val clipPath = Path().apply {
-            moveTo(dst[0], dst[1])
-            lineTo(dst[2], dst[3])
-            lineTo(dst[4], dst[5])
-            lineTo(dst[6], dst[7])
-            close()
-        }
-
-        // Нарисуем контур целевого четырёхугольника для диагностики
-        val debugPaint = Paint().apply {
-            color = Color.MAGENTA
-            style = Paint.Style.STROKE
-            strokeWidth = 2f
-            isAntiAlias = true
-        }
-        canvas.drawPath(clipPath, debugPaint)
-
-        val coercedAlpha = alpha.coerceIn(0f, 255f).roundToInt()
+        val clampedValue = alpha.coerceIn(0f, 1f)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            this.alpha = coercedAlpha
+            this.alpha = (clampedValue * 255).roundToInt()
             isFilterBitmap = true
         }
         canvas.drawBitmap(image, matrix, paint)
