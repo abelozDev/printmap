@@ -151,7 +151,12 @@ object SK42 {
     }
 
     /** Generate SK-42 grid lines for a WGS84 bbox and step (meters). Lines returned in WGS84 for rendering. */
-    fun generateGrid(bboxWgs84: BBox, stepMeters: Double): List<GridLine> {
+    fun generateGrid(
+        bboxWgs84: BBox,
+        stepMeters: Double,
+        eastingOffsetMeters: Double = 106.0,
+        northingOffsetMeters: Double = 28.0
+    ): List<GridLine> {
         require(stepMeters > 0.0)
 
         // Use zone of bbox center
@@ -192,7 +197,8 @@ object SK42 {
             var yy = startY
             var i = 0
             while (i <= segmentsV) {
-                val p = inverseSK42(x, yy, zone)
+                // shift only geometry, not labels; opposite direction as requested
+                val p = inverseSK42(x - eastingOffsetMeters, yy - northingOffsetMeters, zone)
                 pts.add(p)
                 yy += yStep
                 i++
@@ -214,7 +220,8 @@ object SK42 {
             var xx = startX
             var i = 0
             while (i <= segmentsH) {
-                val p = inverseSK42(xx, y, zone)
+                // shift only geometry, not labels; opposite direction as requested
+                val p = inverseSK42(xx - eastingOffsetMeters, y - northingOffsetMeters, zone)
                 pts.add(p)
                 xx += xStep
                 i++
