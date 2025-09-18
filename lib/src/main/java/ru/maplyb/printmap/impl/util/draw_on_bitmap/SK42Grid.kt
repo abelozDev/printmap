@@ -18,6 +18,7 @@ data class LatLon(val latDeg: Double, val lonDeg: Double)
 data class XY(val x: Double, val y: Double) // x=Easting (meters), y=Northing (meters)
 data class BBox(val minLatDeg: Double, val minLonDeg: Double, val maxLatDeg: Double, val maxLonDeg: Double)
 data class Polyline(val points: List<LatLon>)
+data class GridLine(val points: List<LatLon>, val isVertical: Boolean, val valueMeters: Double)
 
 object SK42 {
     // Krasovsky (SK-42) ellipsoid parameters
@@ -150,7 +151,7 @@ object SK42 {
     }
 
     /** Generate SK-42 grid lines for a WGS84 bbox and step (meters). Lines returned in WGS84 for rendering. */
-    fun generateGrid(bboxWgs84: BBox, stepMeters: Double): List<Polyline> {
+    fun generateGrid(bboxWgs84: BBox, stepMeters: Double): List<GridLine> {
         require(stepMeters > 0.0)
 
         // Use zone of bbox center
@@ -178,14 +179,14 @@ object SK42 {
         val startY = snapUp(minY, stepMeters)
         val endY = snapDown(maxY, stepMeters)
 
-        val lines = mutableListOf<Polyline>()
+        val lines = mutableListOf<GridLine>()
 
         // Vertical lines (constant X)
         var x = startX
         while (x <= endX + 1e-6) {
             val pBottom = inverseSK42(x, startY, zone)
             val pTop = inverseSK42(x, endY, zone)
-            lines += Polyline(listOf(pBottom, pTop))
+            lines += GridLine(points = listOf(pBottom, pTop), isVertical = true, valueMeters = x)
             x += stepMeters
         }
 
@@ -194,7 +195,7 @@ object SK42 {
         while (y <= endY + 1e-6) {
             val pLeft = inverseSK42(startX, y, zone)
             val pRight = inverseSK42(endX, y, zone)
-            lines += Polyline(listOf(pLeft, pRight))
+            lines += GridLine(points = listOf(pLeft, pRight), isVertical = false, valueMeters = y)
             y += stepMeters
         }
 

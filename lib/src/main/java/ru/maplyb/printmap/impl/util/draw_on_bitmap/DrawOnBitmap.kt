@@ -40,7 +40,7 @@ import kotlin.math.ceil
 import kotlin.math.floor
 import sk42grid.BBox
 import sk42grid.SK42
-import sk42grid.Polyline
+import sk42grid.GridLine
 import sk42grid.LatLon
 
 // Добавляем enum для систем координат
@@ -389,7 +389,7 @@ class DrawOnBitmap {
                 }
 
                 CoordinateSystem.SK42 -> {
-                    val lines: List<Polyline> = SK42.generateGrid(
+                    val lines: List<GridLine> = SK42.generateGrid(
                         bboxWgs84 = BBox(
                             minLatDeg = boundingBox.latSouth,
                             minLonDeg = boundingBox.lonWest,
@@ -414,6 +414,16 @@ class DrawOnBitmap {
                                 pixelPoints[i + 1].second,
                                 paint
                             )
+                        }
+                        // draw label at start point
+                        val startPx = pixelPoints.first()
+                        val label = polyline.valueMeters.roundToInt().toString()
+                        if (polyline.isVertical) {
+                            canvas.drawText(label, startPx.first + 5f, startPx.second + 30f, paintStroke)
+                            canvas.drawText(label, startPx.first + 5f, startPx.second + 30f, textPaint)
+                        } else {
+                            canvas.drawText(label, startPx.first, startPx.second + 20f, paintStroke)
+                            canvas.drawText(label, startPx.first, startPx.second + 20f, textPaint)
                         }
                     }
                 }
