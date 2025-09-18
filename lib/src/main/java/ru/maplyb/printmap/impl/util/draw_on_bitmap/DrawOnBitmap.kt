@@ -399,9 +399,9 @@ class DrawOnBitmap {
                         stepMeters = stepMeters
                     )
 
-                    lines.forEach { polyline ->
+                    lines.forEach { gridLine ->
                         val pixelPoints = convertGeoToPixel(
-                            polyline.points.map { GeoPoint(it.latDeg, it.lonDeg) },
+                            gridLine.points.map { GeoPoint(it.latDeg, it.lonDeg) },
                             boundingBox,
                             bitmapWidth = bitmap.width,
                             bitmapHeight = bitmap.height
@@ -416,11 +416,11 @@ class DrawOnBitmap {
                             )
                         }
                         // draw label at start point
-                        val startPx = pixelPoints.first()
-                        val label = polyline.valueMeters.roundToInt().toString()
-                        if (polyline.isVertical) {
-                            canvas.drawText(label, startPx.first + 5f, startPx.second + 30f, paintStroke)
-                            canvas.drawText(label, startPx.first + 5f, startPx.second + 30f, textPaint)
+                        val startPx = pixelPoints.firstOrNull() ?: return@forEach
+                        val label = gridLine.valueMeters.roundToInt().toString()
+                        if (gridLine.isVertical) {
+                            canvas.drawText(label, startPx.first + 6f, startPx.second - 8f, paintStroke)
+                            canvas.drawText(label, startPx.first + 6f, startPx.second - 8f, textPaint)
                         } else {
                             canvas.drawText(label, startPx.first, startPx.second + 20f, paintStroke)
                             canvas.drawText(label, startPx.first, startPx.second + 20f, textPaint)

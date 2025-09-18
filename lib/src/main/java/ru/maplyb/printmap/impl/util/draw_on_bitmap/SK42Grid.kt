@@ -174,28 +174,55 @@ object SK42 {
         fun snapUp(v: Double, s: Double) = ceil(v / s) * s
         fun snapDown(v: Double, s: Double) = floor(v / s) * s
 
-        val startX = snapUp(minX, stepMeters)
-        val endX = snapDown(maxX, stepMeters)
-        val startY = snapUp(minY, stepMeters)
-        val endY = snapDown(maxY, stepMeters)
+        // Expand to cover bbox edges fully: include lines just outside by snapping outward
+        var startX = snapDown(minX, stepMeters) - 5 * stepMeters
+        var endX = snapUp(maxX, stepMeters) + 5 * stepMeters
+        var startY = snapDown(minY, stepMeters) - 12 * stepMeters
+        var endY = snapUp(maxY, stepMeters) + 12 * stepMeters
 
         val lines = mutableListOf<GridLine>()
 
-        // Vertical lines (constant X)
+        // Vertical lines (constant X), sampled densely along Y to follow GK curvature and cover bbox
         var x = startX
         while (x <= endX + 1e-6) {
-            val pBottom = inverseSK42(x, startY, zone)
-            val pTop = inverseSK42(x, endY, zone)
-            lines += GridLine(points = listOf(pBottom, pTop), isVertical = true, valueMeters = x)
+            val pts = ArrayList<LatLon>()
+            val segmentsV = 400
+            val totalY = endY - startY
+            val yStep = if (segmentsV > 0) totalY / segmentsV else totalY
+            var yy = startY
+            var i = 0
+            while (i <= segmentsV) {
+                val p = inverseSK42(x, yy, zone)
+                pts.add(p)
+                yy += yStep
+                i++
+            }
+            val clipped = pts.filter { it.latDeg in bboxWgs84.minLatDeg..bboxWgs84.maxLatDeg && it.lonDeg in bboxWgs84.minLonDeg..bboxWgs84.maxLonDeg }
+            if (clipped.size >= 2) {
+                lines += GridLine(points = clipped, isVertical = true, valueMeters = x)
+            }
             x += stepMeters
         }
 
-        // Horizontal lines (constant Y)
+        // Horizontal lines (constant Y), sampled densely along X
         var y = startY
         while (y <= endY + 1e-6) {
-            val pLeft = inverseSK42(startX, y, zone)
-            val pRight = inverseSK42(endX, y, zone)
-            lines += GridLine(points = listOf(pLeft, pRight), isVertical = false, valueMeters = y)
+            val pts = ArrayList<LatLon>()
+            val segmentsH = 600
+            val totalX = endX - startX
+            val xStep = if (segmentsH > 0) totalX / segmentsH else totalX
+            var xx = startX
+            var i = 0
+            while (i <= segmentsH) {
+                val p = inverseSK42(xx, y, zone)
+                pts.add(p)
+                xx += xStep
+                i++
+            }
+            val clipped = pts.filter { it.latDeg in bboxWgs84.minLatDeg..bboxWgs84.maxLatDeg && it.lonDeg in bboxWgs84.minLonDeg..bboxWgs84.maxLonDeg }
+            if (clipped.size >= 2) {
+                lines += GridLine(points = clipped, isVertical = false, valueMeters = y)
+            }
             y += stepMeters
         }
 
