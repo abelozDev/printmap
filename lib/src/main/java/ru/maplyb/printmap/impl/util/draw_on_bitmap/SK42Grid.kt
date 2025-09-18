@@ -154,8 +154,8 @@ object SK42 {
     fun generateGrid(
         bboxWgs84: BBox,
         stepMeters: Double,
-        eastingOffsetMeters: Double = 106.0,
-        northingOffsetMeters: Double = 28.0
+        eastingOffsetMeters: Double = 120.0,
+        northingOffsetMeters: Double = 35.0
     ): List<GridLine> {
         require(stepMeters > 0.0)
 

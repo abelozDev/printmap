@@ -28,7 +28,7 @@ import kotlinx.coroutines.ensureActive
 import ru.maplyb.printmap.api.model.GeoPoint
 import kotlin.math.roundToInt
 import androidx.core.graphics.withTranslation
-import ru.maplyb.printmap.LatLon as LibLatLon
+import ru.maplyb.printmap.LatLon
 import ru.maplyb.printmap.R
 import ru.maplyb.printmap.api.model.RectangularCoordinates
 import ru.maplyb.printmap.getGeodesicLine
@@ -38,10 +38,6 @@ import ru.maplyb.printmap.impl.util.loadBitmap
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
-import sk42grid.BBox
-import sk42grid.SK42
-import sk42grid.GridLine
-import sk42grid.LatLon
 
 // Добавляем enum для систем координат
 enum class CoordinateSystem {
@@ -389,41 +385,75 @@ class DrawOnBitmap {
                 }
 
                 CoordinateSystem.SK42 -> {
-                    val lines: List<GridLine> = SK42.generateGrid(
-                        bboxWgs84 = BBox(
-                            minLatDeg = boundingBox.latSouth,
-                            minLonDeg = boundingBox.lonWest,
-                            maxLatDeg = boundingBox.latNorth,
-                            maxLonDeg = boundingBox.lonEast
-                        ),
+                    // Используем новый SK42Grid для генерации сетки
+                    val bboxWgs84 = sk42grid.BBox(
+                        minLatDeg = boundingBox.latSouth,
+                        minLonDeg = boundingBox.lonWest,
+                        maxLatDeg = boundingBox.latNorth,
+                        maxLonDeg = boundingBox.lonEast
+                    )
+                    
+                    val gridLines = sk42grid.SK42.generateGrid(
+                        bboxWgs84 = bboxWgs84,
                         stepMeters = stepMeters
                     )
-
-                    lines.forEach { gridLine ->
+                    
+                    // Рисуем все линии сетки
+                    for (gridLine in gridLines) {
                         val pixelPoints = convertGeoToPixel(
                             gridLine.points.map { GeoPoint(it.latDeg, it.lonDeg) },
                             boundingBox,
                             bitmapWidth = bitmap.width,
                             bitmapHeight = bitmap.height
-                        ) ?: return@forEach
-                        for (i in 0 until pixelPoints.lastIndex) {
-                            canvas.drawLine(
-                                pixelPoints[i].first,
-                                pixelPoints[i].second,
-                                pixelPoints[i + 1].first,
-                                pixelPoints[i + 1].second,
-                                paint
-                            )
-                        }
-                        // draw label at start point
-                        val startPx = pixelPoints.firstOrNull() ?: return@forEach
-                        val label = gridLine.valueMeters.roundToInt().toString()
-                        if (gridLine.isVertical) {
-                            canvas.drawText(label, startPx.first + 6f, startPx.second - 8f, paintStroke)
-                            canvas.drawText(label, startPx.first + 6f, startPx.second - 8f, textPaint)
-                        } else {
-                            canvas.drawText(label, startPx.first, startPx.second + 20f, paintStroke)
-                            canvas.drawText(label, startPx.first, startPx.second + 20f, textPaint)
+                        )
+                        
+                        if (pixelPoints != null && pixelPoints.size >= 2) {
+                            // Рисуем линию
+                            for (i in 0 until pixelPoints.lastIndex) {
+                                canvas.drawLine(
+                                    pixelPoints[i].first,
+                                    pixelPoints[i].second,
+                                    pixelPoints[i + 1].first,
+                                    pixelPoints[i + 1].second,
+                                    paint
+                                )
+                            }
+                            
+                            // Рисуем подписи
+                            val coordText = "${gridLine.valueMeters.roundToInt()}"
+                            if (gridLine.isVertical) {
+                                // Вертикальные линии
+                                pixelPoints.firstOrNull { it.first > 0f && it.second > 0f }?.let {
+                                    canvas.drawText(
+                                        coordText,
+                                        it.first + 6f, // Сдвиг вправо
+                                        it.second - 8f, // Сдвиг вверх
+                                        paintStroke
+                                    )
+                                    canvas.drawText(
+                                        coordText,
+                                        it.first + 6f,
+                                        it.second - 8f,
+                                        textPaint
+                                    )
+                                }
+                            } else {
+                                // Горизонтальные линии - сдвигаем еще больше вправо
+                                pixelPoints.firstOrNull { it.first > 0f && it.second > 0f }?.let {
+                                    canvas.drawText(
+                                        coordText,
+                                        it.first + 15f, // Больший сдвиг вправо
+                                        it.second + 20f,
+                                        paintStroke
+                                    )
+                                    canvas.drawText(
+                                        coordText,
+                                        it.first + 15f,
+                                        it.second + 20f,
+                                        textPaint
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -457,7 +487,7 @@ class DrawOnBitmap {
     // Вспомогательная функция для отрисовки линий WGS84
     private fun drawWGS84Lines(
         canvas: Canvas,
-        allLons: List<List<LibLatLon>>,
+        allLons: List<List<LatLon>>,
         boundingBox: BoundingBox,
         bitmap: Bitmap,
         paint: Paint,
