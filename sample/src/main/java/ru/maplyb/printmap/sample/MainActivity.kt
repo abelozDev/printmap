@@ -292,12 +292,13 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
         dif_zone.setOnClickListener {
             //48.5161047761417, 35.18711552957413, 47.393866545904984, 38.45360194924245
             //47.61002687910439, 35.522939012989454, 47.49697788636777, 35.872305931328896
+            //47.582707, 35.889823, 47.460820, 36.079036
             selectBb(
                 BoundingBox(
-                    latNorth = 47.61002687910439,
-                    lonWest = 35.522939012989454,
-                    latSouth = 47.49697788636777,
-                    lonEast = 35.872305931328896
+                    latNorth = 47.582707,
+                    lonWest = 35.889823,
+                    latSouth = 47.460820,
+                    lonEast = 36.079036
                 )
             )
             dif_zone.setBackgroundColor(Color.GREEN)

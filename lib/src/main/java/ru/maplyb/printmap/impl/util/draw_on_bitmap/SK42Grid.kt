@@ -157,18 +157,64 @@ object SK42 {
         eastingOffsetMeters: Double = 120.0,
         northingOffsetMeters: Double = 35.0
     ): List<GridLine> {
+        return generateMultiZoneGrid(bboxWgs84, stepMeters, eastingOffsetMeters, northingOffsetMeters)
+    }
+
+    /** Generate SK-42 grid lines for multiple zones covering the bbox. */
+    fun generateMultiZoneGrid(
+        bboxWgs84: BBox,
+        stepMeters: Double,
+        eastingOffsetMeters: Double = 120.0,
+        northingOffsetMeters: Double = 35.0
+    ): List<GridLine> {
         require(stepMeters > 0.0)
 
-        // Use zone of bbox center
-        val centerLat = 0.5 * (bboxWgs84.minLatDeg + bboxWgs84.maxLatDeg)
-        val centerLon = 0.5 * (bboxWgs84.minLonDeg + bboxWgs84.maxLonDeg)
-        val zone = zoneFromLon(centerLon)
+        // Determine which zones are covered by the bbox
+        val westZone = zoneFromLon(bboxWgs84.minLonDeg)
+        val eastZone = zoneFromLon(bboxWgs84.maxLonDeg)
+        
+        val allLines = mutableListOf<GridLine>()
+        
+        // Generate grid for each zone
+        for (zone in westZone..eastZone) {
+            val zoneLines = generateGridForZone(bboxWgs84, zone, stepMeters, eastingOffsetMeters, northingOffsetMeters)
+            allLines.addAll(zoneLines)
+        }
+        
+        return allLines
+    }
 
-        // Project bbox corners to SK-42 GK
-        val p1 = forwardSK42(bboxWgs84.minLatDeg, bboxWgs84.minLonDeg, zone)
-        val p2 = forwardSK42(bboxWgs84.minLatDeg, bboxWgs84.maxLonDeg, zone)
-        val p3 = forwardSK42(bboxWgs84.maxLatDeg, bboxWgs84.minLonDeg, zone)
-        val p4 = forwardSK42(bboxWgs84.maxLatDeg, bboxWgs84.maxLonDeg, zone)
+    /** Generate SK-42 grid lines for a specific zone. */
+    private fun generateGridForZone(
+        bboxWgs84: BBox,
+        zone: Int,
+        stepMeters: Double,
+        eastingOffsetMeters: Double,
+        northingOffsetMeters: Double
+    ): List<GridLine> {
+        // Define zone boundaries in longitude
+        val zoneCentralMeridian = zone * 6.0 - 3.0
+        val zoneWestLon = zoneCentralMeridian - 3.0
+        val zoneEastLon = zoneCentralMeridian + 3.0
+        
+        // Clip bbox to zone boundaries
+        val clippedBbox = BBox(
+            minLatDeg = bboxWgs84.minLatDeg,
+            minLonDeg = maxOf(bboxWgs84.minLonDeg, zoneWestLon),
+            maxLatDeg = bboxWgs84.maxLatDeg,
+            maxLonDeg = minOf(bboxWgs84.maxLonDeg, zoneEastLon)
+        )
+        
+        // Check if this zone actually intersects with the bbox
+        if (clippedBbox.minLonDeg >= clippedBbox.maxLonDeg) {
+            return emptyList()
+        }
+
+        // Project clipped bbox corners to SK-42 GK for this zone
+        val p1 = forwardSK42(clippedBbox.minLatDeg, clippedBbox.minLonDeg, zone)
+        val p2 = forwardSK42(clippedBbox.minLatDeg, clippedBbox.maxLonDeg, zone)
+        val p3 = forwardSK42(clippedBbox.maxLatDeg, clippedBbox.minLonDeg, zone)
+        val p4 = forwardSK42(clippedBbox.maxLatDeg, clippedBbox.maxLonDeg, zone)
 
         val minX = listOf(p1.x, p2.x, p3.x, p4.x).minOrNull() ?: p1.x
         val maxX = listOf(p1.x, p2.x, p3.x, p4.x).maxOrNull() ?: p1.x
@@ -203,7 +249,7 @@ object SK42 {
                 yy += yStep
                 i++
             }
-            val clipped = pts.filter { it.latDeg in bboxWgs84.minLatDeg..bboxWgs84.maxLatDeg && it.lonDeg in bboxWgs84.minLonDeg..bboxWgs84.maxLonDeg }
+            val clipped = pts.filter { it.latDeg in clippedBbox.minLatDeg..clippedBbox.maxLatDeg && it.lonDeg in clippedBbox.minLonDeg..clippedBbox.maxLonDeg }
             if (clipped.size >= 2) {
                 lines += GridLine(points = clipped, isVertical = true, valueMeters = x)
             }
@@ -226,7 +272,7 @@ object SK42 {
                 xx += xStep
                 i++
             }
-            val clipped = pts.filter { it.latDeg in bboxWgs84.minLatDeg..bboxWgs84.maxLatDeg && it.lonDeg in bboxWgs84.minLonDeg..bboxWgs84.maxLonDeg }
+            val clipped = pts.filter { it.latDeg in clippedBbox.minLatDeg..clippedBbox.maxLatDeg && it.lonDeg in clippedBbox.minLonDeg..clippedBbox.maxLonDeg }
             if (clipped.size >= 2) {
                 lines += GridLine(points = clipped, isVertical = false, valueMeters = y)
             }
