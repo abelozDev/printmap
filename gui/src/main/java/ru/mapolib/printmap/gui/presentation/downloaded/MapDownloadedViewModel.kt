@@ -26,6 +26,9 @@ import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.Layer
 import ru.maplyb.printmap.api.model.LayerObject
 import ru.maplyb.printmap.api.model.OperationResult
+import ru.maplyb.printmap.impl.excel_generator.deleteExcelFile
+import ru.maplyb.printmap.impl.excel_generator.exportToExcel
+import ru.maplyb.printmap.impl.excel_generator.sendExcelFile
 import ru.maplyb.printmap.impl.util.draw_on_bitmap.DrawOnBitmap
 import ru.maplyb.printmap.impl.files.FileUtil
 import ru.maplyb.printmap.impl.util.GeoCalculator.distanceBetween
@@ -42,6 +45,7 @@ internal class MapDownloadedViewModel(
     appName: String,
     author: String,
     layers: List<Layer>,
+    reportPath: String?,
     private val fileUtil: FileUtil,
     private val context: Context
 ) : PrintMapViewModel<MapDownloadedEvent, MapDownloadedEffect>() {
@@ -62,6 +66,7 @@ internal class MapDownloadedViewModel(
             layers = layers,
             appName = appName,
             author = author,
+            reportFilePath = reportPath,
             layerObjectsColor = createLayerObjectsColor(layers)
         )
     )
@@ -138,9 +143,10 @@ internal class MapDownloadedViewModel(
 
                         if (!isActive) return@doWork
 
-                        val rotatedBitmap = if (currentState.orientation != ImageOrientation.PORTRAIT) {
-                            rotateBitmap(bitmap = bitmapWithDraw)
-                        } else bitmapWithDraw
+                        val rotatedBitmap =
+                            if (currentState.orientation != ImageOrientation.PORTRAIT) {
+                                rotateBitmap(bitmap = bitmapWithDraw)
+                            } else bitmapWithDraw
 
                         val bitmapWithDefaults = setDefault(rotatedBitmap)
 
@@ -152,7 +158,7 @@ internal class MapDownloadedViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                e.printStackTrace() // для других исключений
+                e.printStackTrace()
             }
         }
     }
@@ -229,6 +235,7 @@ internal class MapDownloadedViewModel(
                 }
                 drawLayers()
             }
+
             MapDownloadedEvent.DeleteImage -> {
                 deleteExistedMap()
             }
@@ -373,6 +380,55 @@ internal class MapDownloadedViewModel(
                     )
                 }
                 drawLayers()
+            }
+
+            MapDownloadedEvent.OnReportClick -> { onReportClicked() }
+
+            MapDownloadedEvent.OnDeleteReportClick -> { onDeleteRepostClick() }
+            MapDownloadedEvent.OnShareReportClick -> { onShareReportClick() }
+        }
+    }
+
+    private fun onShareReportClick() {
+        state.value.reportFilePath?.let {
+            sendExcelFile(context, it)
+        }
+    }
+
+    private fun onDeleteRepostClick() {
+        _state.update { it.copy(state = MapDownloadedState.Progress) }
+        val result = state.value.reportFilePath?.let {
+            deleteExcelFile(it)
+        } ?: false
+        if (result) {
+            onEffect(MapDownloadedEffect.DeleteReportPath)
+            _state.update {
+                it.copy(
+                    reportFilePath = null,
+                    state = MapDownloadedState.Initial,
+                )
+            }
+        }
+    }
+
+    private fun onReportClicked() {
+        _state.update { it.copy(state = MapDownloadedState.Progress) }
+        viewModelScope.launch(Dispatchers.Default) {
+            val objects = state.value
+                .layers
+                .filter { it.selected }
+                .map { it.objects }
+                .flatten()
+                .filterIsInstance<LayerObject.Object>()
+            val filePath = exportToExcel(context, objects)
+            filePath?.let {
+                onEffect(MapDownloadedEffect.SetReportPath(filePath))
+            }
+            _state.update {
+                it.copy(
+                    reportFilePath = filePath,
+                    state = MapDownloadedState.Initial,
+                )
             }
         }
     }
@@ -524,25 +580,25 @@ internal class MapDownloadedViewModel(
         val lineYStart = scaleY - textHeight - crossLength
         val lineXEnd = padding + segmentLength * 2  // Это корректное значение для второго отрезка
 
-        // Рисуем белую обводку
+// Рисуем белую обводку
         canvas.drawLine(padding, lineYStart, lineXEnd, lineYStart, paintOutline)
-        // Рисуем основную линию
+// Рисуем основную линию
         canvas.drawLine(padding, lineYStart, lineXEnd, lineYStart, paint)
 
-        // Вычисляем направление линии (вектор)
+// Вычисляем направление линии (вектор)
         val dx = lineXEnd - padding
         val dy = lineYStart - lineYStart
         val length = hypot(dx.toDouble(), dy.toDouble()).toFloat()
 
-        // Нормализуем вектор (направление линии)
+// Нормализуем вектор (направление линии)
         val nx = dx / length
         val ny = dy / length
 
-        // Вектор перпендикуляра
+// Вектор перпендикуляра
         val px = -ny * crossLength
         val py = nx * crossLength
 
-        // Поперечные линии на концах
+// Поперечные линии на концах
         canvas.drawLine(
             padding - px,
             lineYStart - py - (thickness / 2),
@@ -705,6 +761,7 @@ internal class MapDownloadedViewModel(
             layers: List<Layer>,
             appName: String,
             author: String,
+            reportPath: String?,
             context: Context
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -718,7 +775,8 @@ internal class MapDownloadedViewModel(
                         fileUtil = saveBitmap,
                         context = context,
                         appName = appName,
-                        author = author
+                        author = author,
+                        reportPath = reportPath,
                     ) as T
                 }
                 throw IllegalArgumentException("Unknown ViewModel class")

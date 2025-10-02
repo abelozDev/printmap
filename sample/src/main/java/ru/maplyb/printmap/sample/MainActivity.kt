@@ -7,6 +7,9 @@ import android.widget.Button
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.platform.ComposeView
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.Layer
@@ -98,7 +101,9 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             )
         }
         report.setOnClickListener {
-            exportMapToPdf(generatedObjects)
+            lifecycleScope.launch(Dispatchers.Default) {
+                exportMapToPdf(generatedObjects)
+            }
         }
         val objects = listOf(
             Layer(
@@ -347,7 +352,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
         }
     }
 
-    fun exportMapToPdf(mapObjects: List<LayerObject.Object>) {
+    suspend fun exportMapToPdf(mapObjects: List<LayerObject.Object>) {
         exportAndSendExcel(this, mapObjects)
 
 // Вариант 2: Создать файл, затем отправить позже

@@ -100,7 +100,8 @@ fun MainScreen() {
                                     layers = (state as DownloadMapState.Finished).layers,
                                     context = context,
                                     author = (state as DownloadMapState.Finished).author,
-                                    appName = (state as DownloadMapState.Finished).appName
+                                    appName = (state as DownloadMapState.Finished).appName,
+                                    reportPath = (state as DownloadMapState.Finished).reportPath,
                                 )
                             )[MapDownloadedViewModel::class.java]
 
@@ -112,6 +113,16 @@ fun MainScreen() {
                                 onDeleteMap = {
                                     scope.launch {
                                         downloadManager.deleteMap(it)
+                                    }
+                                },
+                                setReportPath = {
+                                    scope.launch {
+                                        downloadManager.updateDownloadStatusReportPath(context, it)
+                                    }
+                                },
+                                removeReportPath = {
+                                    scope.launch {
+                                        downloadManager.updateDownloadStatusReportPath(context, null)
                                     }
                                 }
                             )

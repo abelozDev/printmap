@@ -2,8 +2,13 @@ package ru.maplyb.printmap.impl.excel_generator
 
 import android.content.Context
 import android.content.Intent
-import android.widget.Toast
+import androidx.compose.runtime.DisposableEffect
 import androidx.core.content.FileProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import org.apache.poi.ss.usermodel.FillPatternType
 import org.apache.poi.ss.usermodel.IndexedColors
 import org.apache.poi.ss.usermodel.Row
@@ -11,11 +16,15 @@ import org.apache.poi.ss.usermodel.Sheet
 import org.apache.poi.ss.usermodel.VerticalAlignment
 import org.apache.poi.ss.usermodel.Workbook
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import ru.maplyb.printmap.api.model.GeoPoint
 import ru.maplyb.printmap.api.model.LayerObject
+import ru.maplyb.printmap.impl.util.converters.WGSToSK42Converter
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.math.roundToInt
 
-fun createExcelFromObjects(objects: List<LayerObject.Object>, outputFile: File) {
+private const val EXCEL_REPORT_TAG = "EXCEL_REPORT_TAG"
+suspend fun createExcelFromObjects(objects: List<LayerObject.Object>, outputFile: File) {
     val workbook: Workbook = XSSFWorkbook()
     val sheet: Sheet = workbook.createSheet("Objects")
 
@@ -37,9 +46,27 @@ fun createExcelFromObjects(objects: List<LayerObject.Object>, outputFile: File) 
         cell.setCellValue(header)
         cell.cellStyle = headerStyle
     }
+    val WGSToSK42Converter = WGSToSK42Converter()
+    val mappedObjects = coroutineScope {
+        objects
+            .chunked(100)
+            .flatMap { chunk ->
+                chunk.map {
+                    async {
+                        val convertedCoords = WGSToSK42Converter.wgs84ToSk42(it.coords.latitude, it.coords.longitude)
+                        it.copy(
+                            coords = GeoPoint(
+                                latitude = convertedCoords.first.roundToInt().toDouble(),
+                                longitude = convertedCoords.second.roundToInt().toDouble()
+                            )
+                        )
+                    }
+                }.awaitAll()
+            }
+    }
 
     // Заполняем данными
-    objects.forEachIndexed { index, obj ->
+    mappedObjects.forEachIndexed { index, obj ->
         val row: Row = sheet.createRow(index + 1)
 
         // Порядковый номер
@@ -112,16 +139,16 @@ fun sendExcelFile(context: Context, filePath: String) {
 
             context.startActivity(Intent.createChooser(intent, "Отправить Excel файл"))
         } else {
-            Toast.makeText(context, "Файл не найден", Toast.LENGTH_SHORT).show()
+            println("$EXCEL_REPORT_TAG Файл не найден")
         }
     } catch (e: Exception) {
         e.printStackTrace()
-        Toast.makeText(context, "Ошибка при отправке: ${e.message}", Toast.LENGTH_LONG).show()
+        println("$EXCEL_REPORT_TAG Ошибка при отправке: ${e.message}")
     }
 }
 
 // Пример использования: создание и отправка файла
-fun exportAndSendExcel(context: Context, objects: List<LayerObject.Object>) {
+suspend fun exportAndSendExcel(context: Context, objects: List<LayerObject.Object>) {
     try {
         // Создаем файл
         val fileName = "objects_${System.currentTimeMillis()}.xlsx"
@@ -134,24 +161,54 @@ fun exportAndSendExcel(context: Context, objects: List<LayerObject.Object>) {
 
     } catch (e: Exception) {
         e.printStackTrace()
-        Toast.makeText(context, "Ошибка при создании файла: ${e.message}", Toast.LENGTH_LONG).show()
+        println("$EXCEL_REPORT_TAG Ошибка при создании файла: ${e.message}")
     }
 }
 
 // Альтернатива: только экспорт без отправки
-fun exportToExcel(context: Context, objects: List<LayerObject.Object>): String? {
+suspend fun exportToExcel(context: Context, objects: List<LayerObject.Object>): String? {
     return try {
         val fileName = "objects_${System.currentTimeMillis()}.xlsx"
         val file = File(context.getExternalFilesDir(null), fileName)
 
         createExcelFromObjects(objects, file)
 
-        Toast.makeText(context, "Файл сохранен: ${file.name}", Toast.LENGTH_LONG).show()
+        println("$EXCEL_REPORT_TAG Файл сохранен: ${file.name}")
         file.absolutePath
 
     } catch (e: Exception) {
         e.printStackTrace()
-        Toast.makeText(context, "Ошибка при создании файла: ${e.message}", Toast.LENGTH_LONG).show()
+        println("$EXCEL_REPORT_TAG Ошибка при создании файла: ${e.message}")
         null
+    }
+}
+
+fun deleteExcelFile(filePath: String?): Boolean {
+    return try {
+        if (filePath.isNullOrEmpty()) {
+            println("$EXCEL_REPORT_TAG Путь к файлу не указан")
+            return false
+        }
+
+        val file = File(filePath)
+
+        if (!file.exists()) {
+            println("$EXCEL_REPORT_TAG Файл не найден")
+            return false
+        }
+
+        val deleted = file.delete()
+
+        if (deleted) {
+            println("$EXCEL_REPORT_TAG Файл успешно удален")
+        } else {
+            println("$EXCEL_REPORT_TAG Не удалось удалить файл")
+        }
+
+        deleted
+    } catch (e: Exception) {
+        e.printStackTrace()
+        println("$EXCEL_REPORT_TAG Ошибка при удалении файла: ${e.message}")
+        false
     }
 }

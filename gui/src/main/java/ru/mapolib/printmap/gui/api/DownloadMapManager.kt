@@ -1,6 +1,7 @@
 package ru.mapolib.printmap.gui.api
 
 import android.app.Activity
+import android.content.Context
 import kotlinx.coroutines.flow.StateFlow
 import ru.maplyb.printmap.api.model.BoundingBox
 import ru.maplyb.printmap.api.model.Layer
@@ -21,6 +22,7 @@ interface DownloadMapManager {
     )
     fun hide()
     fun open()
+    suspend fun updateDownloadStatusReportPath(context: Context, path: String?)
 
     companion object {
         fun create(activity: Activity): DownloadMapManager {

@@ -7,6 +7,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import ru.maplyb.printmap.api.domain.MapPrint
@@ -60,7 +61,8 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
                                 layers = args.layers,
                                 isOpen = _state.value.isOpen,
                                 author = args.author,
-                                appName = args.appName
+                                appName = args.appName,
+                                reportPath = args.reportPath
                             )
                         }
 
@@ -107,6 +109,18 @@ internal object DownloadMapManagerImpl : DownloadMapManager {
 
     override fun open() {
         _state.value = _state.value.open()
+    }
+
+    override suspend fun updateDownloadStatusReportPath(context: Context, path: String?) {
+        val downloadedState = preferences?.getDownloadStatus(context)?.first()
+        downloadedState?.filePath?.let {
+            preferences?.setDownloaded(
+                context = context,
+                path = it.copy(
+                    reportPath = path,
+                )
+            )
+        }
     }
 
     suspend fun startFormingAMap(
@@ -170,6 +184,7 @@ sealed interface DownloadMapState {
         val appName: String,
         val boundingBox: BoundingBox,
         val layers: List<Layer>,
+        val reportPath: String?,
         override val isOpen: Boolean = false
     ) : DownloadMapState {
         override fun hide(): DownloadMapState {

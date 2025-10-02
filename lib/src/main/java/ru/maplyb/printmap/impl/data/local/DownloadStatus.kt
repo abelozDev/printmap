@@ -11,7 +11,7 @@ data class DownloadStatus(
     val progressMessage: String? = null,
     val filePath: DownloadedState? = null, // Путь к загруженному файлу (если скачивание завершено)
     val isFinished: Boolean = false, // Флаг завершения загрузки
-    val errorMessage: String? = null // Ошибка (если произошла)
+    val errorMessage: String? = null, // Ошибка (если произошла)
 )
 
 @Serializable
@@ -21,4 +21,5 @@ data class DownloadedState(
     val author: String = "",
     val appName: String = "",
     val layers: List<Layer>,
+    val reportPath: String? = null,
 )

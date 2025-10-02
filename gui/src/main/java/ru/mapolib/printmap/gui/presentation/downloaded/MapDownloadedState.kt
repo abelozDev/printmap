@@ -48,6 +48,7 @@ internal data class MapDownloadedUiState(
     val layers: List<Layer>,
     val coordinateSystem: CoordinateSystem = CoordinateSystem.SK42,
     val coordinateGrid: CoordinateGridModel = coordinateGridVariants[coordinateSystem]!!.first(),
+    val reportFilePath: String? = null,
 )
 
 internal data class CoordinateGridColor(
@@ -112,9 +113,16 @@ internal sealed interface MapDownloadedEvent: PrintMapEvent {
 
     /*CoordinateSystem*/
     data class SelectCoordinateSystem(val system: CoordinateSystem): MapDownloadedEvent
+
+    /*report*/
+    object OnReportClick : MapDownloadedEvent
+    object OnShareReportClick : MapDownloadedEvent
+    object OnDeleteReportClick : MapDownloadedEvent
 }
 internal sealed interface MapDownloadedEffect: PrintMapEffect {
     data class DeleteMap(val path: String): MapDownloadedEffect
+    data class SetReportPath(val path: String): MapDownloadedEffect
+    object DeleteReportPath: MapDownloadedEffect
 }
 
 internal enum class ImageOrientation(val description: String) {

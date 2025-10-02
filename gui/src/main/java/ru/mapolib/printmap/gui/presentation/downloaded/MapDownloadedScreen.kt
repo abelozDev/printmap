@@ -2,11 +2,9 @@ package ru.mapolib.printmap.gui.presentation.downloaded
 
 import android.content.Context
 import android.graphics.Bitmap
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,8 +29,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -73,6 +69,7 @@ import ru.maplyb.printmap.impl.domain.model.PageFormat
 import ru.mapolib.printmap.gui.core.ui.PrintMapTextFieldColors
 import ru.mapolib.printmap.gui.presentation.components.ErrorDialog
 import ru.mapolib.printmap.gui.presentation.components.PrintmapPopup
+import ru.mapolib.printmap.gui.presentation.components.RepostSection
 import ru.mapolib.printmap.gui.presentation.downloaded.expandable.CoordinateGrid
 import ru.mapolib.printmap.gui.presentation.downloaded.expandable.LayersExpandable
 import ru.mapolib.printmap.gui.presentation.downloaded.expandable.MapObjectsSettingExpandable
@@ -84,6 +81,8 @@ import ru.mapolib.printmap.gui.utils.formatSize
 internal fun MapDownloadedScreen(
     viewModel: MapDownloadedViewModel,
     dispose: () -> Unit,
+    setReportPath: (String) -> Unit,
+    removeReportPath: () -> Unit,
     onDeleteMap: (String) -> Unit
 ) {
     val context = LocalContext.current
@@ -99,6 +98,8 @@ internal fun MapDownloadedScreen(
             .onEach {
                 when (it) {
                     is MapDownloadedEffect.DeleteMap -> onDeleteMap(it.path)
+                    MapDownloadedEffect.DeleteReportPath -> removeReportPath()
+                    is MapDownloadedEffect.SetReportPath -> setReportPath(it.path)
                 }
             }
             .launchIn(this)
@@ -204,6 +205,12 @@ internal fun MapDownloadedScreen(
             progress = state.updateMapProgress,
             image = state.bitmap,
             context = context,
+        )
+        RepostSection(
+            reportFilePath = state.reportFilePath,
+            onReportClick = { viewModel.sendEvent(MapDownloadedEvent.OnReportClick) },
+            onDeleteReportClick = { viewModel.sendEvent(MapDownloadedEvent.OnDeleteReportClick) },
+            onShareRepostClick = { viewModel.sendEvent(MapDownloadedEvent.OnShareReportClick) },
         )
         CoordinateGrid(
             sliderInfo = state.coordinatesGridSliderInfo,
@@ -542,6 +549,8 @@ private fun PreviewMapDownloadedScreen() {
     MapDownloadedScreen(
         viewModel = viewModel(),
         onDeleteMap = {},
-        dispose = {}
+        dispose = {},
+        setReportPath = {},
+        removeReportPath = {}
     )
 }
