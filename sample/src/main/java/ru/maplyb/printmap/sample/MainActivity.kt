@@ -16,6 +16,7 @@ import ru.maplyb.printmap.api.model.MapObjectStyle
 import ru.maplyb.printmap.api.model.MapType
 import ru.maplyb.printmap.api.model.ObjectRes
 import ru.maplyb.printmap.api.model.RectangularCoordinates
+import ru.maplyb.printmap.impl.excel_generator.exportAndSendExcel
 import ru.mapolib.printmap.gui.api.DownloadMapManager
 import ru.mapolib.printmap.gui.api.DownloadMapState
 import ru.mapolib.printmap.gui.halpers.permission.getStoragePermission
@@ -30,6 +31,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
     private lateinit var ukraina: Button
     private lateinit var belarus: Button
     private lateinit var dif_zone: Button
+    private lateinit var report: Button
     private lateinit var composeView: ComposeView
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -41,6 +43,7 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
         ukraina = findViewById(ru.maplyb.printmap.R.id.ukraina_bb)
         belarus = findViewById(ru.maplyb.printmap.R.id.belarus_bb)
         dif_zone = findViewById(ru.maplyb.printmap.R.id.dif_zone)
+        report = findViewById(ru.maplyb.printmap.R.id.report)
         composeView = findViewById(ru.maplyb.printmap.R.id.compose_view)
         getStoragePermission(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -80,7 +83,6 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             GeoPoint(48.909705689879495, 24.691518816682922),
             GeoPoint(49.25965321366459, 23.85797202028449),
         )
-
         val generatedObjects = lats.map {
             LayerObject.Object(
                 style = MapObjectStyle(
@@ -90,8 +92,13 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
                 ),
                 coords = it,
                 angle = -450f,
-                res = ObjectRes.Local(R.drawable.ic_mkb)/*ObjectRes.Storage("/storage/emulated/0/Download/rls.png")*/
+                res = ObjectRes.Local(R.drawable.ic_mkb),/*ObjectRes.Storage("/storage/emulated/0/Download/rls.png")*/
+                name = "test name",
+                description = "test description to report test description to report test description to report test description to report test description to report"
             )
+        }
+        report.setOnClickListener {
+            exportMapToPdf(generatedObjects)
         }
         val objects = listOf(
             Layer(
@@ -339,12 +346,22 @@ class MainActivity : ComponentActivity(ru.maplyb.printmap.R.layout.activity_main
             ukraina.setBackgroundColor(Color.GRAY)
         }
     }
-}
 
+    fun exportMapToPdf(mapObjects: List<LayerObject.Object>) {
+        exportAndSendExcel(this, mapObjects)
 
-fun generateSequence(start: Double, end: Double, count: Int): List<Double> {
-    if (count <= 0) return emptyList()
+// Вариант 2: Создать файл, затем отправить позже
+        /*val filePath = exportToExcel(context, objects)
+        if (filePath != null) {
+            sendExcelFile(context, filePath)
+        }
+    }*/
+    }
 
-    val step = (end - start) / (count + 1)
-    return List(count) { index -> start + (index + 1) * step }
+    fun generateSequence(start: Double, end: Double, count: Int): List<Double> {
+        if (count <= 0) return emptyList()
+
+        val step = (end - start) / (count + 1)
+        return List(count) { index -> start + (index + 1) * step }
+    }
 }

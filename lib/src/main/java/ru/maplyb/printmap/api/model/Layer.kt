@@ -116,6 +116,8 @@ sealed interface LayerObject : Serializable {
         val res: ObjectRes,
         @ColorInt val nameColor: Int = Color.BLACK,
         val angle: Float,
+        val name: String,
+        val description: String,
         override val style: MapObjectStyle
     ) : LayerObject {
         override fun updateStyle(newStyle: MapObjectStyle): LayerObject {

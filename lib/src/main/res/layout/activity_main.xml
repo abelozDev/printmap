@@ -41,6 +41,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         />
+    <Button
+        android:id="@+id/report"
+        android:text="отчет"
+        android:padding="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        />
     <androidx.compose.ui.platform.ComposeView
         android:layout_width="match_parent"
         android:layout_height="match_parent"

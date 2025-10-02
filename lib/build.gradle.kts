@@ -69,7 +69,15 @@ dependencies {
     testImplementation(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(kotlin("test"))
-    
+
+    implementation("org.apache.poi:poi:5.2.3")
+    implementation("org.apache.poi:poi-ooxml:5.2.3")
+
+    implementation("org.apache.logging.log4j:log4j-api:2.20.0")
+
+    implementation("org.apache.logging.log4j:log4j-to-slf4j:2.20.0")
+    implementation("org.slf4j:slf4j-android:1.7.36")
+
     //network
     implementation(libs.retrofit)
     implementation(libs.moshi)

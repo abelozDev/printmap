@@ -3,4 +3,8 @@
     <external-path
         name="printmap_external_files"
         path="." />
+
+    <external-files-path
+        name="excel_files"
+        path="." />
 </paths>
